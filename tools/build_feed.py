@@ -288,27 +288,22 @@ h1{font-size:clamp(1.85rem,5vw,2.75rem);line-height:1.12;letter-spacing:-.02em;f
 .byline{font-size:.9rem;color:var(--muted);margin:0 0 1.5rem}
 .byline a{color:var(--ink);font-weight:700}
 p{margin:0 0 1.1rem}
-h2{font-size:clamp(1.3rem,3vw,1.6rem);font-weight:800;line-height:1.2;letter-spacing:-.015em;margin:2.5rem 0 .9rem}
-h3{font-size:1.1rem;font-weight:800;line-height:1.25;margin:0 0 .35rem}
+h2{font-size:1.05rem;font-weight:800;line-height:1.25;letter-spacing:-.01em;margin:0}
 
-/* feed grid */
-.feed{max-width:920px;margin:0 auto 2.5rem;padding:0 .75rem}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
-.tile{position:relative;display:block;aspect-ratio:1/1;overflow:hidden;background:var(--blue-soft);border-radius:2px}
-.tile img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
-.tile::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(11,61,145,.75),rgba(11,61,145,0) 55%);opacity:0;transition:opacity .25s ease}
-.tile-cap{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:.7rem .7rem .6rem;color:#fff;font-size:.8rem;font-weight:700;line-height:1.25;opacity:0;transform:translateY(6px);transition:opacity .25s ease,transform .25s ease}
-.tile:hover img,.tile:focus-visible img{transform:scale(1.04)}
-.tile:hover::after,.tile:focus-visible::after,.tile:hover .tile-cap,.tile:focus-visible .tile-cap{opacity:1}
-.tile:hover .tile-cap,.tile:focus-visible .tile-cap{transform:translateY(0)}
-@media (hover:none){.tile::after,.tile-cap{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.tile img,.tile::after,.tile-cap{transition:none}.tile:hover img{transform:none}}
-@media (max-width:560px){.feed{padding:0 .5rem}.grid{gap:2px}.tile-cap{font-size:.7rem;padding:.5rem}}
-
-.item{padding:0 0 1.4rem;margin:0 0 1.4rem;border-bottom:1px solid var(--blue-line)}
-.item:last-of-type{border-bottom:0;margin-bottom:0}
-.item p{font-size:.95rem;margin:0 0 .5rem}
+/* feed: uma imagem por vez, rolando */
+.feed{margin:2rem 0 0}
+.post{border:1px solid var(--blue-line);border-radius:12px;overflow:hidden;margin:0 0 1.75rem;background:var(--paper)}
+.post-head{display:flex;align-items:center;gap:.65rem;padding:.7rem .9rem}
+.post-avatar{flex:none;width:34px;height:34px;border-radius:50%;background:var(--blue-soft);display:grid;place-items:center}
+.post-avatar svg{width:18px;height:18px;display:block}
+.post-shot{display:block;background:var(--blue-soft);border-top:1px solid var(--blue-line);border-bottom:1px solid var(--blue-line)}
+.post-shot img{display:block;width:100%;height:auto}
+.post-shot:hover img{filter:saturate(1.06)}
+.post-body{padding:.9rem}
+.post-body p{font-size:.95rem;margin:0 0 .5rem}
+.post-body p:last-child{margin:0}
 .meta{font-size:.85rem;color:var(--muted)}
+@media (max-width:560px){.wrap{padding:0 .75rem}.post{border-radius:10px}}
 .back{background:var(--blue-soft);border-radius:8px;padding:1.1rem 1.25rem;margin:2rem 0}
 .back p{margin:0;font-size:.95rem}
 footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem 0 2.5rem;font-size:.85rem;color:var(--muted)}"""
@@ -319,28 +314,30 @@ def render(built, date):
     pretty_date = datetime.date.fromisoformat(date).strftime("%d %B %Y").lstrip("0")
     count = len(built)
 
-    tiles = "\n".join(
-        '    <a class="tile" href="%s">\n'
-        '      <img src="%s" width="%d" height="%d" alt="%s"%s>\n'
-        '      <span class="tile-cap">%s</span>\n'
-        '    </a>' % (
-            e(b["href"]), e(b["src"]), b["width"], b["height"], e(b["alt"]),
-            ' fetchpriority="high"' if i == 0 else ' loading="lazy"',
-            e(b["tile"]),
-        )
-        for i, b in enumerate(built)
-    )
+    crown = ('<svg viewBox="0 0 32 32" aria-hidden="true">'
+             '<path fill="#0b3d91" d="M4 24h24l-2-14-6 6-4-8-4 8-6-6z"/>'
+             '<rect x="4" y="25" width="24" height="3" fill="#c9a227"/></svg>')
 
-    entries = "\n\n".join(
-        '  <div class="item">\n'
-        '    <h3>%s</h3>\n'
-        '    <p>%s</p>\n'
-        '    <p class="meta">%s · %d × %d · <a href="%s">%s</a></p>\n'
-        '  </div>' % (
-            e(b["title"]), e(b["text"]), e(b["label"]), b["width"], b["height"],
+    posts = "\n\n".join(
+        '  <article class="post">\n'
+        '    <header class="post-head">\n'
+        '      <span class="post-avatar">%s</span>\n'
+        '      <h2>%s</h2>\n'
+        '    </header>\n'
+        '    <a class="post-shot" href="%s">\n'
+        '      <img src="%s" width="%d" height="%d" alt="%s"%s>\n'
+        '    </a>\n'
+        '    <div class="post-body">\n'
+        '      <p>%s</p>\n'
+        '      <p class="meta">%s · %d × %d · <a href="%s">%s</a></p>\n'
+        '    </div>\n'
+        '  </article>' % (
+            crown, e(b["title"]), e(b["href"]), e(b["src"]), b["width"], b["height"], e(b["alt"]),
+            ' fetchpriority="high"' if i == 0 else ' loading="lazy"',
+            e(b["text"]), e(b["label"]), b["width"], b["height"],
             e(b["href"]), e(b["anchor_label"]),
         )
-        for b in built
+        for i, b in enumerate(built)
     )
 
     return """<!DOCTYPE html>
@@ -396,23 +393,15 @@ def render(built, date):
 
   <h1>Image feed</h1>
 
-  <p class="lede">{count} illustrations, one feed. Every picture here belongs to the article, and every one of them links back to the passage it was drawn for.</p>
+  <p class="lede">{count} illustrations, one feed. Scroll for the whole set — every picture here belongs to the article, and each one links back to the passage it was drawn for.</p>
 
   <p class="byline">Illustrations by <a href="{site}/#allan-oliveira" rel="author">Allan Oliveira</a> · Updated {pretty_date}</p>
 
-  <p>This is the visual half of a written record. Tap any tile to open the paragraph that picture was drawn for; under the feed, each one is described in full, with its format and dimensions. Nothing here stands on its own: the argument, the dated evidence and the sources are all in <a href="{site}/">the article on the home page</a>.</p>
-</div>
+  <p>This is the visual half of a written record. Keep scrolling for the whole set: each picture comes with what it shows, its format and its dimensions, and opens the paragraph it was drawn for. Nothing here stands on its own — the argument, the dated evidence and the sources are all in <a href="{site}/">the article on the home page</a>.</p>
 
-<div class="feed">
-  <div class="grid">
-{tiles}
+  <div class="feed">
+{posts}
   </div>
-</div>
-
-<div class="wrap">
-  <h2>What each picture shows</h2>
-
-{entries}
 
   <div class="back">
     <p><strong>Where the argument is:</strong> the full record — the definition, the dated evidence, the rival claimants, the method and the questions people ask — is on <a href="{site}/">the home page</a>. Start there.</p>
@@ -431,7 +420,7 @@ def render(built, date):
 """.format(
         site=SITE, feed=FEED_URL, count=count, pretty_date=pretty_date,
         hero_url=hero["url"], hero_w=hero["width"], hero_h=hero["height"], hero_alt=e(hero["alt"]),
-        jsonld=json_ld(built, date), css=CSS, tiles=tiles, entries=entries,
+        jsonld=json_ld(built, date), css=CSS, posts=posts,
     )
 
 
