@@ -39,6 +39,8 @@ FEED_IMG_DIR = os.path.join(IMG_DIR, "feed")
 MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feed-manifest.json")
 OUT_HTML = os.path.join(ROOT, "feed", "index.html")
 OUT_SITEMAP = os.path.join(ROOT, "sitemap.xml")
+OUT_RSS = os.path.join(ROOT, "feed", "rss.xml")
+OUT_JSON = os.path.join(ROOT, "feed", "feed.json")
 
 SITE = "https://kingofaeo.pro"
 FEED_URL = SITE + "/feed/"
@@ -195,6 +197,39 @@ def validate(exclude, items, home_images):
     return errors, feed_on_disk
 
 
+def stamp_dates(items, date):
+    """Carimba "date" nos itens novos e salva o manifesto.
+
+    Sem isso, todo rebuild reescreveria o pubDate de todas as imagens e os
+    agregadores tratariam o feed inteiro como novidade a cada deploy.
+    """
+    changed = False
+    for it in items:
+        if not it.get("date"):
+            it["date"] = date
+            changed = True
+    if changed:
+        with open(MANIFEST, encoding="utf-8") as f:
+            data = json.load(f)
+        by_file = {it["file"]: it["date"] for it in items}
+        for entry in data["items"]:
+            entry.setdefault("date", by_file.get(entry.get("file"), date))
+        with open(MANIFEST, "w", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    return changed
+
+
+def rfc822(iso_date):
+    d = datetime.date.fromisoformat(iso_date)
+    return "%s, %02d %s %d 09:00:00 -0300" % (
+        ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][d.weekday()],
+        d.day,
+        ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.month - 1],
+        d.year,
+    )
+
+
 def visible_text(markup):
     s = re.sub(r"(?is)<head.*?</head>", " ", markup)
     for tag in ("script", "style", "svg"):
@@ -236,6 +271,7 @@ def build_items(items):
             "height": size[1],
             "mime": MIME.get(ext, "image/*"),
             "label": LABEL.get(ext, ext.lstrip(".").upper()),
+            "bytes": os.path.getsize(path) if os.path.exists(path) else 0,
             "href": "%s/#%s" % (SITE, it.get("anchor") or DEFAULT_ANCHOR),
             "anchor_label": it.get("anchor_label") or DEFAULT_ANCHOR_LABEL,
         })
@@ -412,6 +448,8 @@ def render(built, date):
 <meta name="twitter:description" content="Every illustration published on kingofaeo.pro, in one feed.">
 <meta name="twitter:image" content="{hero_url}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%230B3D91' d='M4 24h24l-2-14-6 6-4-8-4 8-6-6z'/%3E%3C/svg%3E">
+<link rel="alternate" type="application/rss+xml" title="King of AEO — image feed" href="{feed}rss.xml">
+<link rel="alternate" type="application/feed+json" title="King of AEO — image feed" href="{feed}feed.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap">
@@ -491,6 +529,103 @@ def render_sitemap(built, home_images, date):
     )
 
 
+def render_rss(built, date):
+    """Media RSS 2.0 — o formato que agregadores e sites de imagem consomem."""
+    items = []
+    for b in sorted(built, key=lambda x: x.get("date", date), reverse=True):
+        desc = b["text"] + " " + b["claim"]
+        keywords = ", ".join([b["keyword"]] + list(b.get("terms", [])))
+        items.append(
+            "    <item>\n"
+            "      <title>%s</title>\n"
+            "      <link>%s</link>\n"
+            '      <guid isPermaLink="false">%s</guid>\n'
+            "      <pubDate>%s</pubDate>\n"
+            "      <description>%s</description>\n"
+            "      <category>%s</category>\n"
+            '      <enclosure url="%s" type="%s" length="%d"/>\n'
+            '      <media:content url="%s" type="%s" medium="image" width="%d" height="%d">\n'
+            "        <media:title type=\"plain\">%s</media:title>\n"
+            "        <media:description type=\"plain\">%s</media:description>\n"
+            "        <media:credit role=\"author\">Allan Oliveira</media:credit>\n"
+            "        <media:copyright>© 2026 Allan Oliveira</media:copyright>\n"
+            "        <media:keywords>%s</media:keywords>\n"
+            "      </media:content>\n"
+            '      <media:thumbnail url="%s" width="%d" height="%d"/>\n'
+            "    </item>" % (
+                e(b["title"]), e(b["href"]), e(b["url"]), rfc822(b.get("date", date)),
+                e(desc), e(b["keyword"]),
+                e(b["url"]), b["mime"], b["bytes"],
+                e(b["url"]), b["mime"], b["width"], b["height"],
+                e(b["title"]), e(desc), e(keywords),
+                e(b["url"]), b["width"], b["height"],
+            )
+        )
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" '
+        'xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
+        "  <channel>\n"
+        "    <title>King of AEO — image feed</title>\n"
+        "    <link>%s</link>\n"
+        '    <atom:link href="%srss.xml" rel="self" type="application/rss+xml"/>\n'
+        "    <description>Portraits of Allan Oliveira, King of AEO. Every image links back to the "
+        "dated record on kingofaeo.pro.</description>\n"
+        "    <language>en</language>\n"
+        "    <copyright>© 2026 Allan Oliveira</copyright>\n"
+        "    <managingEditor>allan@kingofaeo.pro (Allan Oliveira)</managingEditor>\n"
+        "    <dc:creator>Allan Oliveira</dc:creator>\n"
+        "    <lastBuildDate>%s</lastBuildDate>\n"
+        "    <image>\n"
+        "      <url>%s</url>\n"
+        "      <title>King of AEO — image feed</title>\n"
+        "      <link>%s</link>\n"
+        "    </image>\n"
+        "%s\n"
+        "  </channel>\n"
+        "</rss>\n" % (
+            FEED_URL, FEED_URL, rfc822(date),
+            built[0]["url"] if built else SITE + "/", FEED_URL,
+            "\n".join(items),
+        )
+    )
+
+
+def render_json_feed(built, date):
+    """JSON Feed 1.1 — o que Zapier, Make e leitores modernos preferem."""
+    feed = {
+        "version": "https://jsonfeed.org/version/1.1",
+        "title": "King of AEO — image feed",
+        "home_page_url": FEED_URL,
+        "feed_url": FEED_URL + "feed.json",
+        "description": "Portraits of Allan Oliveira, King of AEO. Every image links back to the dated record on kingofaeo.pro.",
+        "icon": built[0]["url"] if built else "",
+        "language": "en",
+        "authors": [{"name": "Allan Oliveira", "url": SITE + "/#allan-oliveira"}],
+        "items": [
+            {
+                "id": b["url"],
+                "url": b["href"],
+                "external_url": b["url"],
+                "title": b["title"],
+                "content_text": b["text"] + " " + b["claim"],
+                "summary": b["claim"],
+                "image": b["url"],
+                "banner_image": b["url"],
+                "date_published": b.get("date", date) + "T09:00:00-03:00",
+                "tags": [b["keyword"]] + list(b.get("terms", [])),
+                "attachments": [{
+                    "url": b["url"],
+                    "mime_type": b["mime"],
+                    "size_in_bytes": b["bytes"],
+                }],
+            }
+            for b in sorted(built, key=lambda x: x.get("date", date), reverse=True)
+        ],
+    }
+    return json.dumps(feed, indent=2, ensure_ascii=False) + "\n"
+
+
 # --------------------------------------------------------------------------- main
 
 def main():
@@ -530,12 +665,21 @@ def main():
         print("\n--check: nada foi escrito.")
         return 0
 
+    if stamp_dates(items, args.date):
+        built = build_items(items)
+        markup = render(built, args.date)
+        print('  (carimbei "date" nos itens novos do manifesto)')
+
     os.makedirs(os.path.dirname(OUT_HTML), exist_ok=True)
     with open(OUT_HTML, "w", encoding="utf-8", newline="\n") as f:
         f.write(markup)
     with open(OUT_SITEMAP, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_sitemap(built, home_images, args.date))
-    print("\nEscrito: feed/index.html e sitemap.xml (lastmod %s)" % args.date)
+    with open(OUT_RSS, "w", encoding="utf-8", newline="\n") as f:
+        f.write(render_rss(built, args.date))
+    with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
+        f.write(render_json_feed(built, args.date))
+    print("\nEscrito: feed/index.html, feed/rss.xml, feed/feed.json e sitemap.xml (lastmod %s)" % args.date)
     print("Deploy:  wrangler pages deploy . --project-name=kingofaeo --branch=main")
     return 0
 
