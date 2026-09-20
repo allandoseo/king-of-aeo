@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://kingofaeo.pro/</loc><lastmod>2026-09-18</lastmod></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://kingofaeo.pro/</loc>
+    <lastmod>2026-09-20</lastmod>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-allan-oliveira.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-vs-search-robot.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-method-infographic.svg</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-coronation.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/allan-oliveira-king-of-aeo-portrait.webp</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://kingofaeo.pro/feed/</loc>
+    <lastmod>2026-09-20</lastmod>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-allan-oliveira.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-vs-search-robot.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-method-infographic.svg</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-coronation.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/allan-oliveira-king-of-aeo-portrait.webp</image:loc></image:image>
+  </url>
 </urlset>

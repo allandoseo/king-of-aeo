@@ -1,0 +1,5 @@
+/tools/*
+  X-Robots-Tag: noindex
+
+/CLAUDE.md
+  X-Robots-Tag: noindex
