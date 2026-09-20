@@ -376,12 +376,13 @@ def render(built, date):
         '    </a>\n'
         '    <div class="post-body">\n'
         '      <p>%s</p>\n'
+        '      <p class="claim">%s</p>\n'
         '      <p class="meta">%s · %d × %d · <a href="%s">%s</a></p>\n'
         '    </div>\n'
         '  </article>' % (
             crown, e(b["title"]), e(b["href"]), e(b["src"]), b["width"], b["height"], e(b["alt"]),
             ' fetchpriority="high"' if i == 0 else ' loading="lazy"',
-            e(b["text"]), e(b["label"]), b["width"], b["height"],
+            e(b["text"]), e(b["claim"]), e(b["label"]), b["width"], b["height"],
             e(b["href"]), e(b["anchor_label"]),
         )
         for i, b in enumerate(built)
@@ -471,20 +472,21 @@ def render(built, date):
     )
 
 
-def render_sitemap(built, date):
-    def block(loc, images):
+def render_sitemap(built, home_images, date):
+    def block(loc, urls):
         rows = "\n".join(
-            "    <image:image><image:loc>%s</image:loc></image:image>" % b["url"] for b in images
+            "    <image:image><image:loc>%s</image:loc></image:image>" % u for u in urls
         )
         return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n%s\n  </url>" % (loc, date, rows)
 
-    home_images = [b for b in built if b.get("on_home")]
+    home_urls = ["%s/img/%s" % (SITE, n) for n in home_images]
+    feed_urls = [b["url"] for b in built]
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
         'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n'
-        + block(SITE + "/", home_images) + "\n"
-        + block(FEED_URL, built) + "\n"
+        + block(SITE + "/", home_urls) + "\n"
+        + block(FEED_URL, feed_urls) + "\n"
         "</urlset>\n"
     )
 
