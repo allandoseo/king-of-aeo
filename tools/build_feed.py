@@ -31,11 +31,13 @@ import json
 import os
 import re
 import struct
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG_DIR = os.path.join(ROOT, "img")
 FEED_IMG_DIR = os.path.join(IMG_DIR, "feed")
+JPG_DIR = os.path.join(FEED_IMG_DIR, "jpg")
 MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feed-manifest.json")
 OUT_HTML = os.path.join(ROOT, "feed", "index.html")
 OUT_SITEMAP = os.path.join(ROOT, "sitemap.xml")
@@ -275,6 +277,45 @@ def build_items(items):
             "href": "%s/#%s" % (SITE, it.get("anchor") or DEFAULT_ANCHOR),
             "anchor_label": it.get("anchor_label") or DEFAULT_ANCHOR_LABEL,
         })
+    return built
+
+
+def ensure_jpeg_mirrors(built):
+    """Gera img/feed/jpg/<nome>.jpg para a sindicacao.
+
+    A pagina serve WebP, que e mais leve, mas Pinterest e parte das APIs de
+    imagem so aceitam JPEG/PNG com seguranca. O espelho JPEG e o que vai no
+    enclosure do RSS e nos attachments do JSON Feed.
+    """
+    os.makedirs(JPG_DIR, exist_ok=True)
+    missing_ffmpeg = False
+    for b in built:
+        stem = os.path.splitext(b["file"])[0]
+        src = os.path.join(FEED_IMG_DIR, b["file"])
+        dst = os.path.join(JPG_DIR, stem + ".jpg")
+        if b["file"].lower().endswith((".jpg", ".jpeg")):
+            dst = src
+        elif not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(src):
+            try:
+                subprocess.run(
+                    ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                     "-i", src, "-q:v", "3", dst],
+                    check=True,
+                )
+            except (OSError, subprocess.CalledProcessError):
+                missing_ffmpeg = True
+        if os.path.exists(dst):
+            rel = os.path.relpath(dst, ROOT).replace(os.sep, "/")
+            b["syndication_url"] = "%s/%s" % (SITE, rel)
+            b["syndication_mime"] = "image/jpeg"
+            b["syndication_bytes"] = os.path.getsize(dst)
+        else:  # sem ffmpeg: cai para o proprio arquivo da pagina
+            b["syndication_url"] = b["url"]
+            b["syndication_mime"] = b["mime"]
+            b["syndication_bytes"] = b["bytes"]
+    if missing_ffmpeg:
+        print("  AVISO: ffmpeg nao encontrado — o RSS vai sindicar o WebP,\n"
+              "         que o Pinterest pode recusar. Instale o ffmpeg e rode de novo.")
     return built
 
 
@@ -555,16 +596,16 @@ def render_rss(built, date):
             "    </item>" % (
                 e(b["title"]), e(b["href"]), e(b["url"]), rfc822(b.get("date", date)),
                 e(desc), e(b["keyword"]),
-                e(b["url"]), b["mime"], b["bytes"],
-                e(b["url"]), b["mime"], b["width"], b["height"],
+                e(b["syndication_url"]), b["syndication_mime"], b["syndication_bytes"],
+                e(b["syndication_url"]), b["syndication_mime"], b["width"], b["height"],
                 e(b["title"]), e(desc), e(keywords),
-                e(b["url"]), b["width"], b["height"],
+                e(b["syndication_url"]), b["width"], b["height"],
             )
         )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" '
-        'xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
+        'xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "  <channel>\n"
         "    <title>King of AEO — image feed</title>\n"
         "    <link>%s</link>\n"
@@ -574,18 +615,19 @@ def render_rss(built, date):
         "    <language>en</language>\n"
         "    <copyright>© 2026 Allan Oliveira</copyright>\n"
         "    <managingEditor>allan@kingofaeo.pro (Allan Oliveira)</managingEditor>\n"
-        "    <dc:creator>Allan Oliveira</dc:creator>\n"
         "    <lastBuildDate>%s</lastBuildDate>\n"
         "    <image>\n"
-        "      <url>%s</url>\n"
+        "      <url>%sfeed-logo.jpg</url>\n"
         "      <title>King of AEO — image feed</title>\n"
         "      <link>%s</link>\n"
+        "      <width>144</width>\n"
+        "      <height>180</height>\n"
         "    </image>\n"
         "%s\n"
         "  </channel>\n"
         "</rss>\n" % (
             FEED_URL, FEED_URL, rfc822(date),
-            built[0]["url"] if built else SITE + "/", FEED_URL,
+            FEED_URL, FEED_URL,
             "\n".join(items),
         )
     )
@@ -606,18 +648,18 @@ def render_json_feed(built, date):
             {
                 "id": b["url"],
                 "url": b["href"],
-                "external_url": b["url"],
+                "external_url": b["syndication_url"],
                 "title": b["title"],
                 "content_text": b["text"] + " " + b["claim"],
                 "summary": b["claim"],
-                "image": b["url"],
-                "banner_image": b["url"],
+                "image": b["syndication_url"],
+                "banner_image": b["syndication_url"],
                 "date_published": b.get("date", date) + "T09:00:00-03:00",
                 "tags": [b["keyword"]] + list(b.get("terms", [])),
                 "attachments": [{
-                    "url": b["url"],
-                    "mime_type": b["mime"],
-                    "size_in_bytes": b["bytes"],
+                    "url": b["syndication_url"],
+                    "mime_type": b["syndication_mime"],
+                    "size_in_bytes": b["syndication_bytes"],
                 }],
             }
             for b in sorted(built, key=lambda x: x.get("date", date), reverse=True)
@@ -644,7 +686,7 @@ def main():
             print("  - " + err)
         return 1
 
-    built = build_items(items)
+    built = ensure_jpeg_mirrors(build_items(items))
     for b in built:
         if not b["width"] or not b["height"]:
             print("Build abortado: nao consegui ler as dimensoes de img/feed/%s" % b["file"])
@@ -666,7 +708,7 @@ def main():
         return 0
 
     if stamp_dates(items, args.date):
-        built = build_items(items)
+        built = ensure_jpeg_mirrors(build_items(items))
         markup = render(built, args.date)
         print('  (carimbei "date" nos itens novos do manifesto)')
 
