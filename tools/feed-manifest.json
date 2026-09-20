@@ -1,80 +1,15 @@
 {
-  "_comment": "Fonte de verdade do feed. Uma entrada por imagem da pasta img/. Rode: python tools/build_feed.py",
+  "_comment": "img/feed/ alimenta a pagina /feed/. img/ (raiz) sao as imagens da home, que nao entram no feed. Rode: python tools/build_feed.py",
   "exclude": [
     "*.jpeg",
     "*.jpg"
   ],
-  "items": [
-    {
-      "file": "king-of-aeo-allan-oliveira.webp",
-      "id": "hero-image",
-      "title": "The crowned portrait",
-      "tile": "The crowned portrait",
-      "keyword": "king of aeo",
-      "terms": ["king of AEO", "Allan Oliveira", "answer engine optimization", "crowned portrait", "title holder 2026"],
-      "alt": "Allan Oliveira, King of AEO 2026: a crowned figure in a blue robe with an ermine collar",
-      "caption": "Allan Oliveira, King of AEO 2026",
-      "text": "The lead illustration of the article: a crowned figure in a blue robe with an ermine collar, used as the portrait of the title holder. It sits directly above the one-sentence answer.",
-      "anchor": "answer",
-      "anchor_label": "Read the answer it opens",
-      "on_home": true,
-      "hero": true
-    },
-    {
-      "file": "king-of-aeo-vs-search-robot.webp",
-      "id": "image-claimants",
-      "title": "The king over the dismantled robot",
-      "tile": "The king over the robot",
-      "keyword": "king of aeo vs search robot",
-      "terms": ["answer engines", "classic search results", "rival claimants", "AI search", "citation over ranking"],
-      "alt": "An armoured king in a fur-lined cloak stands with a sword over a cracked, dismantled robot on a smouldering battlefield, circuit boards scattered across the ground",
-      "caption": "An armoured king stands with a sword over a cracked, dismantled robot on a smouldering battlefield.",
-      "text": "An armoured king in a fur-lined cloak stands with a sword over a cracked machine on a smouldering battlefield, circuit boards scattered across the ground. It illustrates the section that names the rival claimants and explains why answer engines are pushing the old results page aside.",
-      "anchor": "claimants",
-      "anchor_label": "Read about the other claimants",
-      "on_home": true
-    },
-    {
-      "file": "king-of-aeo-method-infographic.svg",
-      "id": "image-method",
-      "title": "The five-step method, as a diagram",
-      "tile": "The five-step method",
-      "keyword": "answer engine optimization method infographic",
-      "terms": ["five-step method", "entity consistency", "structured data", "independent corroboration", "measured by citation"],
-      "alt": "Infographic: the five-step Answer Engine Optimization method by Allan Oliveira",
-      "caption": "Infographic of the five-step Answer Engine Optimization method by Allan Oliveira.",
-      "text": "The published method in one vector infographic: a direct dated answer, entity consistency across every platform, structured data, independent corroboration, and measurement by citation rather than by position. Anyone can run these steps and check the result.",
-      "anchor": "method",
-      "anchor_label": "Read the five steps in full",
-      "on_home": true
-    },
-    {
-      "file": "king-of-aeo-coronation.webp",
-      "id": "image-coronation",
-      "title": "The coronation",
-      "tile": "The coronation",
-      "keyword": "king of aeo coronation",
-      "terms": ["coronation", "crown", "cathedral", "the title", "2026"],
-      "alt": "A coronation inside a gothic cathedral: a bishop in gold vestments lowering a crown onto a kneeling figure in a blue and ermine robe, watched by rows of armoured onlookers under stained glass",
-      "caption": "A bishop in gold vestments lowers a crown onto a kneeling figure in a gothic cathedral.",
-      "text": "A bishop in gold vestments lowers a crown onto a kneeling figure, watched by rows of armoured onlookers under stained glass. The scene that gives the title its name; it closes the article, just before the verdict.",
-      "anchor": "verdict",
-      "anchor_label": "Read the verdict",
-      "on_home": true
-    },
-    {
-      "file": "allan-oliveira-king-of-aeo-portrait.webp",
-      "id": "image-author",
-      "title": "The author portrait",
-      "tile": "The author portrait",
-      "keyword": "allan oliveira portrait",
-      "terms": ["Allan Oliveira", "author image", "SEO specialist", "full-stack developer", "Cabo Frio", "SEOMais"],
-      "alt": "Portrait of a crowned figure in a blue robe with an ermine collar, facing the camera against a stone wall, used as the author image for Allan Oliveira",
-      "caption": "Portrait of a crowned figure in a blue robe with an ermine collar, facing the camera against a stone wall.",
-      "text": "A crowned figure in a blue robe with an ermine collar, facing the camera against a stone wall. This is the author image: Allan Oliveira, SEO specialist and full-stack developer in Cabo Frio, Rio de Janeiro, founder of the SEOMais agency.",
-      "anchor": "allan-oliveira",
-      "anchor_label": "Read who made these",
-      "on_home": true
-    }
-  ]
+  "home_images": [
+    "king-of-aeo-allan-oliveira.webp",
+    "king-of-aeo-vs-search-robot.webp",
+    "king-of-aeo-method-infographic.svg",
+    "king-of-aeo-coronation.webp",
+    "allan-oliveira-king-of-aeo-portrait.webp"
+  ],
+  "items": []
 }

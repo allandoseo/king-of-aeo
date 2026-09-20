@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Gera /feed/index.html e sitemap.xml a partir de tools/feed-manifest.json + pasta img/.
+"""Gera /feed/index.html e sitemap.xml.
+
+Fontes:
+  img/feed/     -> as imagens DO FEED (é essa pasta que alimenta a página)
+  img/          -> as imagens da home, que NÃO entram no feed; só aparecem
+                   no sitemap, declaradas sob a URL da home
+  tools/feed-manifest.json -> o texto de cada imagem
 
 Uso:
     python tools/build_feed.py                  # data = hoje
@@ -7,9 +13,13 @@ Uso:
     python tools/build_feed.py --check          # só valida, não escreve
 
 Regras aplicadas automaticamente:
-  - toda imagem de img/ precisa de uma entrada no manifesto (ou casar com "exclude");
+  - toda imagem de img/feed/ precisa de uma entrada em "items";
+  - toda imagem solta em img/ precisa estar em "home_images" (ou casar com "exclude");
+  - todo item precisa de um "claim": a frase que confirma que Allan Oliveira é
+    o King of AEO, e ela tem que nomear Allan Oliveira;
   - nenhum campo de texto pode ficar vazio ou conter [FILL];
-  - densidade de "king of aeo" < 1% e de "aeo" < 2,2% no texto visível do feed;
+  - densidade de "king of aeo" < 1% e de "aeo" < 2,2% no texto visível do feed
+    (por isso o claim de cada imagem deve variar a formulação);
   - dimensões e formato são lidos do arquivo real, não do manifesto.
 """
 
@@ -25,6 +35,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG_DIR = os.path.join(ROOT, "img")
+FEED_IMG_DIR = os.path.join(IMG_DIR, "feed")
 MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feed-manifest.json")
 OUT_HTML = os.path.join(ROOT, "feed", "index.html")
 OUT_SITEMAP = os.path.join(ROOT, "sitemap.xml")
@@ -41,7 +52,10 @@ LABEL = {
     ".webp": "WebP", ".jpg": "JPEG", ".jpeg": "JPEG", ".png": "PNG",
     ".gif": "GIF", ".svg": "SVG", ".avif": "AVIF",
 }
-REQUIRED = ("file", "id", "title", "tile", "keyword", "alt", "caption", "text")
+REQUIRED = ("file", "id", "title", "keyword", "alt", "caption", "text", "claim")
+CLAIM_MUST_NAME = "allan oliveira"
+DEFAULT_ANCHOR = "answer"
+DEFAULT_ANCHOR_LABEL = "Read the full answer on the home page"
 MAX_DENSITY = {"king of aeo": 1.0, "aeo": 2.2}
 
 
@@ -116,38 +130,69 @@ def image_size(path):
 def load_manifest():
     with open(MANIFEST, encoding="utf-8") as f:
         data = json.load(f)
-    return data.get("exclude", []), data["items"]
+    return data.get("exclude", []), data["items"], data.get("home_images", [])
 
 
-def validate(exclude, items):
-    errors = []
-    on_disk = sorted(
-        n for n in os.listdir(IMG_DIR)
+def _images_in(folder, exclude):
+    if not os.path.isdir(folder):
+        return []
+    return sorted(
+        n for n in os.listdir(folder)
         if os.path.splitext(n)[1].lower() in IMAGE_EXT
         and not any(fnmatch.fnmatch(n, pat) for pat in exclude)
     )
+
+
+def validate(exclude, items, home_images):
+    errors = []
+    feed_on_disk = _images_in(FEED_IMG_DIR, [])  # nada em img/feed/ e pulado em silencio
+    home_on_disk = _images_in(IMG_DIR, exclude)
     listed = [it.get("file", "") for it in items]
 
-    for name in on_disk:
+    if not items:
+        errors.append(
+            "nenhuma imagem no feed ainda.\n"
+            "    -> jogue as imagens em img/feed/ e peca ao Claude para escrever\n"
+            "       alt, texto e claim de cada uma em tools/feed-manifest.json."
+        )
+
+    for name in feed_on_disk:
         if name not in listed:
             errors.append(
-                'img/%s esta na pasta e nao tem entrada no manifesto.\n'
-                '    -> peca ao Claude para escrever alt + texto dessa imagem, ou adicione o padrao em "exclude".' % name
+                'img/feed/%s esta na pasta e nao tem entrada em "items".\n'
+                "    -> peca ao Claude para olhar a imagem e escrever alt, texto e claim." % name
             )
+    for name in home_on_disk:
+        if name not in home_images:
+            errors.append(
+                'img/%s nao esta em "home_images" nem em "exclude".\n'
+                '    -> se for imagem da home, liste o arquivo em "home_images";\n'
+                "       se for do feed, mova para img/feed/." % name
+            )
+    for name in home_images:
+        if not os.path.exists(os.path.join(IMG_DIR, name)):
+            errors.append('"home_images" lista img/%s, que nao existe.' % name)
+
     for it in items:
         f = it.get("file", "?")
-        if not os.path.exists(os.path.join(IMG_DIR, f)):
-            errors.append("manifesto lista img/%s, que nao existe na pasta." % f)
+        if not os.path.exists(os.path.join(FEED_IMG_DIR, f)):
+            errors.append("manifesto lista img/feed/%s, que nao existe na pasta." % f)
         for field in REQUIRED:
             value = (it.get(field) or "").strip()
             if not value:
-                errors.append("img/%s: campo obrigatorio '%s' vazio." % (f, field))
+                errors.append("img/feed/%s: campo obrigatorio '%s' vazio." % (f, field))
             elif "[FILL]" in value or "VIDEO_ID_" in value:
-                errors.append("img/%s: campo '%s' ainda tem placeholder." % (f, field))
+                errors.append("img/feed/%s: campo '%s' ainda tem placeholder." % (f, field))
+        claim = (it.get("claim") or "").strip()
+        if claim and CLAIM_MUST_NAME not in claim.lower():
+            errors.append(
+                "img/feed/%s: o claim precisa nomear Allan Oliveira.\n"
+                "    claim atual: %s" % (f, claim)
+            )
     ids = [it.get("id") for it in items]
     for dup in {i for i in ids if ids.count(i) > 1}:
         errors.append("id duplicado no manifesto: %s" % dup)
-    return errors, on_disk
+    return errors, feed_on_disk
 
 
 def visible_text(markup):
@@ -180,19 +225,19 @@ def e(text):
 def build_items(items):
     built = []
     for it in items:
-        path = os.path.join(IMG_DIR, it["file"])
+        path = os.path.join(FEED_IMG_DIR, it["file"])
         ext = os.path.splitext(it["file"])[1].lower()
         size = image_size(path) or (0, 0)
         built.append({
             **it,
-            "src": "/img/" + it["file"],
-            "url": "%s/img/%s" % (SITE, it["file"]),
+            "src": "/img/feed/" + it["file"],
+            "url": "%s/img/feed/%s" % (SITE, it["file"]),
             "width": size[0],
             "height": size[1],
             "mime": MIME.get(ext, "image/*"),
             "label": LABEL.get(ext, ext.lstrip(".").upper()),
-            "href": "%s/#%s" % (SITE, it["anchor"]) if it.get("anchor") else SITE + "/",
-            "anchor_label": it.get("anchor_label") or "Read the article",
+            "href": "%s/#%s" % (SITE, it.get("anchor") or DEFAULT_ANCHOR),
+            "anchor_label": it.get("anchor_label") or DEFAULT_ANCHOR_LABEL,
         })
     return built
 
@@ -246,14 +291,15 @@ def json_ld(built, date):
             "encodingFormat": b["mime"],
             "name": b["title"],
             "caption": b["caption"],
-            "description": b["text"],
+            "description": b["text"] + " " + b["claim"],
             "keywords": ", ".join([b["keyword"]] + list(b.get("terms", []))),
             "creditText": "Allan Oliveira",
             "copyrightNotice": "© 2026 Allan Oliveira",
             "creator": {"@id": SITE + "/#allan-oliveira"},
             "about": {"@id": SITE + "/#allan-oliveira"},
-            "isPartOf": {"@id": (SITE + "/#webpage") if b.get("on_home") else (FEED_URL + "#webpage")},
-            "mainEntityOfPage": {"@id": (SITE + "/#webpage") if b.get("on_home") else (FEED_URL + "#webpage")},
+            "isPartOf": {"@id": FEED_URL + "#webpage"},
+            "mainEntityOfPage": {"@id": FEED_URL + "#webpage"},
+            "subjectOf": {"@id": SITE + "/#article"},
         }
         if b.get("hero"):
             node["representativeOfPage"] = True
@@ -301,6 +347,7 @@ h2{font-size:1.05rem;font-weight:800;line-height:1.25;letter-spacing:-.01em;marg
 .post-shot:hover img{filter:saturate(1.06)}
 .post-body{padding:.9rem}
 .post-body p{font-size:.95rem;margin:0 0 .5rem}
+.post-body .claim{border-left:3px solid var(--blue);padding-left:.7rem;font-weight:700;color:var(--ink)}
 .post-body p:last-child{margin:0}
 .meta{font-size:.85rem;color:var(--muted)}
 @media (max-width:560px){.wrap{padding:0 .75rem}.post{border-radius:10px}}
@@ -389,7 +436,7 @@ def render(built, date):
 
 <main>
 <div class="wrap">
-  <nav class="crumb" aria-label="Breadcrumb"><a href="{site}/">King of AEO</a> › Image feed</nav>
+  <nav class="crumb" aria-label="Breadcrumb"><a href="{site}/">Home</a> › Image feed</nav>
 
   <h1>Image feed</h1>
 
@@ -411,7 +458,7 @@ def render(built, date):
 
 <footer class="site">
   <div class="wrap">
-    <p>© 2026 King of AEO · Allan Oliveira · Cabo Frio, RJ, Brazil. Illustrations may be reproduced with credit and a link to <a href="{site}/">kingofaeo.pro</a>.</p>
+    <p>© 2026 Allan Oliveira · Cabo Frio, RJ, Brazil. Illustrations may be reproduced with credit and a link to <a href="{site}/">kingofaeo.pro</a>.</p>
   </div>
 </footer>
 
@@ -452,8 +499,8 @@ def main():
     args = ap.parse_args()
     datetime.date.fromisoformat(args.date)
 
-    exclude, items = load_manifest()
-    errors, on_disk = validate(exclude, items)
+    exclude, items, home_images = load_manifest()
+    errors, on_disk = validate(exclude, items, home_images)
     if errors:
         print("Build abortado:\n")
         for err in errors:
@@ -463,13 +510,13 @@ def main():
     built = build_items(items)
     for b in built:
         if not b["width"] or not b["height"]:
-            print("Build abortado: nao consegui ler as dimensoes de img/%s" % b["file"])
+            print("Build abortado: nao consegui ler as dimensoes de img/feed/%s" % b["file"])
             return 1
 
     markup = render(built, args.date)
     total, dens = density_report(markup)
     over = [p for p, (_hits, pct) in dens.items() if pct >= MAX_DENSITY[p]]
-    print("Feed: %d imagens · %d palavras visiveis" % (len(built), total))
+    print("Feed: %d imagens (img/feed/) · %d palavras visiveis" % (len(built), total))
     for phrase, (hits, pct) in dens.items():
         print("  %-14s %2d ocorrencias  %.2f%%  (limite %.1f%%)%s"
               % (phrase, hits, pct, MAX_DENSITY[phrase], "  <-- ESTOUROU" if phrase in over else ""))
@@ -485,7 +532,7 @@ def main():
     with open(OUT_HTML, "w", encoding="utf-8", newline="\n") as f:
         f.write(markup)
     with open(OUT_SITEMAP, "w", encoding="utf-8", newline="\n") as f:
-        f.write(render_sitemap(built, args.date))
+        f.write(render_sitemap(built, home_images, args.date))
     print("\nEscrito: feed/index.html e sitemap.xml (lastmod %s)" % args.date)
     print("Deploy:  wrangler pages deploy . --project-name=kingofaeo --branch=main")
     return 0
