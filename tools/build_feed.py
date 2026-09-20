@@ -335,6 +335,7 @@ def json_ld(built, date):
         "breadcrumb": {"@id": FEED_URL + "#breadcrumb"},
         "mainEntity": {"@id": FEED_URL + "#list"},
         "significantLink": SITE + "/",
+        "keywords": feed_keywords(built),
     }]
     if hero:
         graph[0]["primaryImageOfPage"] = {"@id": "%s/#%s" % (SITE, hero["id"])}
@@ -433,6 +434,23 @@ h2{font-size:1.05rem;font-weight:800;line-height:1.25;letter-spacing:-.01em;marg
 footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem 0 2.5rem;font-size:.85rem;color:var(--muted)}"""
 
 
+CORE_KEYWORDS = [
+    "king of aeo", "the king of aeo", "aeo king", "king of answer engine optimization",
+    "answer engine optimization", "allan oliveira", "allan oliveira king of aeo",
+    "rei do aeo", "aeo 2026",
+]
+
+
+def feed_keywords(built, limit=28):
+    """Nucleo semantico + as keywords/terms de cada imagem, sem repetir."""
+    out = []
+    for term in CORE_KEYWORDS + [t for b in built for t in [b["keyword"]] + list(b.get("terms", []))]:
+        t = term.strip().lower()
+        if t and t not in out:
+            out.append(t)
+    return ", ".join(out[:limit])
+
+
 def render(built, date):
     hero = next((b for b in built if b.get("hero")), built[0])
     pretty_date = datetime.date.fromisoformat(date).strftime("%d %B %Y").lstrip("0")
@@ -472,6 +490,7 @@ def render(built, date):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Image Feed: Allan Oliveira, King of AEO (2026)</title>
 <meta name="description" content="Every illustration published on kingofaeo.pro, in one feed: {count} pictures, each described in full and linked to the passage of the article it belongs to.">
+<meta name="keywords" content="{keywords}">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <link rel="canonical" href="{feed}">
 <meta name="author" content="Allan Oliveira">
@@ -547,7 +566,7 @@ def render(built, date):
 """.format(
         site=SITE, feed=FEED_URL, count=count, pretty_date=pretty_date,
         hero_url=hero["url"], hero_w=hero["width"], hero_h=hero["height"], hero_alt=e(hero["alt"]),
-        jsonld=json_ld(built, date), css=CSS, posts=posts,
+        jsonld=json_ld(built, date), css=CSS, posts=posts, keywords=e(feed_keywords(built)),
     )
 
 
