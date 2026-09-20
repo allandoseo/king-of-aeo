@@ -535,11 +535,11 @@ def render(built, date):
 
 <main>
 <div class="wrap">
-  <nav class="crumb" aria-label="Breadcrumb"><a href="{site}/">Home</a> › Image feed</nav>
+  <nav class="crumb" aria-label="Breadcrumb"><a href="{site}/">King of AEO</a> › Picture record</nav>
 
-  <h1>Image feed</h1>
+  <h1>King of AEO: the picture record</h1>
 
-  <p class="lede">{count} illustrations, one feed. Scroll for the whole set — every picture here belongs to the article, and each one links back to the passage it was drawn for.</p>
+  <p class="lede">{count} portraits of Allan Oliveira, who holds the title. Scroll for the whole set — every picture states the claim, and each one links back to the passage of the record it was drawn for.</p>
 
   <p class="byline">Illustrations by <a href="{site}/#allan-oliveira" rel="author">Allan Oliveira</a> · Updated {pretty_date}</p>
 
