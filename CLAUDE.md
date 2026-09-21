@@ -7,7 +7,7 @@ Regras: manter "king of aeo" abaixo de 1% e "aeo" abaixo de 2,2% de densidade no
 ## Página da música (/king-of-aeo-song/)
 Escrita à mão, com o vídeo do YouTube `4b-dHmjz6O8` como conteúdo principal, JSON-LD `VideoObject` + `BreadcrumbList`, e `sitemap-videos.xml` próprio (declarado no robots.txt). O `build_feed.py` só declara a URL dela no `sitemap.xml`, via a constante `SONG_LASTMOD` — não gera a página.
 
-**Exceção de densidade:** o H1 e o primeiro parágrafo foram ditados pelo cliente e o título da música contém "King of AEO", então essa página fica acima do limite de 1%. Não tente "consertar" reescrevendo o H1.
+A página carrega `VideoObject` + `MusicRecording` + `MusicComposition` (com a letra em `lyrics` e em `transcript`, idênticas) + `FAQPage` + `BreadcrumbList`. A letra é literal e o H1 foi ditado pelo cliente: se a densidade apertar, **acrescente texto** (as seções "What the lines refer to" e o FAQ existem por isso) em vez de reescrever o H1 ou a letra.
 
 ## Pastas de imagem
 - `img/feed/` — **alimenta a página /feed/**. É aqui que entram as imagens novas.

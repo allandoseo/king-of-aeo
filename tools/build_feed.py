@@ -581,8 +581,8 @@ def render_sitemap(built, home_images, date):
     home_urls = ["%s/img/%s" % (SITE, n) for n in home_images]
     feed_urls = [b["url"] for b in built]
     # /king-of-aeo-song/ e escrita a mao e nao tem imagem propria: entra so com loc + lastmod
-    song = "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (
-        SITE + "/king-of-aeo-song/", SONG_LASTMOD)
+    song = block(SITE + "/king-of-aeo-song/",
+                 [SITE + "/img/feed/king-of-aeo-rio-de-janeiro-sunset.webp"])
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
