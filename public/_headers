@@ -1,0 +1,8 @@
+/docs/the-legend-of-the-king-of-aeo.pdf
+  Link: <https://kingofaeo.pro/archive/the-legend/>; rel="canonical"
+
+/docs/the-five-laws-of-aeo.pdf
+  Link: <https://kingofaeo.pro/archive/five-laws/>; rel="canonical"
+
+/docs/*
+  Cache-Control: public, max-age=86400

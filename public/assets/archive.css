@@ -1,0 +1,236 @@
+/* The Royal Archives — kingofaeo.pro
+   Illuminated manuscript meets official register.
+   Mobile first. Gold is decoration only: #B8901F on parchment is 2.5:1,
+   so it never carries text at body size. */
+
+:root{
+  --parchment:#F5ECD7;
+  --ink:#1B1510;
+  --royal:#1A3A8F;   /* 8.7:1 on parchment */
+  --gold:#B8901F;    /* rules, borders, drop-cap glyph only */
+  --seal:#8B1E1E;    /* 7.8:1 on parchment */
+  --ink-soft:#4A3F33; /* 7.4:1 on parchment, for secondary text */
+  --measure:68ch;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html{-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  padding:1rem .75rem 3rem;
+  background:var(--parchment);
+  color:var(--ink);
+  font-family:"Crimson Text",Georgia,"Times New Roman",serif;
+  font-size:19px;
+  line-height:1.65;
+  overflow-wrap:break-word;
+}
+
+/* ---- main column: thin double gold border ---- */
+.column{
+  max-width:var(--measure);
+  margin:0 auto;
+  padding:1.5rem 1.1rem;
+  border:1px double var(--gold);
+  outline:1px solid var(--gold);
+  outline-offset:4px;
+}
+
+@media (min-width:40rem){
+  body{padding:2.5rem 1.5rem 4rem}
+  .column{padding:2.75rem 2.5rem}
+}
+
+/* ---- headings ---- */
+h1,h2{
+  font-family:"Cinzel Decorative","Cinzel",Georgia,serif;
+  color:var(--royal);
+  line-height:1.25;
+  font-weight:700;
+}
+h1{font-size:1.75rem;margin:.6rem 0 1rem;text-align:center}
+h2{font-size:1.3rem;margin:2.25rem 0 .75rem}
+h3{font-family:"Crimson Text",Georgia,serif;font-size:1.1rem;color:var(--ink);margin:1.5rem 0 .5rem}
+
+@media (min-width:40rem){
+  h1{font-size:2.35rem}
+  h2{font-size:1.6rem}
+}
+
+p{margin:0 0 1.1rem}
+
+a{color:var(--royal);text-decoration:underline;text-underline-offset:2px}
+a:hover,a:focus{color:var(--seal)}
+a:focus-visible{outline:2px solid var(--seal);outline-offset:2px}
+
+/* ---- small caps labels ---- */
+.label,.crumb,.byline,.meta,.type{
+  font-family:"IM Fell English SC",Georgia,serif;
+  font-size:.9rem;
+  letter-spacing:.02em;
+  color:var(--ink-soft);
+}
+
+.crumb{margin:0 0 .75rem;text-align:center}
+.crumb ol{list-style:none;margin:0;padding:0}
+.crumb li{display:inline}
+.crumb li+li::before{content:" › ";color:var(--gold)}
+
+.byline{text-align:center;margin:0 0 1.5rem}
+
+/* ---- centred gold rule with a diamond ---- */
+.rule{
+  border:0;
+  height:1px;
+  margin:2.5rem auto;
+  max-width:22rem;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  position:relative;
+  overflow:visible;
+}
+.rule::after{
+  content:"";
+  position:absolute;
+  top:50%;left:50%;
+  width:8px;height:8px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  background:var(--gold);
+}
+
+/* ---- drop cap: gold letter in a blue box ---- */
+.dropcap::first-letter{
+  float:left;
+  margin:.25rem .5rem 0 0;
+  padding:.35rem .5rem;
+  background:var(--royal);
+  color:var(--gold);       /* 3.4:1 — large-text AA */
+  font-family:"Cinzel Decorative","Cinzel",Georgia,serif;
+  font-size:3.1rem;
+  line-height:1;
+}
+
+.subtitle{text-align:center;font-style:italic;color:var(--ink-soft);margin:0 0 .35rem}
+.colophon{text-align:center;font-size:.95rem;color:var(--ink-soft);margin:0 0 1.5rem}
+
+.see-record{
+  margin:1.25rem 0 0;
+  padding-top:.6rem;
+  border-top:1px solid rgba(184,144,31,.45);
+  font-family:"IM Fell English SC",Georgia,serif;
+  font-size:.9rem;
+}
+
+/* ---- epigraph: the law, in italic ---- */
+.epigraph{
+  margin:0 0 1.25rem;
+  padding-left:1rem;
+  border-left:2px solid var(--gold);
+  font-style:italic;
+  color:var(--ink-soft);
+}
+
+/* ---- notice box ---- */
+.notice{
+  margin:1.5rem 0;
+  padding:1rem 1.1rem;
+  border:1px solid var(--seal);
+  border-left:4px solid var(--seal);
+  background:rgba(139,30,30,.05);
+}
+.notice p{margin:0}
+
+/* ---- in-page table of contents ---- */
+.toc{margin:1.75rem 0;padding:1rem 1.1rem;border:1px solid var(--gold)}
+.toc ol{margin:.5rem 0 0;padding-left:1.35rem}
+.toc li{margin:.2rem 0}
+
+/* ---- document cards, styled as sealed scrolls ---- */
+.cards{list-style:none;margin:1.5rem 0 0;padding:0;display:grid;gap:1.5rem}
+@media (min-width:52rem){.cards{grid-template-columns:1fr 1fr}}
+
+.card{
+  position:relative;
+  padding:1.5rem 1.25rem 1.25rem;
+  border:1px solid var(--gold);
+  /* curled top and bottom edges of a rolled scroll */
+  border-top:3px double var(--gold);
+  border-bottom:3px double var(--gold);
+  background:
+    linear-gradient(180deg,rgba(184,144,31,.10),transparent 3rem),
+    var(--parchment);
+}
+/* the wax seal */
+.card::before{
+  content:"";
+  position:absolute;
+  top:-9px;right:1.1rem;
+  width:18px;height:18px;
+  border-radius:50%;
+  background:var(--seal);
+  box-shadow:0 0 0 2px var(--parchment),0 0 0 3px var(--gold);
+}
+.card h3{margin:0 0 .35rem;font-family:"Cinzel Decorative","Cinzel",Georgia,serif;color:var(--royal);font-size:1.15rem}
+.card .type{display:block;margin:0 0 .6rem}
+.card p{margin:0 0 .9rem}
+.card .meta{display:block;margin:0 0 .9rem}
+
+/* ---- buttons / download ---- */
+.btn{
+  display:inline-block;
+  margin:.25rem .4rem .25rem 0;
+  padding:.5rem .95rem;
+  border:1px solid var(--royal);
+  background:var(--royal);
+  color:var(--parchment);
+  font-family:"IM Fell English SC",Georgia,serif;
+  font-size:.95rem;
+  text-decoration:none;
+}
+.btn:hover,.btn:focus{background:var(--seal);border-color:var(--seal);color:var(--parchment)}
+.btn.secondary{background:transparent;color:var(--royal)}
+.btn.secondary:hover,.btn.secondary:focus{background:transparent;color:var(--seal)}
+
+/* ---- the record: definition list ---- */
+dl.record{margin:1.25rem 0}
+dl.record dt{font-family:"IM Fell English SC",Georgia,serif;color:var(--seal);margin:1.1rem 0 .2rem}
+dl.record dd{margin:0 0 .5rem}
+
+/* ---- citation block ---- */
+.citation{
+  margin:1.75rem 0;
+  padding:1rem 1.1rem;
+  border:1px solid var(--gold);
+  background:rgba(184,144,31,.06);
+  font-size:.95rem;
+}
+.citation p{margin:0 0 .75rem}
+
+/* ---- checklists ---- */
+ul.check{margin:.75rem 0 1.25rem;padding-left:1.35rem}
+ul.check li{margin:.35rem 0}
+
+/* ---- forthcoming list ---- */
+.forthcoming{margin:1rem 0 0;padding-left:1.35rem;color:var(--ink-soft)}
+
+/* ---- author block ---- */
+.author{margin-top:2.5rem;padding-top:1.25rem;border-top:1px solid var(--gold)}
+
+/* ---- site nav ---- */
+.archive-nav{max-width:var(--measure);margin:0 auto 1rem;text-align:center}
+
+/* ---- print: hide navigation ---- */
+@media print{
+  body{background:#fff;color:#000;font-size:11pt;padding:0}
+  .column{border:0;outline:0;max-width:none;padding:0}
+  .archive-nav,.toc,.crumb,.btn{display:none}
+  a{color:#000;text-decoration:none}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt}
+  .rule{background:#000}
+  .card{break-inside:avoid}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
