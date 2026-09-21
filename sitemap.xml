@@ -44,4 +44,8 @@
     <image:image><image:loc>https://kingofaeo.pro/img/feed/king-of-aeo-horseback-castle.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/feed/king-of-aeo-crown-handover-james-dooley.webp</image:loc></image:image>
   </url>
+  <url>
+    <loc>https://kingofaeo.pro/king-of-aeo-song/</loc>
+    <lastmod>2026-09-21</lastmod>
+  </url>
 </urlset>

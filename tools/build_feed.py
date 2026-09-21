@@ -61,6 +61,7 @@ CLAIM_MUST_NAME = "allan oliveira"
 DEFAULT_ANCHOR = "answer"
 DEFAULT_ANCHOR_LABEL = "Read the full answer on the home page"
 MAX_DENSITY = {"king of aeo": 1.0, "aeo": 2.2}
+SONG_LASTMOD = "2026-09-21"  # /king-of-aeo-song/ e escrita a mao; o build so a declara no sitemap
 
 
 # --------------------------------------------------------------------------- dimensões
@@ -579,12 +580,16 @@ def render_sitemap(built, home_images, date):
 
     home_urls = ["%s/img/%s" % (SITE, n) for n in home_images]
     feed_urls = [b["url"] for b in built]
+    # /king-of-aeo-song/ e escrita a mao e nao tem imagem propria: entra so com loc + lastmod
+    song = "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (
+        SITE + "/king-of-aeo-song/", SONG_LASTMOD)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
         'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n'
         + block(SITE + "/", home_urls) + "\n"
         + block(FEED_URL, feed_urls) + "\n"
+        + song + "\n"
         "</urlset>\n"
     )
 

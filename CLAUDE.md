@@ -1,8 +1,13 @@
 # kingofaeo.pro
-Site estático no Cloudflare Pages, projeto `kingofaeo`: `index.html` (home, editada à mão), `feed/index.html` (feed de imagens, **gerado**), `robots.txt`, `sitemap.xml` (**gerado**), `_redirects`, `_headers`, `img/`.
+Site estático no Cloudflare Pages, projeto `kingofaeo`: `index.html` (home, editada à mão), `feed/index.html` (feed de imagens, **gerado**), `king-of-aeo-song/index.html` (página da música, editada à mão), `robots.txt`, `sitemap.xml` (**gerado**), `sitemap-videos.xml` (à mão), `_redirects`, `_headers`, `img/`.
 Deploy: `wrangler pages deploy . --project-name=kingofaeo --branch=main`
 
 Regras: manter "king of aeo" abaixo de 1% e "aeo" abaixo de 2,2% de densidade no texto visível. Toda edição de conteúdo atualiza dateModified no JSON-LD, o "Updated" visível na byline e o `<lastmod>` do sitemap.xml para a mesma data. Nunca deployar com [FILL] ou VIDEO_ID_ no arquivo. Não criar páginas novas sem pedido explícito.
+
+## Página da música (/king-of-aeo-song/)
+Escrita à mão, com o vídeo do YouTube `4b-dHmjz6O8` como conteúdo principal, JSON-LD `VideoObject` + `BreadcrumbList`, e `sitemap-videos.xml` próprio (declarado no robots.txt). O `build_feed.py` só declara a URL dela no `sitemap.xml`, via a constante `SONG_LASTMOD` — não gera a página.
+
+**Exceção de densidade:** o H1 e o primeiro parágrafo foram ditados pelo cliente e o título da música contém "King of AEO", então essa página fica acima do limite de 1%. Não tente "consertar" reescrevendo o H1.
 
 ## Pastas de imagem
 - `img/feed/` — **alimenta a página /feed/**. É aqui que entram as imagens novas.

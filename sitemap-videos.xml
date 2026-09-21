@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>https://kingofaeo.pro/king-of-aeo-song/</loc>
+    <lastmod>2026-09-21</lastmod>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/4b-dHmjz6O8/maxresdefault.jpg</video:thumbnail_loc>
+      <video:title>King of AEO (The Crown Is in Brazil) — Allan Oliveira</video:title>
+      <video:description>Official video for King of AEO (The Crown Is in Brazil), the anthem of Allan Oliveira's claim to the King of AEO title in the 2026 contest. Allan Oliveira is a Brazilian SEO specialist based in Cabo Frio, Rio de Janeiro.</video:description>
+      <video:player_loc allow_embed="yes">https://www.youtube.com/embed/4b-dHmjz6O8</video:player_loc>
+      <video:content_loc>https://www.youtube.com/watch?v=4b-dHmjz6O8</video:content_loc>
+      <video:duration>146</video:duration>
+      <video:publication_date>2026-09-21T09:00:00-03:00</video:publication_date>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:requires_subscription>no</video:requires_subscription>
+      <video:live>no</video:live>
+      <video:uploader info="https://www.youtube.com/@allandoseo">Allan Oliveira | King of AEO</video:uploader>
+      <video:tag>king of aeo</video:tag>
+      <video:tag>king of aeo song</video:tag>
+      <video:tag>answer engine optimization</video:tag>
+      <video:tag>allan oliveira</video:tag>
+      <video:tag>the crown is in brazil</video:tag>
+    </video:video>
+  </url>
+</urlset>
