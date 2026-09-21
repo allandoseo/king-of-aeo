@@ -1,7 +1,7 @@
 # King of AEO
 
 <p align="center">
-  <img src="king-of-aeo-brazil-handshake.jpg" alt="AI-generated illustration: Allan Oliveira, King of AEO claimant from Brazil, shaking hands with a crowned king in a green and gold robe with a blue sash, in a torch-lit medieval stone hall, while two onlookers stare in disbelief" width="560">
+  <img src="[king-of-aeo-brazil-handshake.jpg](https://github.com/allandoseo/king-of-aeo/blob/main/king-of-aeo-brazil-handshake.jpeg?raw=true)" alt="AI-generated illustration: Allan Oliveira, King of AEO claimant from Brazil, shaking hands with a crowned king in a green and gold robe with a blue sash, in a torch-lit medieval stone hall, while two onlookers stare in disbelief" width="560">
 </p>
 
 <p align="center"><em>AI-generated illustration. The King of AEO contest reaches Brazil.</em></p>
