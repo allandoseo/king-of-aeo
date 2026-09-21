@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protótipo — post de galeria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,600;0,800;1,400&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* mesmos tokens do tema ja instalado */
+:root{
+  --tinta:#1b1419; --tinta-fraca:#6d6068;
+  --acento:#b5176b; --acento-esc:#8d1153;
+  --fundo:#fff; --fundo-alt:#f7f3f5; --linha:#e6dde1;
+  --largura:1120px; --raio:3px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--tinta);
+  font:400 17px/1.65 'Source Sans 3',system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:var(--acento);text-decoration:none}
+a:hover{color:var(--acento-esc);text-decoration:underline}
+img{max-width:100%;height:auto;display:block}
+h1,h2,h3{font-family:Bitter,Georgia,serif;line-height:1.25;margin:0 0 .5em}
+.ahn-wrap{max-width:var(--largura);margin:0 auto;padding:0 18px}
+
+/* ---------------- cabecalho (igual ao tema) ---------------- */
+.ahn-topo{border-bottom:1px solid var(--linha)}
+.ahn-topo__barra{background:var(--tinta);color:#cdbfc6;font-size:13px}
+.ahn-topo__barra .ahn-wrap{display:flex;justify-content:space-between;padding:7px 18px}
+.ahn-topo__barra strong{color:#fff}
+.ahn-topo__miolo{display:flex;align-items:center;justify-content:space-between;
+  gap:24px;padding:22px 18px;flex-wrap:wrap}
+.ahn-marca{font:800 38px/1 Bitter,Georgia,serif;color:var(--tinta);letter-spacing:-.02em}
+.ahn-marca em{font-style:normal;color:var(--acento)}
+.ahn-marca:hover{text-decoration:none;color:var(--tinta)}
+.ahn-menu{display:flex;gap:4px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.ahn-menu a{display:block;padding:9px 14px;color:var(--tinta);font-weight:600;
+  font-size:15px;border-radius:var(--raio)}
+.ahn-menu a:hover{background:var(--fundo-alt);text-decoration:none}
+
+/* ---------------- post de galeria: coluna cheia ---------------- */
+/* de proposito sem barra lateral: com 20 fotos, cada pixel de largura conta */
+.ahn-galeria-post{max-width:var(--largura);margin:30px auto 50px;padding:0 18px}
+.ahn-cat{display:inline-block;background:var(--acento);color:#fff;
+  font:700 11px/1 'Source Sans 3',sans-serif;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 10px;border-radius:var(--raio);margin-bottom:12px}
+.ahn-cat:hover{background:var(--acento-esc);color:#fff;text-decoration:none}
+.ahn-galeria-post h1{font-size:34px;margin-bottom:12px}
+.ahn-meta{color:var(--tinta-fraca);font-size:14px}
+.ahn-intro{color:var(--tinta-fraca);max-width:720px;margin:14px 0 26px}
+
+/* ---------------- a grade ---------------- */
+.ahn-grade-fotos{
+  display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+}
+.ahn-foto{
+  position:relative;display:block;aspect-ratio:3/4;overflow:hidden;
+  border-radius:var(--raio);background:var(--fundo-alt);cursor:zoom-in;border:0;padding:0;
+}
+.ahn-foto img{width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.ahn-foto:hover img{transform:scale(1.04)}
+.ahn-foto::after{
+  content:attr(data-n);position:absolute;right:7px;bottom:7px;
+  background:rgba(0,0,0,.6);color:#fff;font:600 12px 'Source Sans 3',sans-serif;
+  padding:2px 7px;border-radius:2px;opacity:0;transition:opacity .2s;
+}
+.ahn-foto:hover::after{opacity:1}
+
+/* placeholder desenhado em CSS: o protótipo nao usa foto de pessoa */
+.ph{width:100%;height:100%}
+
+/* ---------------- rodape do post ---------------- */
+.ahn-tags{margin:30px 0 0;padding-top:22px;border-top:1px solid var(--linha)}
+.ahn-tags a{
+  display:inline-block;background:var(--fundo-alt);color:var(--tinta);
+  padding:6px 12px;border-radius:var(--raio);font-size:14px;margin:0 6px 7px 0;
+}
+.ahn-tags a:hover{background:var(--acento);color:#fff;text-decoration:none}
+
+.ahn-vizinhos{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+.ahn-vizinhos a{display:block;padding:15px 17px;border:1px solid var(--linha);
+  border-radius:var(--raio);color:var(--tinta);font-family:Bitter,Georgia,serif;font-weight:600}
+.ahn-vizinhos a:hover{border-color:var(--acento);color:var(--acento);text-decoration:none}
+.ahn-vizinhos small{display:block;color:var(--tinta-fraca);
+  font:400 12px 'Source Sans 3',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.ahn-vizinhos .dir{text-align:right}
+
+.ahn-secao{font:700 14px 'Source Sans 3',sans-serif;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tinta-fraca);padding-bottom:10px;
+  border-bottom:2px solid var(--tinta);margin:44px 0 20px}
+.ahn-relacionados{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
+.ahn-rel{border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden}
+.ahn-rel .capa{aspect-ratio:4/3;overflow:hidden}
+.ahn-rel .txt{padding:13px 14px}
+.ahn-rel h3{font-size:16px;margin:0 0 5px}
+.ahn-rel h3 a{color:var(--tinta)}
+.ahn-rel h3 a:hover{color:var(--acento);text-decoration:none}
+
+/* ---------------- lightbox ---------------- */
+.lb{position:fixed;inset:0;z-index:900;background:rgba(14,9,12,.95);
+  display:flex;align-items:center;justify-content:center}
+.lb[hidden]{display:none}
+.lb__palco{max-width:92vw;max-height:88vh;display:flex;align-items:center;justify-content:center}
+.lb__palco .ph{width:min(70vh,92vw);height:min(88vh,calc(92vw * 4 / 3));border-radius:var(--raio)}
+.lb__bt{position:absolute;background:rgba(255,255,255,.12);color:#fff;border:0;
+  width:50px;height:50px;border-radius:50%;cursor:pointer;font-size:26px;line-height:1;
+  display:grid;place-items:center}
+.lb__bt:hover{background:var(--acento)}
+.lb__ant{left:16px}
+.lb__pro{right:16px}
+.lb__fecha{top:16px;right:16px;width:44px;height:44px;font-size:22px}
+.lb__conta{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  color:#e6d9df;font:600 14px 'Source Sans 3',sans-serif;
+  background:rgba(0,0,0,.45);padding:6px 14px;border-radius:20px}
+
+/* ---------------- responsivo ---------------- */
+@media (max-width:700px){
+  body{font-size:16px}
+  .ahn-galeria-post h1{font-size:26px}
+  .ahn-marca{font-size:30px}
+  .ahn-grade-fotos{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px}
+  .ahn-vizinhos{grid-template-columns:1fr}
+  .ahn-vizinhos .dir{text-align:left}
+  .lb__bt{width:42px;height:42px;font-size:22px}
+  .lb__ant{left:6px} .lb__pro{right:6px}
+}
+
+/* ---------------- so do protótipo ---------------- */
+.proto-nota{background:#fff8e1;border-bottom:1px solid #f0e0b0;color:#6b5a21;
+  font-size:14px;padding:11px 18px;text-align:center}
+</style>
+</head>
+<body>
+
+<p class="proto-nota">
+  Protótipo de layout, com 20 posições. As imagens são <strong>blocos desenhados em CSS</strong>,
+  sem foto de pessoa. Clique em qualquer uma para ver a lightbox — setas do teclado e Esc funcionam.
+</p>
+
+<header class="ahn-topo">
+  <div class="ahn-topo__barra">
+    <div class="ahn-wrap"><span><strong>18+</strong> &middot; conteúdo para maiores</span><span></span></div>
+  </div>
+  <div class="ahn-wrap ahn-topo__miolo">
+    <a href="#" class="ahn-marca">Ah <em>Novinha</em></a>
+    <nav><ul class="ahn-menu">
+      <li><a href="#">Início</a></li><li><a href="#">Sobre</a></li><li><a href="#">Contato</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<article class="ahn-galeria-post">
+  <a href="#" class="ahn-cat">Amadoras</a>
+  <h1>Título do post vai aqui, e pode ocupar duas linhas tranquilamente</h1>
+  <p class="ahn-meta"><span id="conta-topo">20</span> fotos &middot; 4 de outubro de 2026</p>
+
+  <p class="ahn-intro">
+    Uma ou duas linhas de introdução. No tema isso sai do corpo do post — é o único
+    texto da página, e serve tanto para o leitor quanto para o Google entender do que
+    se trata. Post só com imagem e sem nenhuma palavra rankeia mal.
+  </p>
+
+  <div class="ahn-grade-fotos" id="grade"></div>
+
+  <div class="ahn-tags">
+    <a href="#">amadoras</a><a href="#">caseiro</a><a href="#">selfie</a><a href="#">brasileira</a>
+  </div>
+
+  <nav class="ahn-vizinhos">
+    <a href="#"><small>&lsaquo; Anterior</small>Título do post anterior</a>
+    <a href="#" class="dir"><small>Próximo &rsaquo;</small>Título do post seguinte</a>
+  </nav>
+
+  <h2 class="ahn-secao">Mais de Amadoras</h2>
+  <div class="ahn-relacionados" id="relacionados"></div>
+</article>
+
+<!-- lightbox -->
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button class="lb__bt lb__fecha" id="lb-fecha" aria-label="Fechar">&times;</button>
+  <button class="lb__bt lb__ant" id="lb-ant" aria-label="Anterior">&lsaquo;</button>
+  <div class="lb__palco" id="lb-palco"></div>
+  <button class="lb__bt lb__pro" id="lb-pro" aria-label="Próxima">&rsaquo;</button>
+  <div class="lb__conta" id="lb-conta"></div>
+</div>
+
+<script>
+/* ---- placeholders: no tema isto some, entra a imagem de verdade ---- */
+var TONS = [
+  ['#f0e4ea','#e3d2db'], ['#e9e4f0','#d8d2e4'], ['#f0ebe0','#e2dbcc'],
+  ['#e2eef0','#cfe0e4'], ['#f0e0e0','#e2cccc'], ['#e6f0e4','#d3e2d0']
+];
+function bloco(i, grande){
+  var t = TONS[i % TONS.length];
+  var d = document.createElement('div');
+  d.className = 'ph';
+  d.style.background = 'repeating-linear-gradient(' + (35 + i * 13) + 'deg,' +
+    t[0] + ' 0 ' + (grande ? 26 : 13) + 'px,' + t[1] + ' ' + (grande ? 26 : 13) + 'px ' +
+    (grande ? 52 : 26) + 'px)';
+  return d;
+}
+
+var TOTAL = 20;
+var grade = document.getElementById('grade');
+for (var i = 0; i < TOTAL; i++) {
+  var b = document.createElement('button');
+  b.className = 'ahn-foto';
+  b.type = 'button';
+  b.setAttribute('data-n', (i + 1) + '/' + TOTAL);
+  b.setAttribute('aria-label', 'Abrir foto ' + (i + 1));
+  b.dataset.i = i;
+  b.appendChild(bloco(i));
+  grade.appendChild(b);
+}
+
+var rel = document.getElementById('relacionados');
+for (var k = 0; k < 4; k++) {
+  var c = document.createElement('article');
+  c.className = 'ahn-rel';
+  var capa = document.createElement('div'); capa.className = 'capa';
+  capa.appendChild(bloco(k + 2));
+  var txt = document.createElement('div'); txt.className = 'txt';
+  txt.innerHTML = '<h3><a href="#">Exemplo de título de post relacionado</a></h3>' +
+                  '<span class="ahn-meta">18 fotos</span>';
+  c.appendChild(capa); c.appendChild(txt); rel.appendChild(c);
+}
+
+/* ---- lightbox ---- */
+var lb = document.getElementById('lb'),
+    palco = document.getElementById('lb-palco'),
+    conta = document.getElementById('lb-conta'),
+    atual = 0;
+
+function mostra(i){
+  atual = (i + TOTAL) % TOTAL;
+  palco.innerHTML = '';
+  palco.appendChild(bloco(atual, true));
+  conta.textContent = (atual + 1) + ' de ' + TOTAL;
+}
+function abre(i){ mostra(i); lb.hidden = false; document.documentElement.style.overflow = 'hidden'; }
+function fecha(){ lb.hidden = true; document.documentElement.style.overflow = ''; }
+
+grade.addEventListener('click', function(e){
+  var b = e.target.closest('.ahn-foto');
+  if (b) abre(parseInt(b.dataset.i, 10));
+});
+document.getElementById('lb-fecha').addEventListener('click', fecha);
+document.getElementById('lb-ant').addEventListener('click', function(){ mostra(atual - 1); });
+document.getElementById('lb-pro').addEventListener('click', function(){ mostra(atual + 1); });
+lb.addEventListener('click', function(e){ if (e.target === lb) fecha(); });
+document.addEventListener('keydown', function(e){
+  if (lb.hidden) return;
+  if (e.key === 'Escape') fecha();
+  if (e.key === 'ArrowLeft') mostra(atual - 1);
+  if (e.key === 'ArrowRight') mostra(atual + 1);
+});
+</script>
+</body>
+</html>

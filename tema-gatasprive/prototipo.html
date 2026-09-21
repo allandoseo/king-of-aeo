@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protótipo — Gatas Privé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   Gatas Prive — diretorio de Goiania.
+   Um unico municipio: a taxonomia e BAIRRO, nao estado/cidade. Isso simplifica
+   URL, menu e consulta, e e o que torna o site barato de manter.
+   Prefixo .gp-, fonte Outfit, roxo + ambar: nada em comum, no codigo, com os
+   outros sites da casa.
+   ========================================================================== */
+:root{
+  --fundo:#0f0f0f; --superficie:#1a1a1c; --superficie-2:#2a2a2e; --linha:#2f2f34;
+  --texto:#fff; --texto-fraco:#a3a3ad; --texto-apagado:#6f6f7a;
+  --roxo:#720eec; --roxo-claro:#8f3bff; --ambar:#ffba00; --ambar-esc:#e0a300;
+  --zap:#25d366;
+  --largura:1400px; --raio:14px; --pill:999px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--texto);
+  font:400 15px/1.6 Outfit,system-ui,-apple-system,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+h1,h2,h3{line-height:1.2;margin:0 0 .4em;font-weight:700;letter-spacing:-.015em}
+.gp-wrap{max-width:var(--largura);margin:0 auto;padding:0 22px}
+[hidden]{display:none !important}
+
+/* ---------------- topo ---------------- */
+.gp-topo{background:var(--superficie);border-bottom:1px solid var(--linha)}
+.gp-topo__miolo{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 22px}
+.gp-marca{font:700 30px/1 Outfit,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.gp-marca small{display:block;font:300 9.5px/1 Outfit,sans-serif;letter-spacing:.3em;
+  color:var(--texto-apagado);margin-top:6px;text-transform:uppercase}
+.gp-topo__acoes{display:flex;align-items:center;gap:14px}
+.gp-bt{display:inline-flex;align-items:center;gap:7px;border:0;cursor:pointer;
+  padding:10px 20px;border-radius:var(--pill);font:600 14px Outfit,sans-serif}
+.gp-bt--ambar{background:var(--ambar);color:#241a00}
+.gp-bt--ambar:hover{background:var(--ambar-esc)}
+.gp-bt--vazio{background:transparent;color:var(--texto);padding:10px 8px}
+.gp-bt--vazio:hover{color:var(--ambar)}
+.gp-bt--zap{background:var(--zap);color:#04301a;font-size:16px;padding:14px 26px}
+.gp-bt--zap:hover{filter:brightness(1.08)}
+.gp-bt--roxo{background:var(--roxo);color:#fff}
+.gp-bt--roxo:hover{background:var(--roxo-claro)}
+
+/* ---------------- barras ---------------- */
+.gp-barra{border-bottom:1px solid var(--linha);background:var(--fundo)}
+.gp-barra__miolo{display:flex;align-items:center;gap:10px;padding:11px 22px;overflow-x:auto;scrollbar-width:none}
+.gp-barra__miolo::-webkit-scrollbar{display:none}
+.gp-barra__rotulo{color:var(--texto-apagado);font-size:13.5px;flex:0 0 auto}
+.gp-chip{flex:0 0 auto;background:var(--superficie-2);color:var(--texto-fraco);
+  padding:7px 16px;border-radius:var(--pill);font-size:13.5px;white-space:nowrap}
+.gp-chip:hover,.gp-chip.atual{background:var(--roxo);color:#fff}
+.gp-filtro{display:inline-flex;align-items:center;gap:6px;color:var(--texto-fraco);
+  font-size:14px;padding:7px 2px;margin-right:18px;cursor:pointer;flex:0 0 auto}
+.gp-filtro:hover{color:var(--ambar)}
+
+/* ---------------- introducao ---------------- */
+.gp-intro{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);
+  padding:26px 30px;margin:26px auto 0;max-width:1080px}
+.gp-intro h1{font-size:27px;margin-bottom:12px}
+.gp-intro p{color:var(--texto-fraco);margin:0;font-size:14.5px;max-width:78ch}
+
+/* ---------------- destaques ---------------- */
+.gp-destaques{display:flex;gap:16px;overflow-x:auto;padding:26px 22px 8px;scrollbar-width:none;
+  max-width:var(--largura);margin:0 auto}
+.gp-destaques::-webkit-scrollbar{display:none}
+.gp-dest{flex:0 0 auto;width:78px;text-align:center}
+.gp-dest__foto{width:68px;height:68px;border-radius:50%;margin:0 auto 7px;overflow:hidden;
+  border:2px solid var(--roxo);padding:2px;background:var(--fundo)}
+.gp-dest__foto span{display:block;width:100%;height:100%;border-radius:50%}
+.gp-dest__nome{font-size:11.5px;color:var(--texto-fraco);line-height:1.25;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------------- secao e grade ---------------- */
+.gp-secao{max-width:var(--largura);margin:34px auto 18px;padding:0 22px}
+.gp-secao h2{font-size:28px;margin-bottom:4px}
+.gp-migalha{color:var(--texto-apagado);font-size:13px}
+.gp-migalha a:hover{color:var(--ambar)}
+.gp-grade{max-width:var(--largura);margin:0 auto;padding:0 22px 40px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.gp-card{position:relative;border-radius:var(--raio);overflow:hidden;
+  background:var(--superficie-2);aspect-ratio:3/4;display:block}
+.gp-card__foto{position:absolute;inset:0}
+.gp-card__foto span{display:block;width:100%;height:100%}
+/* o degrade garante leitura do nome sobre foto clara ou escura */
+.gp-card::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.65) 26%,rgba(0,0,0,0) 56%)}
+.gp-card__texto{position:absolute;left:0;right:0;bottom:0;padding:16px 16px 14px;z-index:2}
+.gp-card__nome{font-size:17px;font-weight:600;margin:0 0 5px;display:block}
+.gp-card__resumo{color:#d2d2d8;font-size:12.5px;line-height:1.45;margin:0 0 10px;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gp-card__tags{display:flex;gap:6px;flex-wrap:wrap}
+.gp-tag{background:rgba(255,255,255,.16);padding:4px 10px;border-radius:5px;font-size:11.5px;color:#fff}
+.gp-card:hover .gp-tag{background:var(--roxo)}
+.gp-selo{position:absolute;top:12px;left:12px;z-index:3;background:var(--ambar);color:#241a00;
+  font:700 10.5px Outfit,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+  padding:5px 10px;border-radius:5px}
+
+/* ---------------- pagina do perfil ---------------- */
+.gp-perfil{max-width:1180px;margin:26px auto 44px;padding:0 22px;
+  display:grid;grid-template-columns:1.25fr 1fr;gap:34px;align-items:start}
+.gp-galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.gp-galeria__principal{grid-column:1 / -1;aspect-ratio:4/3;border-radius:var(--raio);overflow:hidden}
+.gp-galeria__principal span{display:block;width:100%;height:100%}
+.gp-galeria__mini{aspect-ratio:1;border-radius:9px;overflow:hidden;cursor:zoom-in}
+.gp-galeria__mini span{display:block;width:100%;height:100%}
+.gp-perfil__painel{background:var(--superficie);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:26px}
+.gp-perfil__painel h1{font-size:30px;margin-bottom:6px}
+.gp-perfil__local{color:var(--texto-fraco);font-size:14.5px;margin:0 0 18px}
+.gp-perfil__local b{color:var(--ambar);font-weight:600}
+.gp-dados{list-style:none;margin:0 0 22px;padding:0;border-top:1px solid var(--linha)}
+.gp-dados li{display:flex;justify-content:space-between;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--linha);font-size:14.5px}
+.gp-dados span{color:var(--texto-apagado)}
+.gp-dados b{font-weight:600}
+.gp-perfil__texto{color:var(--texto-fraco);font-size:14.5px;margin:20px 0 0}
+.gp-perfil__texto h2{font-size:18px;color:var(--texto);margin:0 0 8px}
+.gp-aviso-cx{background:#241a00;border:1px solid #4a3a08;border-radius:10px;
+  padding:13px 16px;color:#e8d9a8;font-size:12.5px;line-height:1.5;margin-top:18px}
+
+/* ---------------- rodape ---------------- */
+.gp-rodape{border-top:1px solid var(--linha);background:var(--superficie);padding:28px 0;margin-top:10px}
+.gp-rodape .gp-wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  color:var(--texto-apagado);font-size:13px}
+.gp-rodape ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.gp-rodape a:hover{color:var(--ambar)}
+.gp-rod-aviso{max-width:var(--largura);margin:16px auto 0;padding:0 22px;
+  color:var(--texto-apagado);font-size:12px;line-height:1.55}
+
+/* ---------------- responsivo ---------------- */
+@media (max-width:1200px){ .gp-grade{grid-template-columns:repeat(3,1fr)} }
+@media (max-width:900px){ .gp-perfil{grid-template-columns:1fr;gap:24px} }
+@media (max-width:860px){
+  .gp-grade{grid-template-columns:repeat(2,1fr);gap:14px}
+  .gp-intro h1{font-size:22px} .gp-secao h2{font-size:23px} .gp-marca{font-size:24px}
+  .gp-perfil__painel h1{font-size:24px}
+}
+@media (max-width:520px){
+  .gp-topo__miolo{flex-wrap:wrap;gap:12px}
+  .gp-bt--ambar{padding:9px 16px;font-size:13px}
+  .gp-grade{gap:11px}
+  .gp-card__nome{font-size:15px} .gp-card__resumo{font-size:11.5px}
+}
+
+/* ---------------- so do protótipo ---------------- */
+.proto-nota{background:#2a2410;border-bottom:1px solid #4a4020;color:#e8d9a8;
+  font-size:13.5px;padding:11px 20px;text-align:center}
+.proto-troca{position:fixed;right:14px;bottom:14px;z-index:500;display:flex;gap:6px;
+  background:var(--superficie-2);border:1px solid var(--linha);border-radius:10px;padding:6px}
+.proto-troca button{border:0;background:transparent;color:var(--texto-fraco);padding:8px 14px;
+  font:600 13.5px Outfit,sans-serif;cursor:pointer;border-radius:6px}
+.proto-troca button.on{background:var(--roxo);color:#fff}
+</style>
+</head>
+<body>
+
+<p class="proto-nota">
+  Protótipo. Nomes e textos são <strong>exemplos</strong>; as fotos são blocos em CSS,
+  nenhuma pessoa real. Use o botão no canto para ver a <strong>página do perfil</strong>.
+</p>
+
+<header class="gp-topo">
+  <div class="gp-wrap gp-topo__miolo">
+    <a href="#" class="gp-marca" onclick="mostra('home');return false">
+      Gatas Privé<small>Acompanhantes em Goiânia</small>
+    </a>
+    <div class="gp-topo__acoes">
+      <a href="#" class="gp-bt gp-bt--ambar">Publicar anúncio</a>
+      <a href="#" class="gp-bt gp-bt--vazio">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>Contato
+      </a>
+    </div>
+  </div>
+</header>
+
+<nav class="gp-barra" aria-label="Categorias">
+  <div class="gp-wrap gp-barra__miolo">
+    <span class="gp-barra__rotulo">Categorias:</span>
+    <a href="#" class="gp-chip atual">Acompanhantes</a>
+    <a href="#" class="gp-chip">Massagistas</a>
+    <a href="#" class="gp-chip">Duplas</a>
+    <a href="#" class="gp-chip">Trans</a>
+  </div>
+</nav>
+
+<nav class="gp-barra" aria-label="Bairros">
+  <div class="gp-wrap gp-barra__miolo">
+    <span class="gp-barra__rotulo">Bairros:</span>
+    <a href="#" class="gp-chip">Setor Bueno</a>
+    <a href="#" class="gp-chip">Setor Oeste</a>
+    <a href="#" class="gp-chip">Jardim América</a>
+    <a href="#" class="gp-chip">Setor Marista</a>
+    <a href="#" class="gp-chip">Setor Central</a>
+    <a href="#" class="gp-chip">Universitário</a>
+    <a href="#" class="gp-chip">Jardim Goiás</a>
+    <a href="#" class="gp-chip">Setor Sul</a>
+    <a href="#" class="gp-chip">Setor Pedro Ludovico</a>
+    <a href="#" class="gp-chip">Setor Aeroporto</a>
+  </div>
+</nav>
+
+<!-- ====================== HOME ====================== -->
+<div id="tela-home">
+  <div class="gp-wrap">
+    <section class="gp-intro">
+      <h1>Acompanhantes em Goiânia</h1>
+      <p>
+        Aqui entra o texto de abertura. É o bloco que o Google lê para entender a
+        página, então vale escrever de verdade: o que o visitante encontra, como os
+        anúncios são conferidos e o que o site não faz. Nas páginas de bairro esse
+        texto muda sozinho, usando a descrição do bairro.
+      </p>
+    </section>
+  </div>
+
+  <section aria-label="Em destaque">
+    <div class="gp-destaques" id="destaques"></div>
+  </section>
+
+  <div class="gp-secao">
+    <h2>Acompanhantes em Goiânia</h2>
+    <p class="gp-migalha"><a href="#">Goiânia</a> &rsaquo; Acompanhantes</p>
+  </div>
+
+  <div class="gp-grade" id="grade"></div>
+</div>
+
+<!-- ====================== PERFIL ====================== -->
+<div id="tela-perfil" hidden>
+  <div class="gp-perfil">
+    <div>
+      <div class="gp-galeria" id="galeria"></div>
+    </div>
+
+    <aside class="gp-perfil__painel">
+      <h1>Bia Ferraz</h1>
+      <p class="gp-perfil__local">Goiânia &middot; <b>Setor Bueno</b></p>
+
+      <ul class="gp-dados">
+        <li><span>Idade</span><b>26 anos</b></li>
+        <li><span>Altura</span><b>1,68 m</b></li>
+        <li><span>Atende</span><b>Com local</b></li>
+        <li><span>Horário</span><b>10h às 22h</b></li>
+        <li><span>Cachê</span><b>A combinar</b></li>
+      </ul>
+
+      <a href="#" class="gp-bt gp-bt--zap" style="width:100%;justify-content:center">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm5.6 14.2c-.2.6-1.2 1.2-1.7 1.2-.4 0-1 .1-3.3-.8-2.8-1.2-4.5-4-4.6-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.1c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2 1.3 2.3 1.4.2.1.4.1.6-.1l.8-1c.2-.2.3-.2.6-.1l2 .9c.2.1.4.2.4.3.1.2.1.6 0 1z"/>
+        </svg>
+        Chamar no WhatsApp
+      </a>
+
+      <div class="gp-perfil__texto">
+        <h2>Sobre</h2>
+        <p>
+          O texto do anúncio entra aqui, escrito pela própria anunciante. No tema,
+          sai do corpo do post — é o único texto da página, então também é o que o
+          Google usa para entender de quem é o perfil.
+        </p>
+      </div>
+
+      <div class="gp-aviso-cx">
+        Confira os dados antes de combinar. O site divulga o anúncio e não intermedia
+        nem se responsabiliza pelo que for combinado entre as partes.
+      </div>
+    </aside>
+  </div>
+
+  <div class="gp-secao"><h2>Também no Setor Bueno</h2></div>
+  <div class="gp-grade" id="grade-rel"></div>
+</div>
+
+<footer class="gp-rodape">
+  <div class="gp-wrap">
+    <span>&copy; 2026 Gatas Privé</span>
+    <ul>
+      <li><a href="#">Sobre</a></li>
+      <li><a href="#">Anunciar</a></li>
+      <li><a href="#">Contato</a></li>
+      <li><a href="#">Privacidade</a></li>
+    </ul>
+  </div>
+  <div class="gp-rod-aviso">
+    Conteúdo destinado a maiores de 18 anos. O site divulga anúncios de terceiros e não
+    intermedia, agencia ou se responsabiliza por serviços combinados entre as partes.
+  </div>
+</footer>
+
+<div class="proto-troca">
+  <button id="b-home" class="on" onclick="mostra('home')">Home</button>
+  <button id="b-perfil" onclick="mostra('perfil')">Perfil</button>
+</div>
+
+<script>
+var TONS = [
+  ['#3a2a4e','#6b3f8f'], ['#4e2a38','#8f3f5e'], ['#2a3a4e','#3f6b8f'],
+  ['#4e4030','#8f7340'], ['#2f4a3c','#3f8f6b'], ['#45304e','#7a3f8f']
+];
+function bloco(i, el){
+  var t = TONS[i % TONS.length];
+  el.style.background = 'linear-gradient(' + (120 + i * 27) + 'deg,' + t[0] + ',' + t[1] + ')';
+}
+
+var NOMES = ['Bia Ferraz','Melissa Barcelos','Paola Maia','Letícia Bia','Vanessa Lins',
+             'Isa Ferraz','Sara Lorraine','Mariana Love','Jaqueline Rosa','Ana Ferrari',
+             'Camila Dias','Rafaela Nunes'];
+var BAIRROS = ['Setor Bueno','Setor Oeste','Jardim América','Setor Marista','Setor Central',
+               'Universitário','Jardim Goiás','Setor Sul','Setor Pedro Ludovico','Setor Aeroporto',
+               'Setor Campinas','Setor Coimbra'];
+
+function card(k){
+  var c = document.createElement('a');
+  c.className = 'gp-card'; c.href = '#';
+  c.onclick = function(){ mostra('perfil'); return false; };
+  c.innerHTML =
+    (k < 2 ? '<span class="gp-selo">Destaque</span>' : '') +
+    '<span class="gp-card__foto"><span></span></span>' +
+    '<span class="gp-card__texto">' +
+      '<span class="gp-card__nome">' + NOMES[k % NOMES.length] + '</span>' +
+      '<span class="gp-card__resumo">Primeira linha do anúncio, cortada em duas linhas para ' +
+      'todos os cards terem a mesma altura de texto.</span>' +
+      '<span class="gp-card__tags"><span class="gp-tag">Goiânia</span>' +
+      '<span class="gp-tag">' + BAIRROS[k % BAIRROS.length] + '</span></span>' +
+    '</span>';
+  bloco(k, c.querySelector('.gp-card__foto span'));
+  return c;
+}
+
+var d = document.getElementById('destaques');
+for (var i = 0; i < 14; i++) {
+  var it = document.createElement('a');
+  it.className = 'gp-dest'; it.href = '#';
+  it.onclick = function(){ mostra('perfil'); return false; };
+  it.innerHTML = '<span class="gp-dest__foto"><span></span></span>' +
+                 '<span class="gp-dest__nome">' + NOMES[i % NOMES.length] + '</span>';
+  bloco(i + 2, it.querySelector('.gp-dest__foto span'));
+  d.appendChild(it);
+}
+
+var g = document.getElementById('grade');
+for (var k = 0; k < 12; k++) g.appendChild(card(k));
+
+var gr = document.getElementById('grade-rel');
+for (var r = 0; r < 4; r++) gr.appendChild(card(r + 3));
+
+var gal = document.getElementById('galeria');
+var p = document.createElement('div');
+p.className = 'gp-galeria__principal'; p.innerHTML = '<span></span>';
+bloco(0, p.querySelector('span')); gal.appendChild(p);
+for (var m = 1; m <= 6; m++) {
+  var mi = document.createElement('div');
+  mi.className = 'gp-galeria__mini'; mi.innerHTML = '<span></span>';
+  bloco(m + 1, mi.querySelector('span')); gal.appendChild(mi);
+}
+
+function mostra(qual){
+  document.getElementById('tela-home').hidden   = qual !== 'home';
+  document.getElementById('tela-perfil').hidden = qual !== 'perfil';
+  document.getElementById('b-home').classList.toggle('on', qual === 'home');
+  document.getElementById('b-perfil').classList.toggle('on', qual === 'perfil');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+/*
+Theme Name: Gatas Prive
+Description: Diretorio de acompanhantes de uma cidade so. Taxonomia de bairro, pagina de perfil com galeria e WhatsApp, tema escuro.
+Version: 1.0
+Author: Gatas Prive
+Text Domain: gatasprive
+Tags: directory, custom-logo, custom-menu, featured-images, two-columns
+*/
+
+/* ==========================================================================
+   Um unico municipio: a taxonomia e BAIRRO, nao estado/cidade. Isso simplifica
+   URL, menu e consulta, e e o que torna o site barato de manter.
+   Prefixo .gp-, fonte Outfit, roxo + ambar.
+   ========================================================================== */
+:root{
+  --fundo:#0f0f0f; --superficie:#1a1a1c; --superficie-2:#2a2a2e; --linha:#2f2f34;
+  --texto:#fff; --texto-fraco:#a3a3ad; --texto-apagado:#6f6f7a;
+  --roxo:#720eec; --roxo-claro:#8f3bff; --ambar:#ffba00; --ambar-esc:#e0a300;
+  --zap:#25d366;
+  --largura:1400px; --raio:14px; --pill:999px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fundo);color:var(--texto);
+  font:400 15px/1.6 Outfit,system-ui,-apple-system,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;height:auto;display:block}
+h1,h2,h3{line-height:1.2;margin:0 0 .4em;font-weight:700;letter-spacing:-.015em}
+.gp-wrap{max-width:var(--largura);margin:0 auto;padding:0 22px}
+
+.gp-oculto{position:absolute!important;width:1px;height:1px;overflow:hidden;
+  clip:rect(1px,1px,1px,1px);white-space:nowrap}
+.gp-pula{position:absolute;left:-9999px;top:0;background:var(--roxo);color:#fff;
+  padding:10px 16px;z-index:1000}
+.gp-pula:focus{left:0}
+
+/* ---------------- portao 18+ ---------------- */
+/* o conteudo vai sempre no HTML; o portao e so uma camada revelada por JS para
+   quem ainda nao confirmou. Buscador recebe a pagina inteira — sem cloaking. */
+.gp-idade{position:fixed;inset:0;z-index:9999;background:#09090a;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.gp-idade[hidden]{display:none}
+.gp-idade__caixa{max-width:440px;background:var(--superficie);border:1px solid var(--linha);
+  padding:34px 30px;border-radius:var(--raio);text-align:center}
+.gp-idade__selo{display:inline-grid;place-items:center;width:60px;height:60px;border-radius:50%;
+  background:var(--roxo);color:#fff;font:700 18px/1 Outfit,sans-serif;margin-bottom:16px}
+.gp-idade h2{font-size:21px;margin-bottom:9px}
+.gp-idade p{color:var(--texto-fraco);font-size:14px;margin:0 0 20px}
+.gp-idade__bts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ---------------- botoes ---------------- */
+.gp-bt{display:inline-flex;align-items:center;gap:7px;border:0;cursor:pointer;
+  padding:10px 20px;border-radius:var(--pill);font:600 14px Outfit,sans-serif;line-height:1.2}
+.gp-bt--ambar{background:var(--ambar);color:#241a00}
+.gp-bt--ambar:hover{background:var(--ambar-esc)}
+.gp-bt--vazio{background:transparent;color:var(--texto);padding:10px 8px}
+.gp-bt--vazio:hover{color:var(--ambar)}
+.gp-bt--zap{background:var(--zap);color:#04301a;font-size:16px;padding:14px 26px}
+.gp-bt--zap:hover{filter:brightness(1.08)}
+.gp-bt--roxo{background:var(--roxo);color:#fff}
+.gp-bt--roxo:hover{background:var(--roxo-claro)}
+.gp-bt--cinza{background:var(--superficie-2);color:var(--texto-fraco)}
+
+/* ---------------- topo ---------------- */
+.gp-topo{background:var(--superficie);border-bottom:1px solid var(--linha)}
+.gp-topo__miolo{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 22px}
+.gp-marca{font:700 30px/1 Outfit,sans-serif;letter-spacing:.14em;text-transform:uppercase;display:block}
+.gp-marca small{display:block;font:300 9.5px/1 Outfit,sans-serif;letter-spacing:.3em;
+  color:var(--texto-apagado);margin-top:6px;text-transform:uppercase}
+.gp-marca--img img{max-height:62px;width:auto}
+.gp-topo__acoes{display:flex;align-items:center;gap:14px}
+
+/* ---------------- barras ---------------- */
+.gp-barra{border-bottom:1px solid var(--linha);background:var(--fundo)}
+.gp-barra__miolo{display:flex;align-items:center;gap:10px;padding:11px 22px;
+  overflow-x:auto;scrollbar-width:none}
+.gp-barra__miolo::-webkit-scrollbar{display:none}
+.gp-barra__rotulo{color:var(--texto-apagado);font-size:13.5px;flex:0 0 auto}
+.gp-chip{flex:0 0 auto;background:var(--superficie-2);color:var(--texto-fraco);
+  padding:7px 16px;border-radius:var(--pill);font-size:13.5px;white-space:nowrap}
+.gp-chip:hover,.gp-chip.atual{background:var(--roxo);color:#fff}
+
+/* ---------------- introducao ---------------- */
+.gp-intro{background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio);
+  padding:26px 30px;margin:26px auto 0;max-width:1080px}
+.gp-intro h1{font-size:27px;margin-bottom:12px}
+.gp-intro p{color:var(--texto-fraco);margin:0 0 .8em;font-size:14.5px;max-width:78ch}
+.gp-intro p:last-child{margin-bottom:0}
+
+/* ---------------- destaques ---------------- */
+.gp-destaques{display:flex;gap:16px;overflow-x:auto;padding:26px 22px 8px;
+  scrollbar-width:none;max-width:var(--largura);margin:0 auto}
+.gp-destaques::-webkit-scrollbar{display:none}
+.gp-dest{flex:0 0 auto;width:78px;text-align:center}
+.gp-dest__foto{width:68px;height:68px;border-radius:50%;margin:0 auto 7px;overflow:hidden;
+  border:2px solid var(--roxo);padding:2px;background:var(--fundo)}
+.gp-dest__foto img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.gp-dest__nome{font-size:11.5px;color:var(--texto-fraco);line-height:1.25;display:block;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------------- secao e grade ---------------- */
+.gp-secao{max-width:var(--largura);margin:34px auto 18px;padding:0 22px}
+.gp-secao h1,.gp-secao h2{font-size:28px;margin-bottom:4px}
+.gp-migalha{color:var(--texto-apagado);font-size:13px;margin:0}
+.gp-migalha a:hover{color:var(--ambar)}
+.gp-grade{max-width:var(--largura);margin:0 auto;padding:0 22px 40px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.gp-card{position:relative;border-radius:var(--raio);overflow:hidden;
+  background:var(--superficie-2);aspect-ratio:3/4;display:block}
+.gp-card__foto{position:absolute;inset:0}
+.gp-card__foto img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.gp-card:hover .gp-card__foto img{transform:scale(1.04)}
+/* o degrade garante leitura do nome sobre foto clara ou escura */
+.gp-card::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.65) 26%,rgba(0,0,0,0) 56%)}
+.gp-card__texto{position:absolute;left:0;right:0;bottom:0;padding:16px 16px 14px;z-index:2}
+.gp-card__nome{font-size:17px;font-weight:600;margin:0 0 5px;display:block}
+.gp-card__resumo{color:#d2d2d8;font-size:12.5px;line-height:1.45;margin:0 0 10px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gp-card__tags{display:flex;gap:6px;flex-wrap:wrap}
+.gp-tag{background:rgba(255,255,255,.16);padding:4px 10px;border-radius:5px;font-size:11.5px;color:#fff}
+.gp-card:hover .gp-tag{background:var(--roxo)}
+.gp-selo{position:absolute;top:12px;left:12px;z-index:3;background:var(--ambar);color:#241a00;
+  font:700 10.5px Outfit,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+  padding:5px 10px;border-radius:5px}
+
+/* ---------------- paginacao ---------------- */
+/* o botao e um link de verdade para a proxima pagina; o JS dispara sozinho
+   quando ele entra na tela, virando rolagem infinita */
+.gp-pag{display:flex;justify-content:center;max-width:var(--largura);
+  margin:0 auto 52px;padding:0 22px}
+.gp-pag__mais{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--superficie-2);color:var(--texto);border:1px solid var(--linha);
+  padding:13px 30px;border-radius:var(--pill);font:600 15px Outfit,sans-serif;
+}
+.gp-pag__mais:hover{background:var(--roxo);border-color:var(--roxo);color:#fff}
+.gp-pag__mais::before{
+  content:'';width:15px;height:15px;border-radius:50%;
+  border:2px solid currentColor;border-top-color:transparent;
+  opacity:0;transition:opacity .2s;
+}
+.gp-pag__mais.carregando{pointer-events:none;color:var(--texto-fraco)}
+.gp-pag__mais.carregando::before{opacity:1;animation:gp-gira .7s linear infinite}
+@keyframes gp-gira{to{transform:rotate(360deg)}}
+
+/* ---------------- pagina do perfil ---------------- */
+.gp-perfil{max-width:1180px;margin:26px auto 44px;padding:0 22px;
+  display:grid;grid-template-columns:1.25fr 1fr;gap:34px;align-items:start}
+.gp-galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.gp-galeria__principal{grid-column:1 / -1;aspect-ratio:4/3;border-radius:var(--raio);
+  overflow:hidden;cursor:zoom-in;border:0;padding:0;background:var(--superficie-2);display:block}
+.gp-galeria__principal img{width:100%;height:100%;object-fit:cover}
+.gp-galeria__mini{aspect-ratio:1;border-radius:9px;overflow:hidden;cursor:zoom-in;
+  border:0;padding:0;background:var(--superficie-2);display:block}
+.gp-galeria__mini img{width:100%;height:100%;object-fit:cover}
+.gp-galeria__mini:focus-visible,.gp-galeria__principal:focus-visible{
+  outline:3px solid var(--ambar);outline-offset:2px}
+.gp-perfil__painel{background:var(--superficie);border:1px solid var(--linha);
+  border-radius:var(--raio);padding:26px}
+.gp-perfil__painel h1{font-size:30px;margin-bottom:6px}
+.gp-perfil__local{color:var(--texto-fraco);font-size:14.5px;margin:0 0 18px}
+.gp-perfil__local b{color:var(--ambar);font-weight:600}
+.gp-perfil__local a:hover{color:var(--ambar)}
+.gp-dados{list-style:none;margin:0 0 22px;padding:0;border-top:1px solid var(--linha)}
+.gp-dados li{display:flex;justify-content:space-between;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--linha);font-size:14.5px}
+.gp-dados span{color:var(--texto-apagado)}
+.gp-dados b{font-weight:600}
+.gp-perfil__texto{color:var(--texto-fraco);font-size:14.5px;margin:20px 0 0}
+.gp-perfil__texto h2{font-size:18px;color:var(--texto);margin:0 0 8px}
+.gp-perfil__texto p{margin:0 0 .9em}
+.gp-aviso-cx{background:#241a00;border:1px solid #4a3a08;border-radius:10px;
+  padding:13px 16px;color:#e8d9a8;font-size:12.5px;line-height:1.5;margin-top:18px}
+
+/* ---------------- lightbox ---------------- */
+.gp-lb{position:fixed;inset:0;z-index:900;background:rgba(5,5,6,.96);
+  display:flex;align-items:center;justify-content:center}
+.gp-lb[hidden]{display:none}
+.gp-lb__palco{max-width:92vw;max-height:88vh;display:flex;align-items:center;justify-content:center}
+.gp-lb__palco img{max-width:92vw;max-height:88vh;width:auto;height:auto;border-radius:var(--raio)}
+.gp-lb__bt{position:absolute;background:rgba(255,255,255,.14);color:#fff;border:0;
+  width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:24px;line-height:1;
+  display:grid;place-items:center}
+.gp-lb__bt:hover{background:var(--roxo)}
+.gp-lb__bt:focus-visible{outline:3px solid var(--ambar);outline-offset:2px}
+.gp-lb__ant{left:18px} .gp-lb__pro{right:18px}
+.gp-lb__fecha{top:18px;right:18px;width:42px;height:42px;font-size:21px}
+.gp-lb__conta{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  color:#d8d8e0;font:600 13.5px Outfit,sans-serif;background:rgba(0,0,0,.5);
+  padding:6px 15px;border-radius:var(--pill)}
+
+/* ---------------- pagina de texto ---------------- */
+.gp-pagina{max-width:780px;margin:30px auto 48px;padding:0 22px}
+.gp-pagina h1{font-size:30px;margin-bottom:18px}
+.gp-pagina__corpo{color:var(--texto-fraco);font-size:15.5px}
+.gp-pagina__corpo h2{font-size:20px;color:var(--texto);margin:1.7em 0 .5em}
+.gp-pagina__corpo p{margin:0 0 1.1em}
+.gp-pagina__corpo ul,.gp-pagina__corpo ol{margin:0 0 1.1em;padding-left:1.3em}
+.gp-pagina__corpo li{margin-bottom:.4em}
+.gp-pagina__corpo a{color:var(--ambar);text-decoration:underline}
+.gp-pagina__corpo strong{color:var(--texto)}
+
+/* ---------------- vazio ---------------- */
+.gp-vazio{max-width:720px;margin:40px auto;text-align:center;padding:60px 24px;
+  background:var(--superficie);border:1px solid var(--linha);border-radius:var(--raio)}
+.gp-vazio h1{font-size:25px}
+.gp-vazio p{color:var(--texto-fraco);margin:0 auto 22px;max-width:46ch}
+
+/* ---------------- links parceiros ---------------- */
+/* separado do conteudo de proposito: o leitor tem que perceber que ali e area
+   de parceiro, nao navegacao do site */
+.gp-parceiros{border-top:1px solid var(--linha);background:var(--superficie);padding:26px 0 24px}
+.gp-parceiros__tit{
+  font:600 12.5px Outfit,sans-serif;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--texto-apagado);margin:0 0 14px;
+}
+.gp-parceiros__lista{display:flex;flex-wrap:wrap;gap:9px;list-style:none;margin:0;padding:0}
+.gp-parceiros__lista a{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--superficie-2);border:1px solid var(--linha);
+  padding:9px 16px;border-radius:var(--pill);
+  font-size:14px;font-weight:500;color:var(--texto);
+}
+.gp-parceiros__lista a:hover{background:var(--roxo);border-color:var(--roxo);color:#fff}
+.gp-parceiros__lista svg{opacity:.45}
+.gp-parceiros__lista a:hover svg{opacity:1}
+
+/* ---------------- rodape ---------------- */
+.gp-rodape{border-top:1px solid var(--linha);background:var(--superficie);padding:28px 0;margin-top:10px}
+.gp-rodape .gp-wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  color:var(--texto-apagado);font-size:13px}
+.gp-rodape ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.gp-rodape a:hover{color:var(--ambar)}
+.gp-rod-aviso{max-width:var(--largura);margin:16px auto 0;padding:0 22px;
+  color:var(--texto-apagado);font-size:12px;line-height:1.55}
+
+/* ---------------- responsivo ---------------- */
+@media (max-width:1200px){ .gp-grade{grid-template-columns:repeat(3,1fr)} }
+@media (max-width:900px){ .gp-perfil{grid-template-columns:1fr;gap:24px} }
+@media (max-width:860px){
+  .gp-grade{grid-template-columns:repeat(2,1fr);gap:14px}
+  .gp-intro h1{font-size:22px}
+  .gp-secao h1,.gp-secao h2{font-size:23px}
+  .gp-marca{font-size:24px}
+  .gp-marca--img img{max-height:48px}
+  .gp-perfil__painel h1{font-size:24px}
+}
+@media (max-width:520px){
+  .gp-topo__miolo{flex-wrap:wrap;gap:12px}
+  .gp-bt--ambar{padding:9px 16px;font-size:13px}
+  .gp-grade{gap:11px}
+  .gp-card__nome{font-size:15px}
+  .gp-card__resumo{font-size:11.5px}
+  .gp-lb__bt{width:40px;height:40px;font-size:21px}
+  .gp-lb__ant{left:6px} .gp-lb__pro{right:6px}
+}

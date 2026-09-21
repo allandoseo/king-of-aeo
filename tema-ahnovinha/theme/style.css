@@ -1,0 +1,346 @@
+/*
+Theme Name: Ah Novinha
+Description: Portal de imagens. Grade masonry, chips de categoria, busca no topo, galeria com lightbox e portao 18+.
+Version: 3.0
+Author: Ah Novinha
+Text Domain: ahnovinha
+Tags: blog, grid-layout, custom-logo, custom-menu, featured-images, photography
+*/
+
+/* ==========================================================================
+   Estrutura do design "vortice", cores tiradas da logo.
+   As tres dominantes da logo, amostradas do PNG:
+     #4a0229  vinho do contorno   -> texto e superficies escuras
+     #fdebd2  creme               -> fundos suaves e chips
+     #fb016a  rosa                -> acento
+   O coral original do design brigava com a logo; trocado por isto.
+   ========================================================================== */
+:root{
+  --tinta:#4a0229;
+  --tinta-fraca:#8a5665;
+  --tinta-apagada:#ab8793;
+  --acento:#fb016a;
+  --acento-esc:#c80053;
+  --creme:#fdebd2;
+  --fundo:#fffaf5;
+  --superficie:#fff;
+  --chip:#fbeee0;
+  --chip-hover:#f7e1cb;
+  --linha:#f2e3d4;
+  --largura:1280px;
+  --raio:12px;
+  --raio-g:16px;
+  --pill:999px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--fundo);color:var(--tinta);
+  font:400 16px/1.6 Sora,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+a:hover{color:var(--acento-esc)}
+img{max-width:100%;height:auto;display:block}
+h1,h2,h3,h4{font-weight:600;line-height:1.25;margin:0 0 .5em;letter-spacing:-.01em}
+.ahn-wrap{max-width:var(--largura);margin:0 auto;padding:0 24px}
+
+.ahn-oculto{
+  position:absolute!important;width:1px;height:1px;overflow:hidden;
+  clip:rect(1px,1px,1px,1px);white-space:nowrap;
+}
+.ahn-pula{position:absolute;left:-9999px;top:0;background:var(--acento);color:#fff;padding:10px 16px;z-index:1000}
+.ahn-pula:focus{left:0}
+
+/* ---------------- portao 18+ ---------------- */
+.ahn-idade{
+  position:fixed;inset:0;z-index:9999;background:#140c09;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.ahn-idade[hidden]{display:none}
+.ahn-idade__caixa{
+  max-width:460px;background:var(--superficie);padding:36px 32px;border-radius:var(--raio-g);
+  text-align:center;
+}
+.ahn-idade__selo{
+  display:inline-grid;place-items:center;width:62px;height:62px;border-radius:50%;
+  background:var(--acento);color:#fff;font:700 19px/1 Sora,sans-serif;margin-bottom:18px;
+}
+.ahn-idade h2{font-size:23px;margin-bottom:10px}
+.ahn-idade p{color:var(--tinta-fraca);font-size:15px;margin:0 0 22px}
+.ahn-idade__bts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ---------------- botoes ---------------- */
+.ahn-bt{
+  display:inline-block;padding:11px 22px;border:0;border-radius:var(--pill);
+  font:600 15px Sora,sans-serif;cursor:pointer;line-height:1.2;
+}
+.ahn-bt--sim{background:var(--acento);color:#fff}
+.ahn-bt--sim:hover{background:var(--acento-esc);color:#fff}
+.ahn-bt--nao{background:var(--chip);color:var(--tinta-fraca)}
+.ahn-bt--nao:hover{background:var(--chip-hover);color:var(--tinta)}
+
+/* ---------------- cabecalho ---------------- */
+.ahn-topo{background:var(--fundo);position:sticky;top:0;z-index:50;border-bottom:1px solid var(--linha)}
+.ahn-topo__barra{background:var(--tinta);color:#b6b5bf;font-size:12.5px}
+.ahn-topo__barra .ahn-wrap{display:flex;justify-content:space-between;gap:14px;padding:6px 24px;flex-wrap:wrap}
+.ahn-topo__barra strong{color:#fff}
+
+.ahn-topo__miolo{display:flex;align-items:center;gap:26px;padding:16px 24px}
+.ahn-marca{display:flex;align-items:center;gap:9px;font:700 24px/1 Sora,sans-serif;letter-spacing:-.025em;flex:0 0 auto}
+.ahn-marca:hover{color:var(--tinta)}
+.ahn-marca__disco{
+  width:28px;height:28px;border-radius:50%;background:var(--acento);flex:0 0 28px;
+  display:grid;place-items:center;
+}
+.ahn-marca__disco::after{content:'';width:9px;height:9px;border-radius:50%;background:var(--superficie)}
+.ahn-marca em{font-style:normal;color:var(--acento)}
+/* A logo e horizontal. O PNG original tinha 46% de margem vazia e por isso o
+   desenho saia minusculo; o arquivo em uso agora e a versao recortada, entao
+   esta altura e altura de desenho de verdade. */
+.ahn-marca--img{flex:0 0 auto}
+.ahn-marca--img img{max-height:84px;width:auto}
+.ahn-marca--img .custom-logo-link{display:block;line-height:0}
+
+.ahn-menu{display:flex;gap:4px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.ahn-menu a{display:block;padding:8px 13px;font-size:14.5px;font-weight:500;border-radius:var(--pill);color:var(--tinta-fraca)}
+.ahn-menu a:hover{background:var(--chip);color:var(--tinta)}
+.ahn-menu .current-menu-item>a,.ahn-menu .current_page_item>a{color:var(--tinta);font-weight:600}
+
+/* busca do topo */
+.ahn-busca{display:flex;align-items:center;flex:1 1 auto;max-width:560px;position:relative}
+.ahn-busca input{
+  width:100%;border:1px solid var(--linha);background:var(--superficie);
+  padding:11px 16px 11px 42px;border-radius:var(--pill);
+  font:400 14.5px Sora,sans-serif;color:var(--tinta);
+}
+.ahn-busca input::placeholder{color:var(--tinta-apagada)}
+.ahn-busca input:focus{outline:none;border-color:var(--acento)}
+.ahn-busca button{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  background:none;border:0;padding:0;cursor:pointer;color:var(--tinta-apagada);
+  display:grid;place-items:center;
+}
+.ahn-busca button:hover{color:var(--acento)}
+
+/* ---------------- chips de categoria ---------------- */
+.ahn-chips-area{position:relative;max-width:var(--largura);margin:0 auto}
+
+/* as bordas desbotam para o chip parecer deslizar por baixo da seta,
+   em vez de ser cortado na metade */
+.ahn-chips-area::before,
+.ahn-chips-area::after{
+  content:'';position:absolute;top:0;bottom:0;width:72px;z-index:2;
+  pointer-events:none;opacity:0;transition:opacity .2s;
+}
+.ahn-chips-area::before{
+  left:0;background:linear-gradient(to right,var(--fundo) 30%,rgba(255,250,245,0));
+}
+.ahn-chips-area::after{
+  right:0;background:linear-gradient(to left,var(--fundo) 30%,rgba(255,250,245,0));
+}
+.ahn-chips-area.tem-esq::before,
+.ahn-chips-area.tem-dir::after{opacity:1}
+
+.ahn-chips{
+  display:flex;gap:8px;overflow-x:auto;padding:14px 24px 16px;
+  scrollbar-width:none;scroll-behavior:smooth;
+}
+.ahn-chips::-webkit-scrollbar{display:none}
+
+.ahn-chips__seta{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+  width:36px;height:36px;border-radius:50%;cursor:pointer;
+  background:var(--creme);color:var(--tinta);
+  border:1px solid var(--linha);
+  display:grid;place-items:center;padding:0;
+  box-shadow:0 2px 8px rgba(74,2,41,.12);
+  transition:background .18s,color .18s,transform .18s;
+}
+.ahn-chips__seta:hover{background:var(--acento);color:#fff;border-color:var(--acento)}
+.ahn-chips__seta:active{transform:translateY(-50%) scale(.92)}
+.ahn-chips__seta:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
+.ahn-chips__seta[hidden]{display:none}
+.ahn-chips__seta--esq{left:4px}
+.ahn-chips__seta--dir{right:4px}
+.ahn-chips a{
+  flex:0 0 auto;background:var(--chip);color:var(--tinta-fraca);
+  padding:7px 15px;border-radius:var(--pill);font-size:13.5px;font-weight:500;white-space:nowrap;
+}
+.ahn-chips a:hover{background:var(--chip-hover);color:var(--tinta)}
+.ahn-chips a.atual{background:var(--tinta);color:var(--superficie)}
+
+/* ---------------- corpo ---------------- */
+.ahn-corpo{max-width:var(--largura);margin:8px auto 56px;padding:0 24px}
+.ahn-secao{font-size:15px;font-weight:600;color:var(--tinta-fraca);margin:0 0 18px}
+
+/* ---------------- grade masonry ---------------- */
+/* colunas de CSS: altura variavel sem uma linha de JavaScript, que e o que
+   mantem a pagina leve mesmo com muita imagem */
+.ahn-grade{column-count:4;column-gap:20px}
+.ahn-card{break-inside:avoid;margin:0 0 26px;display:block}
+.ahn-card__capa{position:relative;display:block;overflow:hidden;border-radius:var(--raio);background:var(--chip)}
+.ahn-card__capa img{width:100%;height:auto;display:block;transition:transform .35s}
+.ahn-card:hover .ahn-card__capa img{transform:scale(1.03)}
+.ahn-card__qtd{
+  position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.92);color:var(--tinta);
+  font:600 12px Sora,sans-serif;padding:4px 10px;border-radius:var(--pill);
+  display:flex;align-items:center;gap:5px;
+}
+.ahn-card__texto{padding:10px 2px 0}
+.ahn-card h3{font-size:15px;font-weight:600;margin:0 0 2px;line-height:1.35}
+.ahn-card:hover h3{color:var(--acento-esc)}
+.ahn-card__meta{font-size:13px;color:var(--tinta-apagada)}
+
+/* ---------------- paginacao ---------------- */
+/* links de verdade, nao "carregar mais": o buscador precisa conseguir andar
+   ate o fim do acervo, senao so a primeira pagina entra no indice */
+.ahn-pag{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.ahn-pag .page-numbers{
+  padding:9px 16px;border-radius:var(--pill);font-size:14.5px;font-weight:500;
+  background:var(--chip);color:var(--tinta-fraca);display:inline-block;
+}
+.ahn-pag .current{background:var(--tinta);color:var(--superficie)}
+.ahn-pag a.page-numbers:hover{background:var(--acento);color:#fff}
+
+/* ---------------- post de galeria ---------------- */
+.ahn-galeria-post{max-width:var(--largura);margin:22px auto 56px;padding:0 24px}
+.ahn-cat{
+  display:inline-block;background:var(--chip);color:var(--tinta-fraca);
+  font:600 12.5px Sora,sans-serif;padding:6px 14px;border-radius:var(--pill);margin-bottom:14px;
+}
+.ahn-cat:hover{background:var(--acento);color:#fff}
+.ahn-galeria-post h1{font-size:30px;margin-bottom:8px;letter-spacing:-.02em}
+.ahn-meta{color:var(--tinta-apagada);font-size:14px;display:block}
+.ahn-intro{color:var(--tinta-fraca);max-width:680px;margin:14px 0 28px;font-size:15.5px}
+.ahn-intro p{margin:0 0 .85em}
+.ahn-intro p:last-child{margin-bottom:0}
+
+.ahn-grade-fotos{column-count:4;column-gap:14px}
+.ahn-foto{
+  break-inside:avoid;margin:0 0 14px;position:relative;display:block;width:100%;
+  overflow:hidden;border-radius:var(--raio);background:var(--chip);
+  cursor:zoom-in;border:0;padding:0;
+}
+.ahn-foto img{width:100%;height:auto;display:block;transition:transform .35s}
+.ahn-foto:hover img{transform:scale(1.03)}
+.ahn-foto:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
+.ahn-foto::after{
+  content:attr(data-n);position:absolute;right:9px;bottom:9px;
+  background:rgba(255,255,255,.92);color:var(--tinta);
+  font:600 11.5px Sora,sans-serif;padding:3px 9px;border-radius:var(--pill);
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.ahn-foto:hover::after{opacity:1}
+
+.ahn-tags{margin:34px 0 0;padding-top:24px;border-top:1px solid var(--linha);
+  display:flex;gap:8px;flex-wrap:wrap}
+.ahn-tags a{background:var(--chip);color:var(--tinta-fraca);padding:7px 15px;
+  border-radius:var(--pill);font-size:13.5px}
+.ahn-tags a:hover{background:var(--acento);color:#fff}
+
+.ahn-vizinhos{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+.ahn-vizinhos a{display:block;padding:16px 18px;background:var(--superficie);
+  border:1px solid var(--linha);border-radius:var(--raio);font-weight:600;font-size:15px}
+.ahn-vizinhos a:hover{border-color:var(--acento);color:var(--acento-esc)}
+.ahn-vizinhos small{display:block;color:var(--tinta-apagada);font-weight:400;font-size:12.5px;margin-bottom:5px}
+.ahn-vizinhos .dir{text-align:right}
+
+.ahn-relacionados{column-count:4;column-gap:20px;margin-top:4px}
+
+/* ---------------- lightbox ---------------- */
+.lb{position:fixed;inset:0;z-index:900;background:rgba(20,12,9,.96);
+  display:flex;align-items:center;justify-content:center}
+.lb[hidden]{display:none}
+.lb__palco{max-width:92vw;max-height:88vh;display:flex;align-items:center;justify-content:center}
+.lb__palco img{max-width:92vw;max-height:88vh;width:auto;height:auto;border-radius:var(--raio)}
+.lb__bt{
+  position:absolute;background:rgba(255,255,255,.14);color:#fff;border:0;
+  width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:24px;line-height:1;
+  display:grid;place-items:center;
+}
+.lb__bt:hover{background:var(--acento)}
+.lb__bt:focus-visible{outline:3px solid var(--acento);outline-offset:2px}
+.lb__ant{left:18px}
+.lb__pro{right:18px}
+.lb__fecha{top:18px;right:18px;width:42px;height:42px;font-size:21px}
+.lb__conta{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  color:#efece6;font:600 13.5px Sora,sans-serif;
+  background:rgba(0,0,0,.5);padding:6px 15px;border-radius:var(--pill);
+}
+
+/* ---------------- pagina de texto ---------------- */
+.ahn-pagina{max-width:760px;margin:30px auto 56px;padding:0 24px}
+.ahn-pagina h1{font-size:30px;margin-bottom:20px;letter-spacing:-.02em}
+.ahn-pagina__corpo{font-size:16.5px;color:var(--tinta-fraca)}
+.ahn-pagina__corpo h2{font-size:21px;color:var(--tinta);margin:1.7em 0 .5em}
+.ahn-pagina__corpo p{margin:0 0 1.1em}
+.ahn-pagina__corpo ul,.ahn-pagina__corpo ol{margin:0 0 1.1em;padding-left:1.3em}
+.ahn-pagina__corpo li{margin-bottom:.4em}
+.ahn-pagina__corpo a{color:var(--acento-esc);text-decoration:underline}
+.ahn-pagina__corpo strong{color:var(--tinta)}
+
+/* ---------------- vazio e 404 ---------------- */
+.ahn-vazio{text-align:center;padding:70px 20px;background:var(--superficie);
+  border-radius:var(--raio-g);border:1px solid var(--linha)}
+.ahn-vazio h1{font-size:26px}
+.ahn-vazio p{color:var(--tinta-fraca);max-width:440px;margin:0 auto 24px}
+
+/* ---------------- links parceiros ---------------- */
+/* visualmente separado do conteudo de proposito: o leitor tem que perceber
+   que ali e area de parceiro, nao navegacao do site */
+.ahn-parceiros{border-top:1px solid var(--linha);background:var(--chip);padding:26px 0 24px}
+.ahn-parceiros__tit{
+  font:600 12.5px Sora,sans-serif;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tinta-fraca);margin:0 0 14px;
+}
+.ahn-parceiros__lista{display:flex;flex-wrap:wrap;gap:9px;list-style:none;margin:0;padding:0}
+.ahn-parceiros__lista a{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--superficie);border:1px solid var(--linha);
+  padding:8px 15px;border-radius:var(--pill);
+  font-size:14px;font-weight:500;color:var(--tinta);
+}
+.ahn-parceiros__lista a:hover{
+  background:var(--acento);border-color:var(--acento);color:#fff;text-decoration:none;
+}
+.ahn-parceiros__lista svg{opacity:.45}
+.ahn-parceiros__lista a:hover svg{opacity:1}
+
+/* ---------------- rodape ---------------- */
+.ahn-rodape{border-top:1px solid var(--linha);padding:26px 0;font-size:13.5px;color:var(--tinta-apagada)}
+.ahn-rodape .ahn-wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+.ahn-rodape ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.ahn-rodape a:hover{color:var(--acento-esc)}
+.ahn-aviso{max-width:var(--largura);margin:0 auto;padding:16px 24px 0;font-size:12.5px;
+  color:var(--tinta-apagada);line-height:1.55}
+
+/* ---------------- responsivo ---------------- */
+@media (max-width:1100px){
+  .ahn-grade,.ahn-grade-fotos,.ahn-relacionados{column-count:3}
+}
+@media (max-width:860px){
+  .ahn-topo__miolo{flex-wrap:wrap;gap:14px}
+  .ahn-busca{order:3;max-width:none;flex-basis:100%}
+  .ahn-grade,.ahn-grade-fotos,.ahn-relacionados{column-count:2}
+  .ahn-galeria-post h1{font-size:24px}
+}
+@media (max-width:860px){
+  .ahn-marca--img img{max-height:66px}
+}
+@media (max-width:560px){
+  body{font-size:15.5px}
+  .ahn-marca--img img{max-height:54px}
+  .ahn-wrap,.ahn-corpo,.ahn-galeria-post,.ahn-pagina{padding-left:16px;padding-right:16px}
+  .ahn-chips{padding-left:16px;padding-right:16px}
+  .ahn-grade{column-gap:12px}
+  .ahn-card{margin-bottom:18px}
+  .ahn-grade-fotos{column-gap:8px}
+  .ahn-foto{margin-bottom:8px}
+  .ahn-vizinhos{grid-template-columns:1fr}
+  .ahn-vizinhos .dir{text-align:left}
+  .lb__bt{width:40px;height:40px;font-size:21px}
+  .lb__ant{left:6px}
+  .lb__pro{right:6px}
+}

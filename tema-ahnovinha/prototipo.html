@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protótipo — tema Ah Novinha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,600;0,800;1,400&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   Protótipo do tema "Ah Novinha" — blog.
+   De proposito NAO parece com o tema do travestismix: fonte serifada,
+   fundo claro, grade de cards, prefixo .ahn-. Dois sites da mesma rede
+   com o mesmo tema deixam rastro.
+   Tudo inline aqui so porque e protótipo; no tema vira style.css.
+   ========================================================================== */
+:root{
+  --tinta:#1b1419;
+  --tinta-fraca:#6d6068;
+  --acento:#b5176b;
+  --acento-esc:#8d1153;
+  --fundo:#fff;
+  --fundo-alt:#f7f3f5;
+  --linha:#e6dde1;
+  --largura:1120px;
+  --lateral:300px;
+  --raio:3px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--fundo);color:var(--tinta);
+  font:400 17px/1.65 'Source Sans 3',system-ui,-apple-system,Segoe UI,sans-serif;
+}
+a{color:var(--acento);text-decoration:none}
+a:hover{color:var(--acento-esc);text-decoration:underline}
+img{max-width:100%;height:auto;display:block}
+h1,h2,h3,h4{font-family:Bitter,Georgia,serif;line-height:1.25;margin:0 0 .5em}
+.ahn-wrap{max-width:var(--largura);margin:0 auto;padding:0 18px}
+
+/* ---------------- portao 18+ ---------------- */
+.ahn-idade{
+  position:fixed;inset:0;z-index:999;background:#160f13;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.ahn-idade__caixa{
+  max-width:470px;background:var(--fundo);padding:34px 30px;border-radius:var(--raio);
+  text-align:center;border-top:5px solid var(--acento);
+}
+.ahn-idade__selo{
+  display:inline-grid;place-items:center;width:62px;height:62px;border-radius:50%;
+  background:var(--acento);color:#fff;font:800 20px/1 Bitter,serif;margin-bottom:16px;
+}
+.ahn-idade h2{font-size:25px;margin-bottom:10px}
+.ahn-idade p{color:var(--tinta-fraca);font-size:15px;margin:0 0 20px}
+.ahn-idade__bts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ahn-bt{
+  display:inline-block;padding:12px 24px;border:0;border-radius:var(--raio);
+  font:600 16px 'Source Sans 3',sans-serif;cursor:pointer;
+}
+.ahn-bt--sim{background:var(--acento);color:#fff}
+.ahn-bt--sim:hover{background:var(--acento-esc);color:#fff;text-decoration:none}
+.ahn-bt--nao{background:var(--fundo-alt);color:var(--tinta-fraca)}
+
+/* ---------------- cabecalho ---------------- */
+.ahn-topo{border-bottom:1px solid var(--linha);background:var(--fundo)}
+.ahn-topo__barra{
+  background:var(--tinta);color:#cdbfc6;font-size:13px;
+}
+.ahn-topo__barra .ahn-wrap{display:flex;justify-content:space-between;gap:14px;padding:7px 18px}
+.ahn-topo__barra strong{color:#fff}
+.ahn-topo__miolo{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:22px 18px;flex-wrap:wrap;
+}
+.ahn-marca{font:800 38px/1 Bitter,serif;color:var(--tinta);letter-spacing:-.02em}
+.ahn-marca:hover{text-decoration:none;color:var(--tinta)}
+.ahn-marca span{color:var(--acento)}
+.ahn-marca__tag{
+  display:block;font:400 13px/1.4 'Source Sans 3',sans-serif;
+  color:var(--tinta-fraca);letter-spacing:.14em;text-transform:uppercase;margin-top:7px;
+}
+.ahn-menu{display:flex;gap:4px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.ahn-menu a{
+  display:block;padding:9px 14px;color:var(--tinta);font-weight:600;font-size:15px;
+  border-radius:var(--raio);
+}
+.ahn-menu a:hover{background:var(--fundo-alt);text-decoration:none}
+.ahn-menu .atual a{background:var(--acento);color:#fff}
+
+/* ---------------- grade principal ---------------- */
+.ahn-corpo{
+  max-width:var(--largura);margin:34px auto 50px;padding:0 18px;
+  display:grid;grid-template-columns:1fr var(--lateral);gap:40px;align-items:start;
+}
+
+/* ---------------- post em destaque ---------------- */
+.ahn-destaque{
+  display:grid;grid-template-columns:1.15fr 1fr;gap:0;
+  border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;margin-bottom:34px;
+}
+.ahn-destaque__texto{padding:28px 26px}
+.ahn-destaque h2{font-size:28px;margin-bottom:12px}
+.ahn-destaque h2 a{color:var(--tinta)}
+.ahn-destaque h2 a:hover{color:var(--acento);text-decoration:none}
+.ahn-destaque p{color:var(--tinta-fraca);margin:0 0 16px;font-size:16px}
+
+/* ---------------- etiquetas e meta ---------------- */
+.ahn-cat{
+  display:inline-block;background:var(--acento);color:#fff;
+  font:700 11px/1 'Source Sans 3',sans-serif;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 10px;border-radius:var(--raio);margin-bottom:12px;
+}
+.ahn-cat:hover{background:var(--acento-esc);color:#fff;text-decoration:none}
+.ahn-meta{color:var(--tinta-fraca);font-size:13.5px;letter-spacing:.02em}
+
+/* ---------------- grade de cards ---------------- */
+.ahn-secao{
+  font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-fraca);
+  font-family:'Source Sans 3',sans-serif;font-weight:700;
+  padding-bottom:10px;border-bottom:2px solid var(--tinta);margin:0 0 22px;
+}
+.ahn-grade{display:grid;grid-template-columns:repeat(2,1fr);gap:28px}
+.ahn-card{border:1px solid var(--linha);border-radius:var(--raio);overflow:hidden;background:var(--fundo)}
+.ahn-card__texto{padding:18px}
+.ahn-card h3{font-size:19px;margin-bottom:9px}
+.ahn-card h3 a{color:var(--tinta)}
+.ahn-card h3 a:hover{color:var(--acento);text-decoration:none}
+.ahn-card p{color:var(--tinta-fraca);font-size:15px;margin:0 0 12px}
+
+/* capa: no tema e a imagem destacada. aqui e um bloco desenhado em CSS,
+   porque o protótipo nao usa foto de pessoa. */
+.ahn-capa{
+  aspect-ratio:16/9;background:
+    repeating-linear-gradient(135deg,#efe6ea 0 14px,#e8dde2 14px 28px);
+  display:grid;place-items:center;color:#b9a8b1;
+  font:600 13px 'Source Sans 3',sans-serif;letter-spacing:.1em;text-transform:uppercase;
+}
+.ahn-destaque .ahn-capa{aspect-ratio:auto;height:100%;min-height:240px}
+
+/* ---------------- paginacao ---------------- */
+.ahn-pag{display:flex;gap:7px;margin-top:32px;flex-wrap:wrap}
+.ahn-pag a,.ahn-pag span{
+  padding:9px 15px;border:1px solid var(--linha);border-radius:var(--raio);
+  font-weight:600;font-size:15px;color:var(--tinta);
+}
+.ahn-pag .atual{background:var(--acento);border-color:var(--acento);color:#fff}
+.ahn-pag a:hover{border-color:var(--acento);color:var(--acento);text-decoration:none}
+
+/* ---------------- barra lateral ---------------- */
+.ahn-caixa{border:1px solid var(--linha);border-radius:var(--raio);margin-bottom:24px}
+.ahn-caixa__tit{
+  font:700 13px 'Source Sans 3',sans-serif;letter-spacing:.12em;text-transform:uppercase;
+  padding:13px 16px;border-bottom:1px solid var(--linha);background:var(--fundo-alt);
+  margin:0;color:var(--tinta);
+}
+.ahn-caixa__corpo{padding:16px}
+.ahn-busca{display:flex}
+.ahn-busca input{
+  flex:1;min-width:0;border:1px solid var(--linha);border-right:0;padding:10px 12px;
+  font:400 15px 'Source Sans 3',sans-serif;border-radius:var(--raio) 0 0 var(--raio);
+}
+.ahn-busca input:focus{outline:2px solid var(--acento);outline-offset:-2px}
+.ahn-busca button{
+  background:var(--acento);color:#fff;border:0;padding:0 15px;cursor:pointer;
+  border-radius:0 var(--raio) var(--raio) 0;display:grid;place-items:center;
+}
+.ahn-busca button:hover{background:var(--acento-esc)}
+.ahn-lista{list-style:none;margin:0;padding:0}
+.ahn-lista li{border-bottom:1px solid var(--linha)}
+.ahn-lista li:last-child{border-bottom:0}
+.ahn-lista a{
+  display:flex;justify-content:space-between;gap:10px;padding:11px 16px;
+  color:var(--tinta);font-weight:600;font-size:15px;
+}
+.ahn-lista a:hover{background:var(--fundo-alt);color:var(--acento);text-decoration:none}
+.ahn-lista .qtd{color:var(--tinta-fraca);font-weight:400;font-size:13.5px}
+.ahn-recente{display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--linha)}
+.ahn-recente:last-child{border-bottom:0}
+.ahn-recente__mini{
+  width:62px;height:62px;flex:0 0 62px;border-radius:var(--raio);
+  background:repeating-linear-gradient(135deg,#efe6ea 0 9px,#e8dde2 9px 18px);
+}
+.ahn-recente h4{font-size:15px;margin:0 0 4px;line-height:1.35}
+.ahn-recente h4 a{color:var(--tinta)}
+.ahn-recente h4 a:hover{color:var(--acento);text-decoration:none}
+
+/* ---------------- post aberto ---------------- */
+.ahn-post__cab{margin-bottom:26px}
+.ahn-post h1{font-size:36px;margin-bottom:13px}
+.ahn-post__corpo{font-size:18px}
+.ahn-post__corpo h2{font-size:25px;margin:1.6em 0 .5em}
+.ahn-post__corpo p{margin:0 0 1.15em}
+.ahn-post__corpo ul{margin:0 0 1.15em;padding-left:1.3em}
+.ahn-post__corpo li{margin-bottom:.4em}
+.ahn-post__corpo blockquote{
+  margin:1.5em 0;padding:4px 0 4px 20px;border-left:4px solid var(--acento);
+  font-style:italic;color:var(--tinta-fraca);
+}
+.ahn-vizinhos{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:38px;
+  padding-top:26px;border-top:1px solid var(--linha);
+}
+.ahn-vizinhos a{
+  display:block;padding:15px 17px;border:1px solid var(--linha);border-radius:var(--raio);
+  color:var(--tinta);font-family:Bitter,serif;font-weight:600;
+}
+.ahn-vizinhos a:hover{border-color:var(--acento);color:var(--acento);text-decoration:none}
+.ahn-vizinhos small{
+  display:block;color:var(--tinta-fraca);font:400 12px 'Source Sans 3',sans-serif;
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;
+}
+.ahn-vizinhos .dir{text-align:right}
+
+/* ---------------- rodape ---------------- */
+.ahn-rodape{background:var(--tinta);color:#a9999f;padding:38px 0 26px;font-size:15px;margin-top:10px}
+.ahn-rodape a{color:#e4d6dc}
+.ahn-rodape__cols{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:34px;margin-bottom:30px}
+.ahn-rodape h4{
+  color:#fff;font:700 13px 'Source Sans 3',sans-serif;letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:14px;
+}
+.ahn-rodape ul{list-style:none;margin:0;padding:0}
+.ahn-rodape li{margin-bottom:9px}
+.ahn-aviso{
+  border-top:1px solid #352a30;padding-top:20px;font-size:13px;line-height:1.6;color:#8b7c83;
+}
+.ahn-aviso strong{color:#d9c8cf}
+
+/* ---------------- responsivo ---------------- */
+@media (max-width:900px){
+  .ahn-corpo{grid-template-columns:1fr;gap:34px}
+  .ahn-destaque{grid-template-columns:1fr}
+  .ahn-destaque .ahn-capa{min-height:200px;aspect-ratio:16/9}
+  .ahn-rodape__cols{grid-template-columns:1fr 1fr}
+}
+@media (max-width:600px){
+  body{font-size:16px}
+  .ahn-grade{grid-template-columns:1fr}
+  .ahn-marca{font-size:31px}
+  .ahn-topo__miolo{gap:14px}
+  .ahn-post h1{font-size:28px}
+  .ahn-vizinhos,.ahn-rodape__cols{grid-template-columns:1fr}
+  .ahn-vizinhos .dir{text-align:left}
+}
+
+/* ---------------- so do protótipo, nao vai pro tema ---------------- */
+.proto-nota{
+  background:#fff8e1;border-bottom:1px solid #f0e0b0;color:#6b5a21;
+  font-size:14px;padding:11px 18px;text-align:center;
+}
+.proto-nota code{background:#fff;padding:1px 5px;border-radius:2px}
+.proto-troca{
+  position:fixed;right:14px;bottom:14px;z-index:500;display:flex;gap:6px;
+  background:#fff;border:1px solid var(--linha);border-radius:var(--raio);padding:6px;
+  box-shadow:0 3px 14px rgba(0,0,0,.14);
+}
+.proto-troca button{
+  border:0;background:var(--fundo-alt);color:var(--tinta);padding:8px 13px;
+  font:600 14px 'Source Sans 3',sans-serif;cursor:pointer;border-radius:2px;
+}
+.proto-troca button.on{background:var(--acento);color:#fff}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<p class="proto-nota">
+  Protótipo de layout. Os títulos são <strong>exemplos</strong> para julgar o desenho — nada aqui é conteúdo final.
+  As capas são blocos desenhados em CSS, sem foto de pessoa. Use o botão no canto para ver o portão 18+ e o post aberto.
+</p>
+
+<!-- ====================== portao 18+ ====================== -->
+<div class="ahn-idade" id="tela-idade" hidden>
+  <div class="ahn-idade__caixa">
+    <span class="ahn-idade__selo">18+</span>
+    <h2>Conteúdo para maiores de 18 anos</h2>
+    <p>
+      Este site tem conteúdo adulto. Ao entrar, você declara ser maior de 18 anos
+      e concorda em visualizar esse tipo de material.
+    </p>
+    <div class="ahn-idade__bts">
+      <button class="ahn-bt ahn-bt--sim" onclick="mostra('home')">Tenho 18 anos ou mais</button>
+      <a class="ahn-bt ahn-bt--nao" href="https://www.google.com.br">Sair do site</a>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== cabecalho ====================== -->
+<header class="ahn-topo">
+  <div class="ahn-topo__barra">
+    <div class="ahn-wrap">
+      <span><strong>18+</strong> &middot; conteúdo para maiores</span>
+      <span>Atualizado toda semana</span>
+    </div>
+  </div>
+  <div class="ahn-wrap ahn-topo__miolo">
+    <a href="#" class="ahn-marca">
+      Ah <span>Novinha</span>
+      <span class="ahn-marca__tag">Blog</span>
+    </a>
+    <nav>
+      <ul class="ahn-menu">
+        <li class="atual"><a href="#" onclick="mostra('home');return false">Início</a></li>
+        <li><a href="#">Categorias</a></li>
+        <li><a href="#">Sobre</a></li>
+        <li><a href="#">Contato</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- ====================== HOME ====================== -->
+<div id="tela-home">
+<div class="ahn-corpo">
+  <main>
+
+    <article class="ahn-destaque">
+      <div class="ahn-capa">capa do post</div>
+      <div class="ahn-destaque__texto">
+        <a href="#" class="ahn-cat">Segurança</a>
+        <h2><a href="#" onclick="mostra('post');return false">Exemplo de título do post em destaque, com duas linhas para testar</a></h2>
+        <p>
+          Linha de resumo do post. No tema isso sai do resumo do WordPress, ou das
+          primeiras palavras do texto quando o resumo está vazio.
+        </p>
+        <span class="ahn-meta">3 de outubro de 2026 &middot; 6 min de leitura</span>
+      </div>
+    </article>
+
+    <h2 class="ahn-secao">Últimas publicações</h2>
+
+    <div class="ahn-grade">
+      <article class="ahn-card">
+        <div class="ahn-capa">capa do post</div>
+        <div class="ahn-card__texto">
+          <a href="#" class="ahn-cat">Guia</a>
+          <h3><a href="#" onclick="mostra('post');return false">Exemplo de título de post na grade</a></h3>
+          <p>Resumo curto de duas linhas, do jeito que o tema vai cortar o texto.</p>
+          <span class="ahn-meta">2 de outubro de 2026</span>
+        </div>
+      </article>
+      <article class="ahn-card">
+        <div class="ahn-capa">capa do post</div>
+        <div class="ahn-card__texto">
+          <a href="#" class="ahn-cat">Segurança</a>
+          <h3><a href="#" onclick="mostra('post');return false">Outro exemplo, este com um título mais comprido que ocupa duas linhas</a></h3>
+          <p>Resumo curto de duas linhas, do jeito que o tema vai cortar o texto.</p>
+          <span class="ahn-meta">29 de setembro de 2026</span>
+        </div>
+      </article>
+      <article class="ahn-card">
+        <div class="ahn-capa">capa do post</div>
+        <div class="ahn-card__texto">
+          <a href="#" class="ahn-cat">Cidades</a>
+          <h3><a href="#" onclick="mostra('post');return false">Exemplo de título de post na grade</a></h3>
+          <p>Resumo curto de duas linhas, do jeito que o tema vai cortar o texto.</p>
+          <span class="ahn-meta">26 de setembro de 2026</span>
+        </div>
+      </article>
+      <article class="ahn-card">
+        <!-- card sem capa: o tema omite o bloco da imagem em vez de mostrar vazio -->
+        <div class="ahn-card__texto">
+          <a href="#" class="ahn-cat">Guia</a>
+          <h3><a href="#" onclick="mostra('post');return false">Post sem imagem destacada, para ver como fica</a></h3>
+          <p>Resumo curto de duas linhas, do jeito que o tema vai cortar o texto.</p>
+          <span class="ahn-meta">24 de setembro de 2026</span>
+        </div>
+      </article>
+    </div>
+
+    <nav class="ahn-pag">
+      <span class="atual">1</span>
+      <a href="#">2</a>
+      <a href="#">3</a>
+      <a href="#">Próxima &rsaquo;</a>
+    </nav>
+
+  </main>
+
+  <!-- ====================== lateral ====================== -->
+  <aside>
+    <div class="ahn-caixa">
+      <h3 class="ahn-caixa__tit">Buscar no blog</h3>
+      <div class="ahn-caixa__corpo">
+        <form class="ahn-busca" onsubmit="return false">
+          <input type="search" placeholder="O que você procura?" aria-label="Buscar">
+          <button type="submit" aria-label="Buscar">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="ahn-caixa">
+      <h3 class="ahn-caixa__tit">Categorias</h3>
+      <ul class="ahn-lista">
+        <li><a href="#">Segurança <span class="qtd">—</span></a></li>
+        <li><a href="#">Guias <span class="qtd">—</span></a></li>
+        <li><a href="#">Cidades <span class="qtd">—</span></a></li>
+        <li><a href="#">Terminologia <span class="qtd">—</span></a></li>
+      </ul>
+    </div>
+
+    <div class="ahn-caixa">
+      <h3 class="ahn-caixa__tit">Mais lidos</h3>
+      <div>
+        <div class="ahn-recente">
+          <div class="ahn-recente__mini"></div>
+          <div><h4><a href="#">Exemplo de título curto no bloco lateral</a></h4>
+          <span class="ahn-meta">3 out 2026</span></div>
+        </div>
+        <div class="ahn-recente">
+          <div class="ahn-recente__mini"></div>
+          <div><h4><a href="#">Outro exemplo de título no bloco lateral</a></h4>
+          <span class="ahn-meta">29 set 2026</span></div>
+        </div>
+        <div class="ahn-recente">
+          <div class="ahn-recente__mini"></div>
+          <div><h4><a href="#">Terceiro exemplo de título lateral</a></h4>
+          <span class="ahn-meta">24 set 2026</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+</div>
+
+<!-- ====================== POST ABERTO ====================== -->
+<div id="tela-post" hidden>
+<div class="ahn-corpo">
+  <main class="ahn-post">
+    <header class="ahn-post__cab">
+      <a href="#" class="ahn-cat">Segurança</a>
+      <h1>Exemplo de título de um post aberto, para ver a medida da coluna de texto</h1>
+      <span class="ahn-meta">3 de outubro de 2026 &middot; 6 min de leitura</span>
+    </header>
+
+    <div class="ahn-capa" style="aspect-ratio:21/9;margin-bottom:28px">capa do post</div>
+
+    <div class="ahn-post__corpo">
+      <p>
+        Este parágrafo existe só para mostrar a medida da linha e o ritmo da leitura.
+        A coluna fica em torno de 70 caracteres, que é a faixa onde o olho não se perde
+        ao trocar de linha.
+      </p>
+      <p>
+        O corpo usa a mesma fonte do resto do site, 18 pixels no desktop e 16 no celular.
+        Os títulos internos entram em serifada, para separar bem a estrutura do texto.
+      </p>
+
+      <h2>Um subtítulo dentro do texto</h2>
+      <p>
+        Mais um parágrafo de exemplo, para o subtítulo ter conteúdo embaixo e você
+        conseguir julgar o espaçamento entre as seções.
+      </p>
+      <ul>
+        <li>Item de lista, para ver o recuo e o marcador.</li>
+        <li>Segundo item, um pouco mais comprido, de modo a quebrar em duas linhas e mostrar o alinhamento.</li>
+        <li>Terceiro item.</li>
+      </ul>
+
+      <blockquote>
+        Citação destacada, com a barra na cor de acento do site.
+      </blockquote>
+
+      <p>
+        Parágrafo final, com um <a href="#">link de exemplo no meio do texto</a> para
+        você ver como o link se comporta na leitura.
+      </p>
+    </div>
+
+    <nav class="ahn-vizinhos">
+      <a href="#"><small>&lsaquo; Anterior</small>Exemplo de título do post anterior</a>
+      <a href="#" class="dir"><small>Próximo &rsaquo;</small>Exemplo de título do post seguinte</a>
+    </nav>
+  </main>
+
+  <aside>
+    <div class="ahn-caixa">
+      <h3 class="ahn-caixa__tit">Buscar no blog</h3>
+      <div class="ahn-caixa__corpo">
+        <form class="ahn-busca" onsubmit="return false">
+          <input type="search" placeholder="O que você procura?" aria-label="Buscar">
+          <button type="submit" aria-label="Buscar">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5 21 21"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="ahn-caixa">
+      <h3 class="ahn-caixa__tit">Categorias</h3>
+      <ul class="ahn-lista">
+        <li><a href="#">Segurança <span class="qtd">—</span></a></li>
+        <li><a href="#">Guias <span class="qtd">—</span></a></li>
+        <li><a href="#">Cidades <span class="qtd">—</span></a></li>
+        <li><a href="#">Terminologia <span class="qtd">—</span></a></li>
+      </ul>
+    </div>
+  </aside>
+</div>
+</div>
+
+<!-- ====================== rodape ====================== -->
+<footer class="ahn-rodape">
+  <div class="ahn-wrap">
+    <div class="ahn-rodape__cols">
+      <div>
+        <h4>Ah Novinha</h4>
+        <p style="margin:0">
+          Blog com guias e textos sobre o assunto. Conteúdo para maiores de 18 anos.
+        </p>
+      </div>
+      <div>
+        <h4>Categorias</h4>
+        <ul>
+          <li><a href="#">Segurança</a></li>
+          <li><a href="#">Guias</a></li>
+          <li><a href="#">Cidades</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Links úteis</h4>
+        <ul>
+          <li><a href="#">Sobre o site</a></li>
+          <li><a href="#">Contato</a></li>
+          <li><a href="#">Política de privacidade</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="ahn-aviso">
+      <strong>Aviso:</strong> este site é destinado a maiores de 18 anos e não se
+      responsabiliza por conteúdo de terceiros eventualmente citado. O texto do aviso
+      fica editável no Customizer, como no outro site.
+      <br>&copy; 2026 Ah Novinha.
+    </div>
+  </div>
+</footer>
+
+<!-- troca de telas: so do protótipo -->
+<div class="proto-troca">
+  <button id="b-idade" onclick="mostra('idade')">Portão 18+</button>
+  <button id="b-home" class="on" onclick="mostra('home')">Home</button>
+  <button id="b-post" onclick="mostra('post')">Post</button>
+</div>
+
+<script>
+function mostra(qual){
+  document.getElementById('tela-idade').hidden = qual !== 'idade';
+  document.getElementById('tela-home').hidden  = qual !== 'home';
+  document.getElementById('tela-post').hidden  = qual !== 'post';
+  ['idade','home','post'].forEach(function(k){
+    document.getElementById('b-'+k).classList.toggle('on', k === qual);
+  });
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
