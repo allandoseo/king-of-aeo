@@ -219,12 +219,14 @@ ul.check li{margin:.35rem 0}
 
 /* ---- site nav ---- */
 .archive-nav{max-width:var(--measure);margin:0 auto 1rem;text-align:center}
+.site-nav{max-width:var(--measure);margin:0 auto .75rem;text-align:center;font-family:"IM Fell English SC",Georgia,serif;font-size:.9rem;letter-spacing:.02em}
+.site-nav a{color:var(--royal);margin:0 .5rem}
 
 /* ---- print: hide navigation ---- */
 @media print{
   body{background:#fff;color:#000;font-size:11pt;padding:0}
   .column{border:0;outline:0;max-width:none;padding:0}
-  .archive-nav,.toc,.crumb,.btn{display:none}
+  .archive-nav,.site-nav,.toc,.crumb,.btn{display:none}
   a{color:#000;text-decoration:none}
   a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt}
   .rule{background:#000}

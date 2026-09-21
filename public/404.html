@@ -49,11 +49,19 @@ ul{list-style:none;margin:1.5rem 0 0;padding:1.1rem 1.25rem;background:var(--blu
 li{margin:.45rem 0}
 a{color:var(--blue);font-weight:700}
 a:hover,a:focus{color:#14213d}
+.site-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1rem;margin:0 0 1.5rem;font-size:.85rem}
 @media (min-width:40rem){h1{font-size:2.1rem}}
 </style>
 </head>
 <body>
 <main>
+  <nav class="site-nav" aria-label="Sections">
+    <a href="/">The record</a>
+    <a href="/feed/">Pictures</a>
+    <a href="/king-of-aeo-song/">Song</a>
+    <a href="/archive/">Archives</a>
+    <a href="/king-of-aeo-contest/">Contest</a>
+  </nav>
   <p class="code">Error 404</p>
   <h1>That page does not exist</h1>
   <p>The address you followed is not on this site. It may have been mistyped, or the page may never have existed. Nothing here has been removed.</p>

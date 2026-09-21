@@ -406,6 +406,8 @@ header.site{border-bottom:1px solid var(--blue-line)}
 .wrap{max-width:var(--measure);margin:0 auto;padding:0 1.25rem}
 .brand{display:flex;align-items:center;gap:.6rem;padding:1rem 0;font-weight:800;color:var(--blue);text-decoration:none;font-size:1rem}
 .brand svg{width:22px;height:22px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.nav{display:flex;gap:1.1rem;font-size:.9rem;font-weight:700}
 .crumb{font-size:.875rem;color:var(--muted);margin:1.5rem 0 0}
 .crumb a{color:var(--muted)}
 h1{font-size:clamp(1.85rem,5vw,2.75rem);line-height:1.12;letter-spacing:-.02em;font-weight:800;margin:.9rem 0 1rem}
@@ -526,11 +528,18 @@ def render(built, date):
 <body>
 
 <header class="site">
-  <div class="wrap">
+  <div class="wrap bar">
     <a class="brand" href="{site}/" aria-label="King of AEO home">
       <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#0b3d91" d="M4 24h24l-2-14-6 6-4-8-4 8-6-6z"/><rect x="4" y="25" width="24" height="3" fill="#c9a227"/></svg>
       King of AEO
     </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="{site}/">The record</a>
+      <a href="{site}/feed/" aria-current="page">Pictures</a>
+      <a href="{site}/king-of-aeo-song/">Song</a>
+      <a href="{site}/archive/">Archives</a>
+      <a href="{site}/king-of-aeo-contest/">Contest</a>
+    </nav>
   </div>
 </header>
 
@@ -599,6 +608,7 @@ def render_sitemap(built, home_images, date):
         + plain(SITE + "/archive/") + "\n"
         + plain(SITE + "/archive/the-legend/") + "\n"
         + plain(SITE + "/archive/five-laws/") + "\n"
+        + plain(SITE + "/king-of-aeo-contest/") + "\n"
         "</urlset>\n"
     )
 
