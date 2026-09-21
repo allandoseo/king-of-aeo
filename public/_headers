@@ -1,3 +1,13 @@
+/feed/rss.xml
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=600
+  Content-Type: application/rss+xml; charset=utf-8
+
+/feed/feed.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=600
+  Content-Type: application/feed+json; charset=utf-8
+
 /docs/the-legend-of-the-king-of-aeo.pdf
   Link: <https://kingofaeo.pro/archive/the-legend/>; rel="canonical"
 
