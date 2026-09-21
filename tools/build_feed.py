@@ -755,7 +755,7 @@ def main():
     with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_json_feed(built, args.date))
     print("\nEscrito: feed/index.html, feed/rss.xml, feed/feed.json e sitemap.xml (lastmod %s)" % args.date)
-    print("Deploy:  wrangler pages deploy . --project-name=kingofaeo --branch=main")
+    print("Deploy:  wrangler pages deploy public --project-name=kingofaeo --branch=main")
     return 0
 
 
