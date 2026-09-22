@@ -359,7 +359,15 @@ def json_ld(built, date):
             for i, b in enumerate(built)
         ],
     })
-    for b in built:
+    # No minimo do Person: creator e about apontam para o @id do Allan, que vive
+    # no grafo da home. Sem um no local com o MESMO @id a referencia fica pendente.
+    graph.append({
+        "@type": "Person",
+        "@id": SITE + "/#allan-oliveira",
+        "name": "Allan Oliveira",
+        "url": SITE + "/",
+    })
+    for i, b in enumerate(built):
         node = {
             "@type": "ImageObject",
             "@id": "%s/#%s" % (SITE, b["id"]),
@@ -368,9 +376,11 @@ def json_ld(built, date):
             "width": b["width"],
             "height": b["height"],
             "encodingFormat": b["mime"],
+            # name = a legenda visivel (o <figcaption>);
+            # description = o alt exato da <img>, sem reescrever.
             "name": b["title"],
             "caption": b["caption"],
-            "description": b["text"] + " " + b["claim"],
+            "description": b["alt"],
             "keywords": ", ".join([b["keyword"]] + list(b.get("terms", []))),
             "creditText": "Allan Oliveira",
             "copyrightNotice": "© 2026 Allan Oliveira",
@@ -380,7 +390,7 @@ def json_ld(built, date):
             "mainEntityOfPage": {"@id": FEED_URL + "#webpage"},
             "subjectOf": {"@id": SITE + "/#article"},
         }
-        if b.get("hero"):
+        if i == 0:
             node["representativeOfPage"] = True
         graph.append(node)
     return json.dumps({"@context": "https://schema.org", "@graph": graph}, indent=2, ensure_ascii=False)
@@ -415,12 +425,13 @@ h1{font-size:clamp(1.85rem,5vw,2.75rem);line-height:1.12;letter-spacing:-.02em;f
 .byline{font-size:.9rem;color:var(--muted);margin:0 0 1.5rem}
 .byline a{color:var(--ink);font-weight:700}
 p{margin:0 0 1.1rem}
-h2{font-size:1.05rem;font-weight:800;line-height:1.25;letter-spacing:-.01em;margin:0}
+h2{font-size:1.05rem;font-weight:800;line-height:1.25;letter-spacing:-.01em;margin:2rem 0 .75rem}
 
 /* feed: uma imagem por vez, rolando */
 .feed{margin:2rem 0 0}
 .post{border:1px solid var(--blue-line);border-radius:12px;overflow:hidden;margin:0 0 1.75rem;background:var(--paper)}
-.post-head{display:flex;align-items:center;gap:.65rem;padding:.7rem .9rem}
+.post-head{display:flex;align-items:center;gap:.65rem;padding:.7rem .9rem;font-size:1.05rem;font-weight:800;line-height:1.25;letter-spacing:-.01em;color:var(--ink)}
+.post figure{margin:0}
 .post-avatar{flex:none;width:34px;height:34px;border-radius:50%;background:var(--blue-soft);display:grid;place-items:center}
 .post-avatar svg{width:18px;height:18px;display:block}
 .post-shot{display:block;background:var(--blue-soft);border-top:1px solid var(--blue-line);border-bottom:1px solid var(--blue-line)}
@@ -463,15 +474,22 @@ def render(built, date):
              '<path fill="#0b3d91" d="M4 24h24l-2-14-6 6-4-8-4 8-6-6z"/>'
              '<rect x="4" y="25" width="24" height="3" fill="#c9a227"/></svg>')
 
+    # A legenda vive num <figcaption> dentro do <figure> que contem a <img>:
+    # e a estrutura que o Google le como contexto da imagem. O <figcaption> e o
+    # primeiro filho do <figure>, entao a legenda continua acima da foto, e ele
+    # herda a classe .post-head para o avatar e o texto ficarem onde estavam.
+    # As tres primeiras imagens carregam eager (a primeira tambem com
+    # fetchpriority) para o Googlebot-Image pegar o inicio da grade sem esperar.
     posts = "\n\n".join(
         '  <article class="post">\n'
-        '    <header class="post-head">\n'
-        '      <span class="post-avatar">%s</span>\n'
-        '      <h2>%s</h2>\n'
-        '    </header>\n'
-        '    <a class="post-shot" href="%s">\n'
-        '      <img src="%s" width="%d" height="%d" alt="%s"%s>\n'
-        '    </a>\n'
+        '    <figure>\n'
+        '      <figcaption class="post-head">\n'
+        '        <span class="post-avatar">%s</span>%s\n'
+        '      </figcaption>\n'
+        '      <a class="post-shot" href="%s">\n'
+        '        <img src="%s" width="%d" height="%d" alt="%s"%s>\n'
+        '      </a>\n'
+        '    </figure>\n'
         '    <div class="post-body">\n'
         '      <p>%s</p>\n'
         '      <p class="claim">%s</p>\n'
@@ -479,7 +497,8 @@ def render(built, date):
         '    </div>\n'
         '  </article>' % (
             crown, e(b["title"]), e(b["href"]), e(b["src"]), b["width"], b["height"], e(b["alt"]),
-            ' fetchpriority="high"' if i == 0 else ' loading="lazy"',
+            ' loading="eager" fetchpriority="high"' if i == 0
+            else (' loading="eager"' if i < 3 else ' loading="lazy"'),
             e(b["text"]), e(b["claim"]), e(b["label"]), b["width"], b["height"],
             e(b["href"]), e(b["anchor_label"]),
         )
@@ -554,6 +573,8 @@ def render(built, date):
   <p class="byline">Illustrations by <a href="{site}/#allan-oliveira" rel="author">Allan Oliveira</a> · Updated {pretty_date}</p>
 
   <p>This is the visual half of a written record. Keep scrolling for the whole set: each picture comes with what it shows, its format and its dimensions, and opens the paragraph it was drawn for. Nothing here stands on its own — the argument, the dated evidence and the sources are all in <a href="{site}/">the article on the home page</a>.</p>
+
+  <h2 id="portraits">The {count} portraits</h2>
 
   <div class="feed">
 {posts}
