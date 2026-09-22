@@ -208,12 +208,16 @@ function validateScoreboard(entries) {
   return entries;
 }
 
+// Um link é interno se for relativo à raiz ou apontar para o próprio domínio.
+// Links internos nunca levam nofollow.
+const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro(\/|$)/i.test(u);
+
 function renderTimelineRows(items) {
   // Array.prototype.sort is stable: ties keep their order in the data file.
   const sorted = [...items].sort((a, b) => (a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : 0));
   return sorted.map((it) => {
     const sources = it.sources.map((s) => (
-      s.url.startsWith('/')
+      isInternal(s.url)
         ? `<a href="${esc(s.url)}">${esc(s.label)}</a>`
         : `<a href="${esc(s.url)}" rel="nofollow noopener">${esc(s.label)}</a>`
     )).join(', ');
@@ -239,9 +243,11 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
   ];
   for (const e of sorted) {
     const citedRaw = typeof e.cited === 'string' ? e.cited.trim() : '';
-    const cited = /^https?:\/\/\S+$/i.test(citedRaw)
-      ? `<a href="${esc(citedRaw)}" rel="nofollow noopener">${esc(citedRaw)}</a>`
-      : esc(citedRaw);
+    // Fontes internas entram como texto, não como link: esta página só pode ter
+    // um link de conteúdo para a home (regra anti-canibalização).
+    const cited = !/^https?:\/\/\S+$/i.test(citedRaw) || isInternal(citedRaw)
+      ? esc(citedRaw)
+      : `<a href="${esc(citedRaw)}" rel="nofollow noopener">${esc(citedRaw)}</a>`;
     lines.push(`    <tr><td>${str(e.date)}</td><td>${str(e.engine)}</td><td>${str(e.prompt)}</td><td>${str(e.named)}</td><td>${cited}</td><td>${str(e.note)}</td></tr>`);
   }
   lines.push('  </tbody>', '</table>');

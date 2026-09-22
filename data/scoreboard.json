@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "date": "2026-09-21",
+    "engine": "Google AI Overview",
+    "prompt": "who is the king of AEO",
+    "named": "James Dooley",
+    "cited": "",
+    "locale": "United States, English, logged-out session",
+    "note": "The overview credited Barchart.com and also pointed to David Quaid as an early pioneer. It split the answer between the SEO title and American Eagle Outfitters."
+  },
+  {
+    "date": "2026-09-21",
+    "engine": "Perplexity",
+    "prompt": "who is the king of AEO",
+    "named": "No single name returned; six claimants listed",
+    "cited": "https://kingofaeo.pro/",
+    "locale": "Brazil, English prompt, logged-out session",
+    "note": "Answered that no universally recognised holder exists, then listed James Dooley, Vithurs, Stephane Morera, Allan Oliveira, David G. Quaid and Julian Goldie. It dated this site's claim to 17-18 September 2026."
+  }
+]
