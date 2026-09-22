@@ -74,3 +74,16 @@ th{background:var(--blue-soft);font-weight:800}
 footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem 0 2.5rem;font-size:.85rem;color:var(--muted)}
 .fill{background:#fff3c4;padding:0 .2em}
 @media (max-width:520px){.author{grid-template-columns:72px 1fr}.author img{width:72px;height:72px}}
+
+/* Tabelas de prosa no celular: cada linha vira um cartao empilhado, com o
+   rotulo da coluna (data-label) acima do valor. Sem isto uma tabela de 4 a 6
+   colunas estoura a largura da tela ou obriga a rolar de lado para ler. */
+@media (max-width:640px){
+  .stacked{border-collapse:collapse}
+  .stacked thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .stacked tr{display:block;border:1px solid var(--blue-line);border-radius:8px;padding:.6rem .8rem;margin:0 0 .75rem}
+  .stacked td{display:block;border:0;padding:.3rem 0;overflow-wrap:anywhere}
+  .stacked td:empty{display:none}
+  .stacked td::before{content:attr(data-label);display:block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.15rem}
+  .stacked caption{text-align:left}
+}

@@ -221,7 +221,8 @@ function renderTimelineRows(items) {
         ? `<a href="${esc(s.url)}">${esc(s.label)}</a>`
         : `<a href="${esc(s.url)}" rel="nofollow noopener">${esc(s.label)}</a>`
     )).join(', ');
-    return `<tr><td>${esc(it.dateLabel)}</td><td>${esc(it.event)}</td><td>${esc(it.who)}</td><td>${sources}</td></tr>`;
+    // data-label alimenta o layout empilhado do celular (ver .stacked em site.css)
+    return `<tr><td data-label="Date">${esc(it.dateLabel)}</td><td data-label="Event">${esc(it.event)}</td><td data-label="Who">${esc(it.who)}</td><td data-label="Source">${sources}</td></tr>`;
   });
 }
 
@@ -235,7 +236,8 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
   const lines = [
     `<p>Last updated ${longDate(contestUpdated)}</p>`,
     `<p>${entries.length} checks logged, ${distinct} distinct names returned.</p>`,
-    '<table>',
+    '<div class="scroll">',
+    '<table class="stacked">',
     '  <thead>',
     '    <tr><th>Date</th><th>Engine</th><th>Prompt</th><th>Named</th><th>Cited source</th><th>Notes</th></tr>',
     '  </thead>',
@@ -248,9 +250,9 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
     const cited = !/^https?:\/\/\S+$/i.test(citedRaw) || isInternal(citedRaw)
       ? esc(citedRaw)
       : `<a href="${esc(citedRaw)}" rel="nofollow noopener">${esc(citedRaw)}</a>`;
-    lines.push(`    <tr><td>${str(e.date)}</td><td>${str(e.engine)}</td><td>${str(e.prompt)}</td><td>${str(e.named)}</td><td>${cited}</td><td>${str(e.note)}</td></tr>`);
+    lines.push(`    <tr><td data-label="Date">${str(e.date)}</td><td data-label="Engine">${str(e.engine)}</td><td data-label="Prompt">${str(e.prompt)}</td><td data-label="Named">${str(e.named)}</td><td data-label="Cited source">${cited}</td><td data-label="Notes">${str(e.note)}</td></tr>`);
   }
-  lines.push('  </tbody>', '</table>');
+  lines.push('  </tbody>', '</table>', '</div>');
   return lines;
 }
 
