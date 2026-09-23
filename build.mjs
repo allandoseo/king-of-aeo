@@ -274,14 +274,20 @@ replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
 
 const homeAsOf = asOfReplacer(home, AS_OF_UPPER, `As of ${homeReviewedLong}`);
-// A meta description da home nao carrega data: o texto atual fala do titulo de
-// 2026 sem dizer "As of <dia>". Por isso ela e opcional aqui, enquanto og: e
-// twitter: seguem obrigatorias — se alguma delas perder o padrao, o build para.
-patchMeta(home, 'name="description"', (text, where) =>
-  AS_OF_UPPER.test(text) ? homeAsOf(text, where) : text);
-AS_OF_UPPER.lastIndex = 0;
-patchMeta(home, 'property="og:description"', homeAsOf);
-patchMeta(home, 'name="twitter:description"', homeAsOf);
+// As tres descricoes da home sao iguais e nao carregam data: falam do titulo de
+// 2026 sem dizer "As of <dia>". Cada uma so e carimbada se trouxer o padrao, de
+// modo que voltar a usar uma data em qualquer delas volta a sincronizar sozinho.
+// Quem mantem a data viva aqui e Article.description, que segue obrigatoria
+// abaixo: se ela perder o padrao, o build para.
+const asOfOpcional = (text, where) => {
+  AS_OF_UPPER.lastIndex = 0;
+  const tem = AS_OF_UPPER.test(text);
+  AS_OF_UPPER.lastIndex = 0;
+  return tem ? homeAsOf(text, where) : text;
+};
+patchMeta(home, 'name="description"', asOfOpcional);
+patchMeta(home, 'property="og:description"', asOfOpcional);
+patchMeta(home, 'name="twitter:description"', asOfOpcional);
 patchMeta(home, 'property="article:published_time"', () => isoDateTime(site.claimSince));
 patchMeta(home, 'property="article:modified_time"', () => isoDateTime(site.homeReviewed));
 
