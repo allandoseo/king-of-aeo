@@ -690,12 +690,64 @@ def render(built, date):
     )
 
 
+def page_lastmod(rel_path, fallback):
+    """Data da ultima alteracao real de uma pagina, para o <lastmod> do sitemap.
+
+    Carimbar a data do build em todas as URLs diz ao Google que o site inteiro
+    mudou toda vez que qualquer coisa e reconstruida, o que queima orcamento de
+    rastreio e deixa o campo sem valor. Aqui a data sai do git:
+
+      - se o arquivo tem alteracao pendente, ele mudou hoje;
+      - senao, vale a data do ultimo commit que o tocou.
+
+    Fora de um repositorio git, ou se o comando falhar, volta para o fallback.
+    """
+    abs_path = os.path.join(ROOT, rel_path)
+    if not os.path.exists(abs_path):
+        return fallback
+    try:
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--", abs_path],
+            cwd=REPO, capture_output=True, text=True, timeout=15,
+        )
+        if dirty.returncode == 0 and dirty.stdout.strip():
+            return fallback  # fallback e a data do build, ou seja, hoje
+        log = subprocess.run(
+            ["git", "log", "-1", "--format=%cs", "--", abs_path],
+            cwd=REPO, capture_output=True, text=True, timeout=15,
+        )
+        stamp = log.stdout.strip()
+        if log.returncode == 0 and re.match(r"^\d{4}-\d{2}-\d{2}$", stamp):
+            return stamp
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return fallback
+
+
 def render_sitemap(built, home_images, date):
+    # loc -> arquivo que gera aquela URL, para datar cada uma pelo proprio historico.
+    # A home e a pagina do concurso entram aqui, mas quem manda nelas no fim e o
+    # build.mjs: ele roda depois e reescreve esses dois <lastmod> com as datas
+    # editoriais de data/site.json. E de proposito, porque nessas duas paginas o
+    # que importa e quando o conteudo foi revisto, nao quando o arquivo mudou.
+    SOURCE = {
+        SITE + "/": "index.html",
+        FEED_URL: "feed/index.html",
+        SITE + "/king-of-aeo-song/": "king-of-aeo-song/index.html",
+        SITE + "/archive/": "archive/index.html",
+        SITE + "/archive/the-legend/": "archive/the-legend/index.html",
+        SITE + "/archive/five-laws/": "archive/five-laws/index.html",
+        SITE + "/king-of-aeo-contest/": "king-of-aeo-contest/index.html",
+    }
+
+    def when(loc):
+        return page_lastmod(SOURCE[loc], date)
+
     def block(loc, urls):
         rows = "\n".join(
             "    <image:image><image:loc>%s</image:loc></image:image>" % u for u in urls
         )
-        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n%s\n  </url>" % (loc, date, rows)
+        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n%s\n  </url>" % (loc, when(loc), rows)
 
     home_urls = ["%s/img/%s" % (SITE, n) for n in home_images]
     feed_urls = [b["url"] for b in built]
@@ -706,7 +758,7 @@ def render_sitemap(built, home_images, date):
     # /archive/ e escrito a mao e nao tem imagem propria: so loc + lastmod.
     # Precisa entrar aqui porque este arquivo reescreve o sitemap inteiro.
     def plain(loc):
-        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (loc, date)
+        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (loc, when(loc))
 
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'

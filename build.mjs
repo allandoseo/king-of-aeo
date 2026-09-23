@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = import.meta.dirname ?? process.cwd();
+const SITE = 'https://kingofaeo.pro';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
   'August', 'September', 'October', 'November', 'December'];
@@ -28,6 +29,7 @@ const FILES = {
   timeline: 'data/timeline.json',
   scoreboard: 'data/scoreboard.json',
   entity: 'data/entity.json',
+  evidence: 'data/evidence.json',
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
   song: 'public/king-of-aeo-song/index.html',
@@ -295,6 +297,81 @@ function patchPersonSameAs(file, person) {
   };
 }
 
+// ---------- tabela de evidências ----------
+
+const EVIDENCE_STATUS = ['Public record', 'Self-reported', 'Independent'];
+
+function validateEvidence(ev) {
+  if (!ev || typeof ev !== 'object' || Array.isArray(ev)) fail(`${FILES.evidence}: expected an object`);
+  for (const k of ['datasetId', 'name', 'description', 'license', 'csvPath', 'csvUrl']) {
+    if (typeof ev[k] !== 'string' || ev[k] === '') fail(`${FILES.evidence}: "${k}" must be a non-empty string`);
+  }
+  if (!Array.isArray(ev.rows) || ev.rows.length === 0) fail(`${FILES.evidence}: "rows" must be a non-empty array`);
+  ev.rows.forEach((r, i) => {
+    if (!r || typeof r !== 'object') fail(`${FILES.evidence}: rows[${i}] is not an object`);
+    for (const k of ['date', 'evidence', 'type', 'where', 'status']) {
+      if (typeof r[k] !== 'string' || r[k] === '') fail(`${FILES.evidence}: rows[${i}] needs a non-empty string "${k}"`);
+    }
+    // O status alimenta a leitura de confiança da página inteira: um valor fora
+    // da lista descreveria a evidência de um jeito que o texto não explica.
+    if (!EVIDENCE_STATUS.includes(r.status)) {
+      fail(`${FILES.evidence}: rows[${i}] status ${JSON.stringify(r.status)} is not one of ${EVIDENCE_STATUS.join(', ')}`);
+    }
+    if (r.pending !== undefined && r.pending !== true) fail(`${FILES.evidence}: rows[${i}] "pending", when present, must be true`);
+    if (!r.pending) {
+      if (!isIsoDate(r.date) && r.date !== 'Ongoing') fail(`${FILES.evidence}: rows[${i}] date must be YYYY-MM-DD or "Ongoing", got ${JSON.stringify(r.date)}`);
+      if (!/^https?:\/\/\S+$/.test(r.where)) fail(`${FILES.evidence}: rows[${i}] "where" must be an absolute http(s) URL`);
+      // Uma linha publicada não pode carregar marcador de pendência.
+      for (const k of ['date', 'evidence', 'type', 'where', 'status']) {
+        if (r[k].includes('[[')) fail(`${FILES.evidence}: rows[${i}] "${k}" still holds a [[…]] placeholder but the row is not marked pending`);
+      }
+    }
+  });
+  return ev;
+}
+
+const published = (ev) => ev.rows.filter((r) => !r.pending);
+
+// Texto visível do link. O href continua sendo a URL inteira; só o rótulo
+// encolhe, porque uma URL de 250 caracteres arrebenta a tabela no celular.
+function shortUrl(u, max = 52) {
+  const bare = u.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return bare.length <= max ? bare : bare.slice(0, max - 1) + '…';
+}
+
+// Linhas visíveis, mais as pendentes como comentário HTML: elas ficam prontas
+// para uso sem que a página mostre um marcador a quem lê ou a um motor de resposta.
+function renderEvidenceRows(ev) {
+  const cell = (label, v) => `<td data-label="${esc(label)}">${v}</td>`;
+  const link = (u) => (isInternal(u)
+    ? `<a href="${esc(u)}" title="${esc(u)}">${esc(shortUrl(u))}</a>`
+    : `<a href="${esc(u)}" rel="noopener" title="${esc(u)}">${esc(shortUrl(u))}</a>`);
+  const row = (r) => '<tr>'
+    + cell('Date', esc(r.date))
+    + cell('Evidence', esc(r.evidence))
+    + cell('Type', esc(r.type))
+    + cell('Where to check', link(r.where))
+    + cell('Status', esc(r.status))
+    + '</tr>';
+  const lines = published(ev).map(row);
+  const waiting = ev.rows.filter((r) => r.pending);
+  if (waiting.length) {
+    lines.push(`<!-- ${waiting.length} linha(s) aguardando dados; ver data/evidence.json:`);
+    for (const r of waiting) lines.push(`     ${r.date} | ${r.evidence} | ${r.type} | ${r.where} | ${r.status}`);
+    lines.push('-->');
+  }
+  return lines;
+}
+
+// CSV RFC 4180: aspas dobradas, e todo campo entre aspas para não depender do
+// conteúdo. Só as linhas publicadas entram.
+function renderEvidenceCsv(ev) {
+  const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const head = ['Date', 'Evidence', 'Type', 'Where to check', 'Status'];
+  const body = published(ev).map((r) => [r.date, r.evidence, r.type, r.where, r.status].map(q).join(','));
+  return [head.map(q).join(','), ...body].join('\r\n') + '\r\n';
+}
+
 // Um link é interno se for relativo à raiz ou apontar para o próprio domínio.
 // Links internos nunca levam nofollow.
 const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro(\/|$)/i.test(u);
@@ -350,6 +427,7 @@ const timeline = validateTimeline(readJson(FILES.timeline));
 const scoreboard = validateScoreboard(readJson(FILES.scoreboard));
 const entity = validateEntity(readJson(FILES.entity));
 const footerRow = renderFooterRow(entity.footer);
+const evidence = validateEvidence(readJson(FILES.evidence));
 
 // contestUpdated = max(contestEdited, every scoreboard entry date) — ISO string compare.
 const contestUpdated = [site.contestEdited, ...scoreboard.map((e) => e.date)]
@@ -361,6 +439,7 @@ const homeReviewedLong = longDate(site.homeReviewed);
 const home = readText(FILES.home);
 replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
+replaceMarker(home, 'evidence', block(home, 'evidence', renderEvidenceRows(evidence)));
 
 const homeAsOf = asOfReplacer(home, AS_OF_UPPER, `As of ${homeReviewedLong}`);
 // As tres descricoes da home sao iguais e nao carregam data: falam do titulo de
@@ -400,6 +479,27 @@ patchJsonLd(home, (nodes, ofType) => {
   if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
   q.acceptedAnswer.text = asOfReplacer(home, AS_OF_LOWER, `as of ${homeReviewedLong}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
   patchPersonSameAs(home, entity.person)(nodes);
+
+  // Dataset da tabela de evidências. Upsert pelo @id, para o build ser idempotente
+  // e para uma edição manual do nó não virar um segundo nó duplicado.
+  const wanted = {
+    '@type': 'Dataset',
+    '@id': evidence.datasetId,
+    name: evidence.name,
+    description: evidence.description,
+    url: `${SITE}/#evidence`,
+    creator: { '@id': entity.person.id },
+    license: evidence.license,
+    isAccessibleForFree: true,
+    dateModified: isoDateTime(site.homeReviewed),
+    distribution: {
+      '@type': 'DataDownload',
+      encodingFormat: 'text/csv',
+      contentUrl: evidence.csvUrl,
+    },
+  };
+  const at = nodes.findIndex((n) => n && n['@id'] === evidence.datasetId);
+  if (at === -1) nodes.push(wanted); else nodes[at] = wanted;
 });
 patchFooterRow(home, footerRow);
 
@@ -437,3 +537,13 @@ writeText(home);
 writeText(contest);
 writeText(song);
 writeText(sitemap);
+
+// O CSV que o Dataset.distribution aponta. Fica fora do sitemap de proposito:
+// o sitemap so lista paginas HTML.
+{
+  const abs = path.join(ROOT, evidence.csvPath);
+  const out = renderEvidenceCsv(evidence);
+  const before = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : null;
+  fs.writeFileSync(abs, out, 'utf8');
+  console.log(`${before === out ? 'unchanged' : 'wrote'} ${evidence.csvPath} (${published(evidence).length} linhas)`);
+}
