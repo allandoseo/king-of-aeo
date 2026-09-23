@@ -30,6 +30,7 @@ const FILES = {
   entity: 'data/entity.json',
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
+  song: 'public/king-of-aeo-song/index.html',
   sitemap: 'public/sitemap.xml',
 };
 
@@ -265,14 +266,32 @@ function patchFooterRow(file, row) {
   file.text = file.text.replace(found[0][0], () => row);
 }
 
-// Escreve o sameAs no no Person cujo @id bate com o de data/entity.json.
-// Usar o @id (e nao so o @type) importa: a pagina do concurso lista outros
-// Person, os rivais, que nao podem receber esta lista.
+// Coleta todo no Person com este @id em qualquer profundidade do grafo.
+// A busca precisa ser recursiva porque nem sempre o no esta na raiz do @graph:
+// na pagina da musica ele vive dentro de MusicRecording.creator.
+function findPersonsById(node, id, out = []) {
+  if (Array.isArray(node)) {
+    for (const v of node) findPersonsById(v, id, out);
+  } else if (node && typeof node === 'object') {
+    // Uma referencia pendente ({"@id": …} sozinho) nao e o no real: nao recebe sameAs.
+    const isRef = Object.keys(node).length === 1 && node['@id'] !== undefined;
+    if (hasType(node, 'Person') && node['@id'] === id && !isRef) out.push(node);
+    for (const v of Object.values(node)) findPersonsById(v, id, out);
+  }
+  return out;
+}
+
+// Escreve sameAs e url no no Person cujo @id bate com o de data/entity.json.
+// Filtrar por @id, e nao so por @type, importa: a home e a pagina do concurso
+// citam os rivais como Person dentro de mentions, sem @id, e eles precisam
+// continuar sem sameAs. Nos com @id igual se fundem no grafo, entao duas
+// paginas que declarem o mesmo @id com listas diferentes se contradizem.
 function patchPersonSameAs(file, person) {
   return (nodes) => {
-    const found = nodes.filter((n) => hasType(n, 'Person') && n['@id'] === person.id);
+    const found = findPersonsById(nodes, person.id);
     if (found.length !== 1) fail(`${file.rel}: expected exactly 1 Person node with "@id":"${person.id}", found ${found.length}`);
     found[0].sameAs = [...person.sameAs];
+    found[0].url = person.url;
   };
 }
 
@@ -358,8 +377,10 @@ const asOfOpcional = (text, where) => {
 patchMeta(home, 'name="description"', asOfOpcional);
 patchMeta(home, 'property="og:description"', asOfOpcional);
 patchMeta(home, 'name="twitter:description"', asOfOpcional);
-patchMeta(home, 'property="article:published_time"', () => isoDateTime(site.claimSince));
-patchMeta(home, 'property="article:modified_time"', () => isoDateTime(site.homeReviewed));
+// A home declara og:type=website, entao nao carrega article:*. A data de
+// revisao vive em og:updated_time; datePublished e dateModified seguem no
+// JSON-LD (Article e WebPage), que e onde o Google realmente le as datas.
+patchMeta(home, 'property="og:updated_time"', () => isoDateTime(site.homeReviewed));
 
 patchJsonLd(home, (nodes, ofType) => {
   for (const n of ofType('Article')) {
@@ -400,6 +421,13 @@ patchJsonLd(contest, (nodes, ofType) => {
 });
 patchFooterRow(contest, footerRow);
 
+// --- song: public/king-of-aeo-song/index.html ---
+// A pagina e escrita a mao, mas declara o mesmo Person @id das outras tres.
+// O build so sincroniza esse no; o resto do grafo (musica, video, FAQ) fica
+// como esta. Sem isto a pagina mantinha uma lista propria e defasada.
+const song = readText(FILES.song);
+patchJsonLd(song, (nodes) => { patchPersonSameAs(song, entity.person)(nodes); });
+
 // --- sitemap: public/sitemap.xml ---
 const sitemap = readText(FILES.sitemap);
 patchSitemap(sitemap, site.homeReviewed, contestUpdated);
@@ -407,4 +435,5 @@ patchSitemap(sitemap, site.homeReviewed, contestUpdated);
 // Everything validated and patched in memory; only now touch the disk.
 writeText(home);
 writeText(contest);
+writeText(song);
 writeText(sitemap);
