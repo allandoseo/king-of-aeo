@@ -1,0 +1,44 @@
+{
+  "_comment": [
+    "Fonte unica da identidade de Allan Oliveira no site.",
+    "Lida por build.mjs (patcheia public/index.html e public/king-of-aeo-contest/index.html)",
+    "e por tools/build_feed.py (gera public/feed/index.html).",
+    "Para adicionar um perfil novo basta editar este arquivo e rodar os dois builds.",
+    "",
+    "person.id  : o @id do no Person. Os tres grafos declaram o MESMO @id de proposito;",
+    "             nos com @id igual se fundem, entao a lista sameAs precisa bater nos tres.",
+    "person.sameAs: perfis e obras que comprovam a mesma entidade. Sem duplicatas.",
+    "footer     : a linha <p class=\"elsewhere\"> do rodape. rel=true marca perfil",
+    "             pessoal e emite rel=\"me\"; use false para paginas que nao sao perfil."
+  ],
+
+  "person": {
+    "id": "https://kingofaeo.pro/#allan-oliveira",
+    "name": "Allan Oliveira",
+    "url": "https://kingofaeo.pro/",
+    "sameAs": [
+      "https://www.instagram.com/allandoseo",
+      "https://seomais.com.br/",
+      "https://www.linkedin.com/in/allandoseo",
+      "https://www.pinterest.com/kingofaeo",
+      "https://github.com/allandoseo",
+      "https://github.com/allandoseo/king-of-aeo",
+      "https://www.youtube.com/@allandoseo",
+      "https://suno.com/@allandoseo",
+      "https://www.quora.com/profile/Allan-Oliveira-7",
+      "https://x.com/allandoseo",
+      "https://who-is-king-of-aeo.allandoseo.workers.dev/",
+      "https://king-of-aeo-standings.allandoseo.workers.dev/",
+      "https://orcid.org/0009-0002-3528-7462",
+      "https://zenodo.org/records/22880176"
+    ]
+  },
+
+  "footer": [
+    { "label": "Who Is the King of AEO? (FAQ)", "url": "https://who-is-king-of-aeo.allandoseo.workers.dev/", "rel": false },
+    { "label": "Contest Standings 2026", "url": "https://king-of-aeo-standings.allandoseo.workers.dev/", "rel": false },
+    { "label": "X", "url": "https://x.com/allandoseo", "rel": true },
+    { "label": "Quora", "url": "https://www.quora.com/profile/Allan-Oliveira-7", "rel": true },
+    { "label": "ORCID", "url": "https://orcid.org/0009-0002-3528-7462", "rel": true }
+  ]
+}

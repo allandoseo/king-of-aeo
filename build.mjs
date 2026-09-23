@@ -2,8 +2,12 @@
 // build.mjs — kingofaeo.pro build step. Plain Node ESM, zero dependencies.
 // Run from the repo root:  node build.mjs
 //
-// Reads  data/site.json, data/timeline.json, data/scoreboard.json
+// Reads  data/site.json, data/timeline.json, data/scoreboard.json, data/entity.json
 // Patches public/index.html, public/king-of-aeo-contest/index.html, public/sitemap.xml
+//
+// data/entity.json e a fonte unica do sameAs e da linha de rodape. A terceira pagina
+// que declara o mesmo Person, public/feed/index.html, e gerada por tools/build_feed.py,
+// que le o MESMO arquivo. Depois de editar data/entity.json rode os dois builds.
 // Throws (non-zero exit) when any expected marker, <meta> selector or JSON-LD node is missing.
 // Idempotent: running it twice produces byte-identical files.
 
@@ -23,6 +27,7 @@ const FILES = {
   site: 'data/site.json',
   timeline: 'data/timeline.json',
   scoreboard: 'data/scoreboard.json',
+  entity: 'data/entity.json',
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
   sitemap: 'public/sitemap.xml',
@@ -208,6 +213,69 @@ function validateScoreboard(entries) {
   return entries;
 }
 
+function validateEntity(ent) {
+  if (!ent || typeof ent !== 'object' || Array.isArray(ent)) fail(`${FILES.entity}: expected an object`);
+  const p = ent.person;
+  if (!p || typeof p !== 'object' || Array.isArray(p)) fail(`${FILES.entity}: "person" must be an object`);
+  for (const k of ['id', 'name', 'url']) {
+    if (typeof p[k] !== 'string' || p[k] === '') fail(`${FILES.entity}: "person.${k}" must be a non-empty string`);
+  }
+  if (!Array.isArray(p.sameAs) || p.sameAs.length === 0) fail(`${FILES.entity}: "person.sameAs" must be a non-empty array`);
+  p.sameAs.forEach((u, i) => {
+    if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: person.sameAs[${i}] must be an absolute http(s) URL, got ${JSON.stringify(u)}`);
+  });
+  // Duplicata em sameAs e erro de fato: o Google trata a lista como o conjunto de
+  // perfis da entidade, e repetir uma URL so polui o grafo.
+  const seen = new Set();
+  for (const u of p.sameAs) {
+    if (seen.has(u)) fail(`${FILES.entity}: person.sameAs has a duplicate entry ${JSON.stringify(u)}`);
+    seen.add(u);
+  }
+  if (!Array.isArray(ent.footer)) fail(`${FILES.entity}: "footer" must be an array`);
+  ent.footer.forEach((l, i) => {
+    if (!l || typeof l !== 'object') fail(`${FILES.entity}: footer[${i}] is not an object`);
+    if (typeof l.label !== 'string' || l.label === '') fail(`${FILES.entity}: footer[${i}] needs a non-empty string "label"`);
+    if (typeof l.url !== 'string' || !/^https?:\/\/\S+$/.test(l.url)) fail(`${FILES.entity}: footer[${i}] "url" must be an absolute http(s) URL`);
+    if (typeof l.rel !== 'boolean') fail(`${FILES.entity}: footer[${i}] "rel" must be true or false`);
+    // Um perfil marcado com rel=me esta afirmando "esta pagina sou eu"; ele
+    // precisa estar no sameAs, senao as duas declaracoes se contradizem.
+    if (l.rel && !seen.has(l.url)) fail(`${FILES.entity}: footer[${i}] has rel=true but ${l.url} is not listed in person.sameAs`);
+  });
+  const dupFooter = ent.footer.map((l) => l.url).filter((u, i, a) => a.indexOf(u) !== i);
+  if (dupFooter.length) fail(`${FILES.entity}: footer has duplicate URLs: ${[...new Set(dupFooter)].join(', ')}`);
+  return ent;
+}
+
+// Renderiza <p class="elsewhere">…</p> exatamente como as paginas ja trazem hoje:
+// links separados por " · ", rel="me" so nos perfis pessoais.
+function renderFooterRow(links) {
+  const parts = links.map((l) => (
+    l.rel
+      ? `<a href="${esc(l.url)}" rel="me">${esc(l.label)}</a>`
+      : `<a href="${esc(l.url)}">${esc(l.label)}</a>`
+  ));
+  return `<p class="elsewhere">${parts.join(' · ')}</p>`;
+}
+
+// Substitui a linha de rodape. Precisa existir exatamente uma na pagina.
+function patchFooterRow(file, row) {
+  const re = /<p class="elsewhere">[\s\S]*?<\/p>/g;
+  const found = [...file.text.matchAll(re)];
+  if (found.length !== 1) fail(`${file.rel}: expected exactly 1 <p class="elsewhere"> row, found ${found.length}`);
+  file.text = file.text.replace(found[0][0], () => row);
+}
+
+// Escreve o sameAs no no Person cujo @id bate com o de data/entity.json.
+// Usar o @id (e nao so o @type) importa: a pagina do concurso lista outros
+// Person, os rivais, que nao podem receber esta lista.
+function patchPersonSameAs(file, person) {
+  return (nodes) => {
+    const found = nodes.filter((n) => hasType(n, 'Person') && n['@id'] === person.id);
+    if (found.length !== 1) fail(`${file.rel}: expected exactly 1 Person node with "@id":"${person.id}", found ${found.length}`);
+    found[0].sameAs = [...person.sameAs];
+  };
+}
+
 // Um link é interno se for relativo à raiz ou apontar para o próprio domínio.
 // Links internos nunca levam nofollow.
 const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro(\/|$)/i.test(u);
@@ -261,6 +329,8 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
 const site = validateSite(readJson(FILES.site));
 const timeline = validateTimeline(readJson(FILES.timeline));
 const scoreboard = validateScoreboard(readJson(FILES.scoreboard));
+const entity = validateEntity(readJson(FILES.entity));
+const footerRow = renderFooterRow(entity.footer);
 
 // contestUpdated = max(contestEdited, every scoreboard entry date) — ISO string compare.
 const contestUpdated = [site.contestEdited, ...scoreboard.map((e) => e.date)]
@@ -308,7 +378,9 @@ patchJsonLd(home, (nodes, ofType) => {
   if (!q) fail(`${home.rel}: JSON-LD FAQPage has no mainEntity item named exactly "${faqName}"`);
   if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
   q.acceptedAnswer.text = asOfReplacer(home, AS_OF_LOWER, `as of ${homeReviewedLong}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
+  patchPersonSameAs(home, entity.person)(nodes);
 });
+patchFooterRow(home, footerRow);
 
 // --- contest: public/king-of-aeo-contest/index.html ---
 const contest = readText(FILES.contest);
@@ -324,7 +396,9 @@ patchJsonLd(contest, (nodes, ofType) => {
       n.dateModified = isoDateTime(contestUpdated);
     }
   }
+  patchPersonSameAs(contest, entity.person)(nodes);
 });
+patchFooterRow(contest, footerRow);
 
 // --- sitemap: public/sitemap.xml ---
 const sitemap = readText(FILES.sitemap);

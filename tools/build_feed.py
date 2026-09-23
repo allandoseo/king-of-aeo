@@ -34,7 +34,11 @@ import struct
 import subprocess
 import sys
 
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.join(REPO, "public")
+# Fonte unica do sameAs e da linha de rodape, compartilhada com build.mjs.
+# Editar la vale para as tres paginas que declaram o mesmo Person.
+ENTITY = os.path.join(REPO, "data", "entity.json")
 IMG_DIR = os.path.join(ROOT, "img")
 FEED_IMG_DIR = os.path.join(IMG_DIR, "feed")
 JPG_DIR = os.path.join(FEED_IMG_DIR, "jpg")
@@ -62,6 +66,77 @@ DEFAULT_ANCHOR = "answer"
 DEFAULT_ANCHOR_LABEL = "Read the full answer on the home page"
 MAX_DENSITY = {"king of aeo": 1.0, "aeo": 2.2}
 SONG_LASTMOD = "2026-09-21"  # /king-of-aeo-song/ e escrita a mao; o build so a declara no sitemap
+
+
+def load_entity():
+    """Le data/entity.json e devolve (person, footer_html).
+
+    As mesmas regras que build.mjs aplica: sameAs sem duplicatas, so URLs
+    absolutas, e todo link marcado com rel=me precisa constar no sameAs.
+    Se o arquivo estiver errado o build para em vez de publicar um grafo torto.
+    """
+    def bad(msg):
+        raise SystemExit("data/entity.json: " + msg)
+
+    try:
+        with open(ENTITY, encoding="utf-8") as f:
+            ent = json.load(f)
+    except FileNotFoundError:
+        bad("arquivo nao encontrado em %s" % ENTITY)
+    except ValueError as exc:
+        bad("JSON invalido (%s)" % exc)
+
+    person = ent.get("person")
+    if not isinstance(person, dict):
+        bad('"person" precisa ser um objeto')
+    for key in ("id", "name", "url"):
+        if not isinstance(person.get(key), str) or not person[key]:
+            bad('"person.%s" precisa ser uma string nao vazia' % key)
+    same = person.get("sameAs")
+    if not isinstance(same, list) or not same:
+        bad('"person.sameAs" precisa ser uma lista nao vazia')
+    for i, url in enumerate(same):
+        if not isinstance(url, str) or not re.match(r"^https?://\S+$", url):
+            bad("person.sameAs[%d] precisa ser uma URL http(s) absoluta" % i)
+    dups = sorted({u for u in same if same.count(u) > 1})
+    if dups:
+        bad("person.sameAs tem duplicata: %s" % ", ".join(dups))
+
+    footer = ent.get("footer")
+    if not isinstance(footer, list):
+        bad('"footer" precisa ser uma lista')
+    seen = set(same)
+    parts = []
+    urls = []
+    for i, link in enumerate(footer):
+        if not isinstance(link, dict):
+            bad("footer[%d] nao e um objeto" % i)
+        label, url, rel = link.get("label"), link.get("url"), link.get("rel")
+        if not isinstance(label, str) or not label:
+            bad('footer[%d] precisa de "label" string nao vazia' % i)
+        if not isinstance(url, str) or not re.match(r"^https?://\S+$", url):
+            bad('footer[%d] "url" precisa ser uma URL http(s) absoluta' % i)
+        if not isinstance(rel, bool):
+            bad('footer[%d] "rel" precisa ser true ou false' % i)
+        if rel and url not in seen:
+            bad("footer[%d] tem rel=true mas %s nao esta no person.sameAs" % (i, url))
+        if url in urls:
+            bad("footer tem URL repetida: %s" % url)
+        urls.append(url)
+        parts.append('<a href="%s"%s>%s</a>' % (e(url), ' rel="me"' if rel else "", e(label)))
+
+    return person, '<p class="elsewhere">%s</p>' % " · ".join(parts)
+
+
+_ENTITY = None
+
+
+def entity():
+    """load_entity() com cache: o grafo e o rodape pedem o mesmo arquivo."""
+    global _ENTITY
+    if _ENTITY is None:
+        _ENTITY = load_entity()
+    return _ENTITY
 
 
 # --------------------------------------------------------------------------- dimensões
@@ -361,29 +436,21 @@ def json_ld(built, date):
     })
     # No Person: creator e about apontam para o @id do Allan, que vive no grafo
     # da home. Sem um no local com o MESMO @id a referencia fica pendente.
-    # O sameAs repete o da home; nos com o mesmo @id se fundem, entao as tres
-    # paginas que declaram este Person precisam trazer a mesma lista.
+    # Nos com o mesmo @id se fundem, entao as tres paginas que declaram este
+    # Person precisam trazer a mesma lista. Por isso ela vem de data/entity.json,
+    # o mesmo arquivo que build.mjs usa na home e na pagina do concurso.
+    person, _ = entity()
+    if person["id"] != SITE + "/#allan-oliveira":
+        raise SystemExit(
+            "data/entity.json: person.id e %s, mas este feed referencia %s/#allan-oliveira"
+            % (person["id"], SITE)
+        )
     graph.append({
         "@type": "Person",
-        "@id": SITE + "/#allan-oliveira",
-        "name": "Allan Oliveira",
-        "url": SITE + "/",
-        "sameAs": [
-            "https://www.instagram.com/allandoseo",
-            "https://seomais.com.br/",
-            "https://www.linkedin.com/in/allandoseo",
-            "https://www.pinterest.com/kingofaeo",
-            "https://github.com/allandoseo",
-            "https://github.com/allandoseo/king-of-aeo",
-            "https://www.youtube.com/@allandoseo",
-            "https://suno.com/@allandoseo",
-            "https://www.quora.com/profile/Allan-Oliveira-7",
-            "https://x.com/allandoseo",
-            "https://who-is-king-of-aeo.allandoseo.workers.dev/",
-            "https://king-of-aeo-standings.allandoseo.workers.dev/",
-            "https://orcid.org/0009-0002-3528-7462",
-            "https://zenodo.org/records/22880176",
-        ],
+        "@id": person["id"],
+        "name": person["name"],
+        "url": person["url"],
+        "sameAs": list(person["sameAs"]),
     })
     for i, b in enumerate(built):
         node = {
@@ -609,7 +676,7 @@ def render(built, date):
 <footer class="site">
   <div class="wrap">
     <p>© 2026 Allan Oliveira · Cabo Frio, RJ, Brazil. Illustrations may be reproduced with credit and a link to <a href="{site}/">kingofaeo.pro</a>.</p>
-    <p class="elsewhere"><a href="https://who-is-king-of-aeo.allandoseo.workers.dev/">Who Is the King of AEO? (FAQ)</a> · <a href="https://king-of-aeo-standings.allandoseo.workers.dev/">Contest Standings 2026</a> · <a href="https://x.com/allandoseo" rel="me">X</a> · <a href="https://www.quora.com/profile/Allan-Oliveira-7" rel="me">Quora</a> · <a href="https://orcid.org/0009-0002-3528-7462" rel="me">ORCID</a></p>
+    {elsewhere}
   </div>
 </footer>
 
@@ -619,6 +686,7 @@ def render(built, date):
         site=SITE, feed=FEED_URL, count=count, pretty_date=pretty_date,
         hero_url=hero["url"], hero_w=hero["width"], hero_h=hero["height"], hero_alt=e(hero["alt"]),
         jsonld=json_ld(built, date), css=CSS, posts=posts, keywords=e(feed_keywords(built)),
+        elsewhere=entity()[1],
     )
 
 
