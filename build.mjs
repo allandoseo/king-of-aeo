@@ -274,7 +274,12 @@ replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
 
 const homeAsOf = asOfReplacer(home, AS_OF_UPPER, `As of ${homeReviewedLong}`);
-patchMeta(home, 'name="description"', homeAsOf);
+// A meta description da home nao carrega data: o texto atual fala do titulo de
+// 2026 sem dizer "As of <dia>". Por isso ela e opcional aqui, enquanto og: e
+// twitter: seguem obrigatorias — se alguma delas perder o padrao, o build para.
+patchMeta(home, 'name="description"', (text, where) =>
+  AS_OF_UPPER.test(text) ? homeAsOf(text, where) : text);
+AS_OF_UPPER.lastIndex = 0;
 patchMeta(home, 'property="og:description"', homeAsOf);
 patchMeta(home, 'name="twitter:description"', homeAsOf);
 patchMeta(home, 'property="article:published_time"', () => isoDateTime(site.claimSince));
