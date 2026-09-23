@@ -328,7 +328,7 @@ def json_ld(built, date):
         "url": FEED_URL,
         "name": "King of AEO (2026): the picture record of Allan Oliveira",
         "description": "Portraits of Allan Oliveira, King of AEO since 2026. Every picture states the claim, carries a date and links to the evidence on kingofaeo.pro.",
-        "inLanguage": "en",
+        "inLanguage": "en-US",
         "isPartOf": {"@id": SITE + "/#website"},
         "about": {"@id": SITE + "/#allan-oliveira"},
         "datePublished": "2026-09-20T09:00:00-03:00",
@@ -506,7 +506,7 @@ def render(built, date):
     )
 
     return """<!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
