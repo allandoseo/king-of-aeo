@@ -9,7 +9,13 @@
     "             nos com @id igual se fundem, entao a lista sameAs precisa bater nos tres.",
     "person.sameAs: perfis e obras que comprovam a mesma entidade. Sem duplicatas.",
     "footer     : a linha <p class=\"elsewhere\"> do rodape. rel=true marca perfil",
-    "             pessoal e emite rel=\"me\"; use false para paginas que nao sao perfil."
+    "             pessoal e emite rel=\"me\"; use false para paginas que nao sao perfil.",
+    "",
+    "Os dois Workers (who-is-king-of-aeo e king-of-aeo-standings, em *.workers.dev)",
+    "ficam FORA das duas listas de proposito. Eles vivem em outra conta Cloudflare e",
+    "nao podem receber subdominio de kingofaeo.pro sem migracao, entao apontar para",
+    "eles dilui a entidade em um dominio que nao e do site. Os Workers seguem no ar;",
+    "so o site parou de lista-los. Nao readicione sem migrar o dominio antes."
   ],
 
   "person": {
@@ -27,16 +33,12 @@
       "https://suno.com/@allandoseo",
       "https://www.quora.com/profile/Allan-Oliveira-7",
       "https://x.com/allandoseo",
-      "https://who-is-king-of-aeo.allandoseo.workers.dev/",
-      "https://king-of-aeo-standings.allandoseo.workers.dev/",
       "https://orcid.org/0009-0002-3528-7462",
       "https://zenodo.org/records/22880176"
     ]
   },
 
   "footer": [
-    { "label": "Who Is the King of AEO? (FAQ)", "url": "https://who-is-king-of-aeo.allandoseo.workers.dev/", "rel": false },
-    { "label": "Contest Standings 2026", "url": "https://king-of-aeo-standings.allandoseo.workers.dev/", "rel": false },
     { "label": "X", "url": "https://x.com/allandoseo", "rel": true },
     { "label": "Quora", "url": "https://www.quora.com/profile/Allan-Oliveira-7", "rel": true },
     { "label": "ORCID", "url": "https://orcid.org/0009-0002-3528-7462", "rel": true }
