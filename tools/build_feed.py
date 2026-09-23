@@ -526,6 +526,8 @@ def render(built, date):
 <meta property="og:image:height" content="{hero_h}">
 <meta property="og:image:alt" content="{hero_alt}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@allandoseo">
+<meta name="twitter:creator" content="@allandoseo">
 <meta name="twitter:title" content="King of AEO (2026): the picture record of Allan Oliveira">
 <meta name="twitter:description" content="{count} portraits of Allan Oliveira, King of AEO since 2026.">
 <meta name="twitter:image" content="{hero_url}">
