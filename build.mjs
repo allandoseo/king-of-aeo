@@ -334,7 +334,7 @@ const published = (ev) => ev.rows.filter((r) => !r.pending);
 
 // Texto visível do link. O href continua sendo a URL inteira; só o rótulo
 // encolhe, porque uma URL de 250 caracteres arrebenta a tabela no celular.
-function shortUrl(u, max = 52) {
+function shortUrl(u, max = 34) {
   const bare = u.replace(/^https?:\/\//, '').replace(/\/$/, '');
   return bare.length <= max ? bare : bare.slice(0, max - 1) + '…';
 }

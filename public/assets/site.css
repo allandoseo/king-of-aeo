@@ -87,3 +87,20 @@ footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem
   .stacked td::before{content:attr(data-label);display:block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.15rem}
   .stacked caption{text-align:left}
 }
+
+/* Tabela de evidencias da home: Date e Status sao curtos e nao devem quebrar,
+   senao a coluna Status e empurrada para fora do .scroll e some da vista.
+   Abaixo de 640px a tabela vira cartao empilhado (.stacked) e a regra nao vale. */
+@media (min-width:641px){
+  .evidence th:first-child,.evidence td:first-child,
+  .evidence th:last-child,.evidence td:last-child{white-space:nowrap}
+}
+
+/* A tabela de evidencias tem 5 colunas e nao cabe na largura da coluna de texto:
+   a ultima, Status, ficava fora da area visivel e so aparecia com scroll lateral,
+   justo a coluna que diz como cada linha e verificada. Acima de 1040px ela se
+   alarga para os dois lados, centrada na coluna, ate 900px. Abaixo disso vale o
+   .scroll normal e, abaixo de 640px, o cartao empilhado. */
+@media (min-width:1040px){
+  .scroll.wide{width:900px;margin-left:calc((100% - 900px) / 2)}
+}
