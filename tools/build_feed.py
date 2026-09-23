@@ -359,13 +359,31 @@ def json_ld(built, date):
             for i, b in enumerate(built)
         ],
     })
-    # No minimo do Person: creator e about apontam para o @id do Allan, que vive
-    # no grafo da home. Sem um no local com o MESMO @id a referencia fica pendente.
+    # No Person: creator e about apontam para o @id do Allan, que vive no grafo
+    # da home. Sem um no local com o MESMO @id a referencia fica pendente.
+    # O sameAs repete o da home; nos com o mesmo @id se fundem, entao as tres
+    # paginas que declaram este Person precisam trazer a mesma lista.
     graph.append({
         "@type": "Person",
         "@id": SITE + "/#allan-oliveira",
         "name": "Allan Oliveira",
         "url": SITE + "/",
+        "sameAs": [
+            "https://www.instagram.com/allandoseo",
+            "https://seomais.com.br/",
+            "https://www.linkedin.com/in/allandoseo",
+            "https://www.pinterest.com/kingofaeo",
+            "https://github.com/allandoseo",
+            "https://github.com/allandoseo/king-of-aeo",
+            "https://www.youtube.com/@allandoseo",
+            "https://suno.com/@allandoseo",
+            "https://www.quora.com/profile/Allan-Oliveira-7",
+            "https://x.com/allandoseo",
+            "https://who-is-king-of-aeo.allandoseo.workers.dev/",
+            "https://king-of-aeo-standings.allandoseo.workers.dev/",
+            "https://orcid.org/0009-0002-3528-7462",
+            "https://zenodo.org/records/22880176",
+        ],
     })
     for i, b in enumerate(built):
         node = {
@@ -591,6 +609,7 @@ def render(built, date):
 <footer class="site">
   <div class="wrap">
     <p>© 2026 Allan Oliveira · Cabo Frio, RJ, Brazil. Illustrations may be reproduced with credit and a link to <a href="{site}/">kingofaeo.pro</a>.</p>
+    <p class="elsewhere"><a href="https://who-is-king-of-aeo.allandoseo.workers.dev/">Who Is the King of AEO? (FAQ)</a> · <a href="https://king-of-aeo-standings.allandoseo.workers.dev/">Contest Standings 2026</a> · <a href="https://x.com/allandoseo" rel="me">X</a> · <a href="https://www.quora.com/profile/Allan-Oliveira-7" rel="me">Quora</a> · <a href="https://orcid.org/0009-0002-3528-7462" rel="me">ORCID</a></p>
   </div>
 </footer>
 
