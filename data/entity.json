@@ -11,6 +11,13 @@
     "footer     : a linha <p class=\"elsewhere\"> do rodape. rel=true marca perfil",
     "             pessoal e emite rel=\"me\"; use false para paginas que nao sao perfil.",
     "",
+    "dofollow   : URLs que sao do Allan mas nao entram no sameAs, por serem obra e",
+    "             nao perfil (o DOI, os videos, a BibliaJovem). Junto com o sameAs,",
+    "             esta lista define quem NAO leva rel=\"nofollow\". Todo link externo",
+    "             fora dela e nofollow: o site nao passa autoridade para terceiros,",
+    "             nem para rivais nem para referencia neutra. O build aplica isso",
+    "             sozinho em todas as paginas, entao link novo ja nasce certo.",
+    "",
     "Os dois Workers (who-is-king-of-aeo e king-of-aeo-standings, em *.workers.dev)",
     "ficam FORA das duas listas de proposito. Eles vivem em outra conta Cloudflare e",
     "nao podem receber subdominio de kingofaeo.pro sem migracao, entao apontar para",
@@ -37,6 +44,14 @@
       "https://zenodo.org/records/22880176"
     ]
   },
+
+  "dofollow": [
+    "https://doi.org/10.5281/zenodo.22880176",
+    "https://bibliajovem.com",
+    "https://youtu.be/4b-dHmjz6O8",
+    "https://www.youtube.com/watch?v=4b-dHmjz6O8",
+    "https://www.youtube.com/shorts/VRwybxHdPCI"
+  ],
 
   "footer": [
     { "label": "X", "url": "https://x.com/allandoseo", "rel": true },

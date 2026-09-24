@@ -33,6 +33,11 @@ const FILES = {
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
   song: 'public/king-of-aeo-song/index.html',
+  // As tres de /archive/ sao escritas a mao e o build so passa nelas para
+  // aplicar a politica de rel dos links externos.
+  archiveIndex: 'public/archive/index.html',
+  archiveLegend: 'public/archive/the-legend/index.html',
+  archiveFiveLaws: 'public/archive/five-laws/index.html',
   sitemap: 'public/sitemap.xml',
 };
 
@@ -374,7 +379,61 @@ function renderEvidenceCsv(ev) {
 
 // Um link é interno se for relativo à raiz ou apontar para o próprio domínio.
 // Links internos nunca levam nofollow.
-const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro(\/|$)/i.test(u);
+const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro([/?#]|$)/i.test(u);
+
+// ---------- rel dos links externos ----------
+//
+// Política: o site só passa autoridade para a própria entidade. Todo link externo
+// que não esteja no sameAs nem na lista dofollow de data/entity.json recebe
+// rel="nofollow". Isso vale para os rivais, mas também para referência neutra:
+// nada fora da entidade ganha voto deste domínio.
+//
+// A regra roda no build sobre o HTML pronto, em vez de ficar escrita à mão em
+// cada <a>, para que um link novo já nasça com o rel certo.
+
+const stripSlash = (u) => u.replace(/\/+$/, '');
+
+function ownPrefixes(ent) {
+  return [...ent.person.sameAs, ...(ent.dofollow || [])].map(stripSlash);
+}
+
+// Casa por prefixo de caminho, não por host: github.com/allandoseo é dele, mas
+// github.com/outra-pessoa não. O caractere seguinte precisa ser um separador,
+// senão /allandoseo casaria com /allandoseo-falso.
+function isOwnUrl(u, prefixes) {
+  const bare = stripSlash(u);
+  return prefixes.some((p) => bare === p || (bare.startsWith(p) && /^[/?#]/.test(bare.slice(p.length))));
+}
+
+const isExternalHttp = (u) => /^https?:\/\//i.test(u) && !isInternal(u);
+
+function normalizeExternalRel(file, prefixes) {
+  const stats = { own: 0, nofollow: 0, changed: 0 };
+  file.text = file.text.replace(/<a\b[^>]*>/g, (tag) => {
+    const href = tag.match(/\shref="([^"]*)"/);
+    if (!href || !isExternalHttp(href[1])) return tag;
+    const relM = tag.match(/\srel="([^"]*)"/);
+    const tokens = relM ? relM[1].split(/\s+/).filter(Boolean) : [];
+    let next;
+    if (isOwnUrl(href[1], prefixes)) {
+      stats.own += 1;
+      next = tokens.filter((t) => t !== 'nofollow');
+    } else {
+      stats.nofollow += 1;
+      next = tokens.includes('nofollow') ? [...tokens] : ['nofollow', ...tokens];
+      if (!next.includes('noopener')) next.push('noopener');
+    }
+    const before = relM ? relM[1] : null;
+    const after = next.join(' ');
+    if (before === after || (before === null && after === '')) return tag;
+    stats.changed += 1;
+    if (relM) {
+      return after === '' ? tag.replace(relM[0], '') : tag.replace(relM[0], ` rel="${after}"`);
+    }
+    return tag.replace(/\s*>$/, ` rel="${after}">`);
+  });
+  return stats;
+}
 
 function renderTimelineRows(items) {
   // Array.prototype.sort is stable: ties keep their order in the data file.
@@ -528,6 +587,17 @@ patchFooterRow(contest, footerRow);
 const song = readText(FILES.song);
 patchJsonLd(song, (nodes) => { patchPersonSameAs(song, entity.person)(nodes); });
 
+// --- /archive/: so a politica de rel ---
+const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws].map(readText);
+
+// --- rel dos links externos, em todas as paginas que este build controla ---
+// A /feed/ fica de fora porque quem a escreve e tools/build_feed.py. Os links
+// externos dela sao todos da propria entidade (rodape e caixa do autor), entao
+// nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
+const prefixes = ownPrefixes(entity);
+const relPages = [home, contest, song, ...archive];
+const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)]);
+
 // --- sitemap: public/sitemap.xml ---
 const sitemap = readText(FILES.sitemap);
 patchSitemap(sitemap, site.homeReviewed, contestUpdated);
@@ -536,7 +606,12 @@ patchSitemap(sitemap, site.homeReviewed, contestUpdated);
 writeText(home);
 writeText(contest);
 writeText(song);
+for (const f of archive) writeText(f);
 writeText(sitemap);
+
+for (const [rel, s] of relStats) {
+  console.log(`  rel  ${rel.padEnd(38)} ${String(s.own).padStart(2)} dofollow (proprios)  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);
+}
 
 // O CSV que o Dataset.distribution aponta. Fica fora do sitemap de proposito:
 // o sitemap so lista paginas HTML.
