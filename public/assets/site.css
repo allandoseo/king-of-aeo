@@ -66,9 +66,6 @@ th{background:var(--blue-soft);font-weight:800}
 .tldr p{margin:0 0 .5rem;font-size:.95rem}
 .tldr p:last-child{margin:0}
 .video{position:relative;aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;margin:1.5rem 0}
-.video img{width:100%;height:100%;object-fit:cover;display:block}
-.video button{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;cursor:pointer;color:#fff;font:inherit;font-weight:800;font-size:1rem;display:grid;place-items:center}
-.video button span{background:var(--blue);padding:.7rem 1.2rem;border-radius:999px}
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .video-caption{font-size:.85rem;color:var(--muted);margin:-1rem 0 1.5rem}
 .faq details{border-bottom:1px solid var(--blue-line);padding:.6rem 0}

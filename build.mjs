@@ -30,6 +30,7 @@ const FILES = {
   scoreboard: 'data/scoreboard.json',
   entity: 'data/entity.json',
   evidence: 'data/evidence.json',
+  videos: 'data/videos.json',
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
   song: 'public/king-of-aeo-song/index.html',
@@ -401,6 +402,71 @@ function renderEvidenceCsv(ev) {
 // Links internos nunca levam nofollow.
 const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro([/?#]|$)/i.test(u);
 
+// ---------- vídeos embedados na home ----------
+//
+// Uma entrada em data/videos.json gera o player, a legenda, o nó VideoObject e a
+// entrada em Article.video. Antes o HTML e o JSON-LD eram escritos à mão e
+// separados, e foi assim que a home passou a declarar dois vídeos da Ahrefs como
+// obra do Allan. Aqui a autoria sai de `owner` e do canal declarado, e um slot
+// sem vídeo não deixa nó órfão no grafo.
+
+const VIDEO_SLOTS = ['video-1', 'video-2'];
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+const ISO_DURATION = /^PT(?:\d+H)?(?:\d+M)?(?:\d+S)?$/;
+
+function validateVideos(doc) {
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) fail(`${FILES.videos}: expected an object`);
+  if (!Array.isArray(doc.videos)) fail(`${FILES.videos}: "videos" must be an array`);
+  const slots = new Set();
+  const ids = new Set();
+  doc.videos.forEach((v, i) => {
+    if (!v || typeof v !== 'object') fail(`${FILES.videos}: videos[${i}] is not an object`);
+    for (const k of ['slot', 'youtubeId', 'channel', 'name', 'description', 'uploadDate', 'duration', 'caption']) {
+      if (typeof v[k] !== 'string' || v[k] === '') fail(`${FILES.videos}: videos[${i}] needs a non-empty string "${k}"`);
+    }
+    if (typeof v.owner !== 'boolean') fail(`${FILES.videos}: videos[${i}] "owner" must be true or false; say plainly whether the channel is Allan's`);
+    if (!VIDEO_SLOTS.includes(v.slot)) fail(`${FILES.videos}: videos[${i}] slot ${JSON.stringify(v.slot)} is not one of ${VIDEO_SLOTS.join(', ')}`);
+    if (slots.has(v.slot)) fail(`${FILES.videos}: slot ${v.slot} is used more than once`);
+    slots.add(v.slot);
+    if (!YT_ID.test(v.youtubeId)) fail(`${FILES.videos}: videos[${i}] youtubeId must be the 11-character YouTube id, got ${JSON.stringify(v.youtubeId)}`);
+    if (ids.has(v.youtubeId)) fail(`${FILES.videos}: youtubeId ${v.youtubeId} appears twice`);
+    ids.add(v.youtubeId);
+    if (!isIsoDate(v.uploadDate)) fail(`${FILES.videos}: videos[${i}] uploadDate must be YYYY-MM-DD, got ${JSON.stringify(v.uploadDate)}`);
+    if (!ISO_DURATION.test(v.duration)) fail(`${FILES.videos}: videos[${i}] duration must be ISO 8601 like PT6M30S, got ${JSON.stringify(v.duration)}`);
+  });
+  return doc.videos;
+}
+
+// Vídeo de terceiro leva o crédito na própria legenda, sem depender de alguém
+// lembrar de escrevê-lo.
+function videoCaption(v) {
+  return v.owner ? v.caption : `${v.caption} Video by ${v.channel}.`;
+}
+
+function renderVideo(v) {
+  return [
+    `<div class="video" id="${esc(v.slot)}">`,
+    `  <iframe src="https://www.youtube-nocookie.com/embed/${esc(v.youtubeId)}?rel=0" title="${esc(v.name)}" width="560" height="315" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
+    '</div>',
+    `<p class="video-caption">${esc(videoCaption(v))}</p>`,
+  ];
+}
+
+function videoNode(v, personId) {
+  return {
+    '@type': 'VideoObject',
+    '@id': `${SITE}/#${v.slot}`,
+    name: v.name,
+    description: v.description,
+    thumbnailUrl: `https://i.ytimg.com/vi/${v.youtubeId}/maxresdefault.jpg`,
+    uploadDate: isoDateTime(v.uploadDate),
+    duration: v.duration,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${v.youtubeId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${v.youtubeId}`,
+    author: v.owner ? { '@id': personId } : { '@type': 'Organization', name: v.channel },
+  };
+}
+
 // ---------- rel dos links externos ----------
 //
 // Política: rel="nofollow" em todo link externo, exceto três grupos declarados em
@@ -512,6 +578,7 @@ const scoreboard = validateScoreboard(readJson(FILES.scoreboard));
 const entity = validateEntity(readJson(FILES.entity));
 const footerRow = renderFooterRow(entity.footer);
 const evidence = validateEvidence(readJson(FILES.evidence));
+const videos = validateVideos(readJson(FILES.videos));
 
 // contestUpdated = max(contestEdited, every scoreboard entry date) — ISO string compare.
 const contestUpdated = [site.contestEdited, ...scoreboard.map((e) => e.date)]
@@ -524,6 +591,10 @@ const home = readText(FILES.home);
 replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
 replaceMarker(home, 'evidence', block(home, 'evidence', renderEvidenceRows(evidence)));
+for (const slot of VIDEO_SLOTS) {
+  const v = videos.find((x) => x.slot === slot);
+  replaceMarker(home, slot, v ? block(home, slot, renderVideo(v)) : '');
+}
 
 const homeAsOf = asOfReplacer(home, AS_OF_UPPER, `As of ${homeReviewedLong}`);
 // As tres descricoes da home sao iguais e nao carregam data: falam do titulo de
@@ -584,6 +655,22 @@ patchJsonLd(home, (nodes, ofType) => {
   };
   const at = nodes.findIndex((n) => n && n['@id'] === evidence.datasetId);
   if (at === -1) nodes.push(wanted); else nodes[at] = wanted;
+
+  // Vídeos: apaga os nós de todos os slots e reescreve só os declarados, para que
+  // remover um vídeo do JSON não deixe um VideoObject órfão apontando para um
+  // player que não existe mais na página.
+  const slotIds = VIDEO_SLOTS.map((s) => `${SITE}/#${s}`);
+  for (let i = nodes.length - 1; i >= 0; i -= 1) {
+    if (nodes[i] && slotIds.includes(nodes[i]['@id']) && hasType(nodes[i], 'VideoObject')) nodes.splice(i, 1);
+  }
+  const declared = VIDEO_SLOTS
+    .map((s) => videos.find((v) => v.slot === s))
+    .filter(Boolean);
+  for (const v of declared) nodes.push(videoNode(v, entity.person.id));
+  for (const art of ofType('Article')) {
+    if (declared.length) art.video = declared.map((v) => ({ '@id': `${SITE}/#${v.slot}` }));
+    else delete art.video;
+  }
 });
 patchFooterRow(home, footerRow);
 
