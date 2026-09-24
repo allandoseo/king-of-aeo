@@ -13,6 +13,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 const ROOT = import.meta.dirname ?? process.cwd();
 const SITE = 'https://kingofaeo.pro';
@@ -402,6 +403,38 @@ function renderEvidenceCsv(ev) {
 // Links internos nunca levam nofollow.
 const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro([/?#]|$)/i.test(u);
 
+// ---------- versão das folhas de estilo ----------
+//
+// O CSS é servido com cache de horas. Quando o HTML muda e depende de uma regra
+// nova, quem já tinha a folha antiga em cache recebe a página nova com o estilo
+// velho: foi assim que o player da música apareceu por cima do texto do card.
+//
+// A correção é o endereço da folha mudar sempre que o conteúdo dela mudar. O
+// build carimba ?v=<hash do arquivo> em cada <link>, então HTML e CSS não têm
+// como ficar dessincronizados, e cada versão pode ser cacheada por muito tempo.
+
+function cssVersion(rel) {
+  const abs = path.join(ROOT, 'public', rel.replace(/^\//, ''));
+  if (!fs.existsSync(abs)) fail(`${rel}: stylesheet not found at ${abs}`);
+  return createHash('sha256').update(fs.readFileSync(abs)).digest('hex').slice(0, 10);
+}
+
+// Reescreve href="/assets/x.css" e href="/assets/x.css?v=antigo" para a versão atual.
+// Zero ocorrências é válido: /king-of-aeo-song/ traz o CSS embutido na própria página.
+function stampStylesheets(file) {
+  const re = /(<link\b[^>]*\shref=")(\/assets\/[A-Za-z0-9._-]+\.css)(?:\?v=[A-Za-z0-9]+)?(")/g;
+  let n = 0;
+  file.text = file.text.replace(re, (_, open, href, close) => {
+    n += 1;
+    return `${open}${href}?v=${cssVersion(href)}${close}`;
+  });
+  // Uma folha local sem versão anula a proteção inteira: a página voltaria a poder
+  // receber HTML novo com CSS velho em cache.
+  const naked = file.text.match(/href="\/assets\/[A-Za-z0-9._-]+\.css"(?!\?)/);
+  if (naked) fail(`${file.rel}: stylesheet ${naked[0]} was left without a ?v= version`);
+  return n;
+}
+
 // ---------- vídeos embedados na home ----------
 //
 // Uma entrada em data/videos.json gera o player, a legenda, o nó VideoObject e a
@@ -708,6 +741,8 @@ const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws]
 // nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
 const prefixes = dofollowPrefixes(entity);
 const relPages = [home, contest, song, ...archive];
+const stamped = relPages.reduce((n, f) => n + stampStylesheets(f), 0);
+if (stamped === 0) fail('no local stylesheet link was versioned; check the <link> markup');
 const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)]);
 
 // --- sitemap: public/sitemap.xml ---

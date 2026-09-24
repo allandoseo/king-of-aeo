@@ -1,3 +1,6 @@
+/assets/*
+  Cache-Control: public, max-age=604800, must-revalidate
+
 /feed/rss.xml
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=600
