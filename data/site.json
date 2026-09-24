@@ -1,6 +1,22 @@
 {
+  "_comment": [
+    "Datas de PUBLICACAO das duas paginas editoriais. So elas ficam aqui.",
+    "Quando uma pagina nasceu e fato, nao da para derivar do arquivo, que muda",
+    "a cada edicao.",
+    "",
+    "As datas de MODIFICACAO nao vivem mais aqui. Antes eram homeReviewed e",
+    "contestEdited, escritas a mao, e envelheciam sem ninguem notar: a pagina do",
+    "concurso dizia 'editado em 21/09' tres dias depois de ter mudado de fato.",
+    "Agora o build.mjs pega do git, por arquivo: alteracao pendente vale hoje,",
+    "arquivo limpo vale a data do ultimo commit que o tocou. Isso alimenta de uma",
+    "vez o texto visivel, og:updated_time, o dateModified do JSON-LD e o lastmod",
+    "do sitemap. Mexer em data/timeline.json, por exemplo, muda a pagina do",
+    "concurso e por consequencia a data dela.",
+    "",
+    "Se voce readicionar homeReviewed ou contestEdited aqui, o build para e avisa,",
+    "em vez de ignorar o campo e deixar duas fontes de verdade disputando."
+  ],
+
   "claimSince": "2026-09-17",
-  "homeReviewed": "2026-09-24",
-  "contestPublished": "2026-09-21",
-  "contestEdited": "2026-09-21"
+  "contestPublished": "2026-09-21"
 }

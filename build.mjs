@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = import.meta.dirname ?? process.cwd();
 const SITE = 'https://kingofaeo.pro';
@@ -190,8 +191,15 @@ function patchSitemap(file, homeLastmod, contestLastmod) {
 
 function validateSite(site) {
   if (!site || typeof site !== 'object' || Array.isArray(site)) fail(`${FILES.site}: expected an object`);
-  for (const k of ['claimSince', 'homeReviewed', 'contestPublished', 'contestEdited']) {
+  for (const k of ['claimSince', 'contestPublished']) {
     if (!isIsoDate(site[k])) fail(`${FILES.site}: "${k}" must be a YYYY-MM-DD date, got ${JSON.stringify(site[k])}`);
+  }
+  // Datas de modificação escritas à mão envelhecem em silêncio. Se alguém as
+  // trouxer de volta, o build avisa em vez de ignorá-las e deixar duas fontes.
+  for (const k of ['homeReviewed', 'contestEdited']) {
+    if (site[k] !== undefined) {
+      fail(`${FILES.site}: "${k}" is no longer read; the modification date now comes from git (see gitLastChange). Remove the field.`);
+    }
   }
   return site;
 }
@@ -403,6 +411,37 @@ function renderEvidenceCsv(ev) {
 // Um link é interno se for relativo à raiz ou apontar para o próprio domínio.
 // Links internos nunca levam nofollow.
 const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro([/?#]|$)/i.test(u);
+
+// ---------- data real de alteração de cada página ----------
+//
+// A data de modificação não é declarada à mão. Uma data fixa em data/site.json
+// envelhece sem ninguém notar: a página do concurso dizia "editado em 21/09"
+// três dias depois de ter mudado de fato. Ela sai do git:
+//
+//   arquivo com alteração pendente  -> hoje, porque mudou e ainda não foi commitado
+//   arquivo limpo                   -> a data do último commit que o tocou
+//
+// É estável entre execuções: o build carimba a data, o arquivo passa a contê-la,
+// e no build seguinte a mesma data volta. E é automática por dependência: mexer
+// em data/timeline.json muda a página do concurso, logo muda a data dela.
+
+// O site declara tudo em -03:00, então o dia vira no fuso de Brasília.
+function siteToday() {
+  return new Date(Date.now() - (3 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+}
+
+function gitLastChange(rel, fallback) {
+  const abs = path.join(ROOT, rel);
+  const git = (args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 15000 });
+  try {
+    if (git(['status', '--porcelain', '--', abs]).trim()) return fallback;
+    const stamp = git(['log', '-1', '--format=%cs', '--', abs]).trim();
+    if (DATE_RE.test(stamp)) return stamp;
+  } catch {
+    // Fora de um repositório git, ou git indisponível: assume hoje.
+  }
+  return fallback;
+}
 
 // ---------- versão das folhas de estilo ----------
 //
@@ -646,11 +685,20 @@ const footerRow = renderFooterRow(entity.footer);
 const evidence = validateEvidence(readJson(FILES.evidence));
 const videos = validateVideos(readJson(FILES.videos));
 
-// contestUpdated = max(contestEdited, every scoreboard entry date) — ISO string compare.
-const contestUpdated = [site.contestEdited, ...scoreboard.map((e) => e.date)]
-  .reduce((a, b) => (b > a ? b : a));
+// As duas datas de modificação saem do git, não de data/site.json. Só as datas de
+// publicação continuam declaradas: quando uma página nasceu é fato editorial, não
+// dá para derivar do arquivo, que muda a cada edição.
+const today = siteToday();
+const homeReviewed = gitLastChange(FILES.home, today);
+const contestUpdated = gitLastChange(FILES.contest, today);
+const homeReviewedLong = longDate(homeReviewed);
 
-const homeReviewedLong = longDate(site.homeReviewed);
+for (const [label, published, modified] of [
+  ['home', site.claimSince, homeReviewed],
+  ['contest', site.contestPublished, contestUpdated],
+]) {
+  if (modified < published) fail(`${label}: computed modified date ${modified} is before the declared publication date ${published}`);
+}
 
 // --- home: public/index.html ---
 const home = readText(FILES.home);
@@ -680,18 +728,18 @@ patchMeta(home, 'name="twitter:description"', asOfOpcional);
 // A home declara og:type=website, entao nao carrega article:*. A data de
 // revisao vive em og:updated_time; datePublished e dateModified seguem no
 // JSON-LD (Article e WebPage), que e onde o Google realmente le as datas.
-patchMeta(home, 'property="og:updated_time"', () => isoDateTime(site.homeReviewed));
+patchMeta(home, 'property="og:updated_time"', () => isoDateTime(homeReviewed));
 
 patchJsonLd(home, (nodes, ofType) => {
   for (const n of ofType('Article')) {
     n.datePublished = isoDateTime(site.claimSince);
-    n.dateModified = isoDateTime(site.homeReviewed);
+    n.dateModified = isoDateTime(homeReviewed);
     if (typeof n.description !== 'string') fail(`${home.rel}: JSON-LD Article has no "description"`);
     n.description = homeAsOf(n.description, 'JSON-LD Article.description');
   }
   for (const n of ofType('WebPage')) {
     n.datePublished = isoDateTime(site.claimSince);
-    n.dateModified = isoDateTime(site.homeReviewed);
+    n.dateModified = isoDateTime(homeReviewed);
   }
   const faqName = 'Who is the King of AEO?';
   const items = ofType('FAQPage').flatMap((f) => (Array.isArray(f.mainEntity) ? f.mainEntity : []));
@@ -712,7 +760,7 @@ patchJsonLd(home, (nodes, ofType) => {
     creator: { '@id': entity.person.id },
     license: evidence.license,
     isAccessibleForFree: true,
-    dateModified: isoDateTime(site.homeReviewed),
+    dateModified: isoDateTime(homeReviewed),
     distribution: {
       '@type': 'DataDownload',
       encodingFormat: 'text/csv',
@@ -742,7 +790,7 @@ patchFooterRow(home, footerRow);
 
 // --- contest: public/king-of-aeo-contest/index.html ---
 const contest = readText(FILES.contest);
-replaceMarker(contest, 'contestEditedLong', longDate(site.contestEdited));
+replaceMarker(contest, 'contestEditedLong', longDate(contestUpdated));
 replaceMarker(contest, 'timeline', block(contest, 'timeline', renderTimelineRows(timeline)));
 replaceMarker(contest, 'scoreboard', block(contest, 'scoreboard', renderScoreboardLines(scoreboard, site.contestPublished, contestUpdated)));
 patchMeta(contest, 'property="article:published_time"', () => isoDateTime(site.contestPublished));
@@ -780,7 +828,7 @@ const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)])
 
 // --- sitemap: public/sitemap.xml ---
 const sitemap = readText(FILES.sitemap);
-patchSitemap(sitemap, site.homeReviewed, contestUpdated);
+patchSitemap(sitemap, homeReviewed, contestUpdated);
 
 // --- sitemap de video: so o bloco da home, do mesmo data/videos.json ---
 const videoSitemap = readText(FILES.videoSitemap);
