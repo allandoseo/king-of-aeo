@@ -41,6 +41,7 @@ const FILES = {
   archiveLegend: 'public/archive/the-legend/index.html',
   archiveFiveLaws: 'public/archive/five-laws/index.html',
   sitemap: 'public/sitemap.xml',
+  videoSitemap: 'public/sitemap-videos.xml',
 };
 
 // ---------- helpers ----------
@@ -485,6 +486,38 @@ function renderVideo(v) {
   ];
 }
 
+// O sitemap de vídeo pede a duração em segundos, não em ISO 8601.
+function durationSeconds(iso) {
+  const m = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);
+  if (!m) fail(`${FILES.videos}: cannot convert duration ${JSON.stringify(iso)} to seconds`);
+  return (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
+}
+
+// Bloco <url> da home no sitemap de vídeo, um <video:video> por vídeo declarado.
+// A entrada de /king-of-aeo-song/ continua escrita à mão no arquivo, fora do
+// marcador: ela tem tags e descrição próprias que não vêm de data/videos.json.
+function renderHomeVideoSitemap(list, channelUrl) {
+  if (list.length === 0) return '';
+  const rows = list.map((v) => [
+    '    <video:video>',
+    `      <video:thumbnail_loc>https://i.ytimg.com/vi/${esc(v.youtubeId)}/maxresdefault.jpg</video:thumbnail_loc>`,
+    `      <video:title>${esc(v.name)}</video:title>`,
+    `      <video:description>${esc(v.description)}</video:description>`,
+    `      <video:player_loc allow_embed="yes">https://www.youtube-nocookie.com/embed/${esc(v.youtubeId)}</video:player_loc>`,
+    `      <video:content_loc>https://www.youtube.com/watch?v=${esc(v.youtubeId)}</video:content_loc>`,
+    `      <video:duration>${durationSeconds(v.duration)}</video:duration>`,
+    `      <video:publication_date>${isoDateTime(v.uploadDate)}</video:publication_date>`,
+    '      <video:family_friendly>yes</video:family_friendly>',
+    '      <video:requires_subscription>no</video:requires_subscription>',
+    '      <video:live>no</video:live>',
+    v.owner
+      ? `      <video:uploader info="${esc(channelUrl)}">${esc(v.channel)}</video:uploader>`
+      : `      <video:uploader>${esc(v.channel)}</video:uploader>`,
+    '    </video:video>',
+  ].join('\n')).join('\n');
+  return `\n  <url>\n    <loc>${SITE}/</loc>\n${rows}\n  </url>\n`;
+}
+
 function videoNode(v, personId) {
   return {
     '@type': 'VideoObject',
@@ -749,12 +782,21 @@ const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)])
 const sitemap = readText(FILES.sitemap);
 patchSitemap(sitemap, site.homeReviewed, contestUpdated);
 
+// --- sitemap de video: so o bloco da home, do mesmo data/videos.json ---
+const videoSitemap = readText(FILES.videoSitemap);
+const ytChannel = entity.person.sameAs.find((u) => /^https:\/\/www\.youtube\.com\//.test(u)) || '';
+replaceMarker(videoSitemap, 'homeVideos', renderHomeVideoSitemap(
+  VIDEO_SLOTS.map((s2) => videos.find((v) => v.slot === s2)).filter(Boolean),
+  ytChannel,
+));
+
 // Everything validated and patched in memory; only now touch the disk.
 writeText(home);
 writeText(contest);
 writeText(song);
 for (const f of archive) writeText(f);
 writeText(sitemap);
+writeText(videoSitemap);
 
 for (const [rel, s] of relStats) {
   console.log(`  rel  ${rel.padEnd(38)} ${String(s.dofollow).padStart(2)} dofollow  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);
