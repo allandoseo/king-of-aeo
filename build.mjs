@@ -251,6 +251,26 @@ function validateEntity(ent) {
   });
   const dupFooter = ent.footer.map((l) => l.url).filter((u, i, a) => a.indexOf(u) !== i);
   if (dupFooter.length) fail(`${FILES.entity}: footer has duplicate URLs: ${[...new Set(dupFooter)].join(', ')}`);
+
+  // dofollow: as duas listas que escapam do nofollow, além do sameAs.
+  if (ent.dofollow !== undefined) {
+    const d = ent.dofollow;
+    if (!d || typeof d !== 'object' || Array.isArray(d)) fail(`${FILES.entity}: "dofollow" must be an object with "own" and "reference" arrays`);
+    for (const key of Object.keys(d)) {
+      if (key !== 'own' && key !== 'reference') fail(`${FILES.entity}: dofollow has unknown list "${key}"; only "own" and "reference" exist`);
+      if (!Array.isArray(d[key])) fail(`${FILES.entity}: "dofollow.${key}" must be an array`);
+      d[key].forEach((u, i) => {
+        if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: dofollow.${key}[${i}] must be an absolute http(s) URL`);
+        // Repetir no sameAs não quebra nada, mas indica que a entrada está no
+        // lugar errado e que alguém vai editar a cópia que não vale.
+        const inSameAs = [...seen].some((s) => stripSlash(s) === stripSlash(u));
+        if (inSameAs) fail(`${FILES.entity}: dofollow.${key}[${i}] ${u} is already in person.sameAs; remove one of the two`);
+      });
+    }
+    const all = [...(d.own || []), ...(d.reference || [])].map(stripSlash);
+    const dupAll = all.filter((u, i, a) => a.indexOf(u) !== i);
+    if (dupAll.length) fail(`${FILES.entity}: dofollow has duplicate URLs: ${[...new Set(dupAll)].join(', ')}`);
+  }
   return ent;
 }
 
@@ -383,24 +403,25 @@ const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.p
 
 // ---------- rel dos links externos ----------
 //
-// Política: o site só passa autoridade para a própria entidade. Todo link externo
-// que não esteja no sameAs nem na lista dofollow de data/entity.json recebe
-// rel="nofollow". Isso vale para os rivais, mas também para referência neutra:
-// nada fora da entidade ganha voto deste domínio.
+// Política: rel="nofollow" em todo link externo, exceto três grupos declarados em
+// data/entity.json — o sameAs da entidade, dofollow.own (obra do Allan que não é
+// perfil) e dofollow.reference (referência neutra que não disputa o título).
+// Qualquer host fora disso, rival ou não, não recebe voto deste domínio.
 //
 // A regra roda no build sobre o HTML pronto, em vez de ficar escrita à mão em
 // cada <a>, para que um link novo já nasça com o rel certo.
 
 const stripSlash = (u) => u.replace(/\/+$/, '');
 
-function ownPrefixes(ent) {
-  return [...ent.person.sameAs, ...(ent.dofollow || [])].map(stripSlash);
+function dofollowPrefixes(ent) {
+  const d = ent.dofollow || {};
+  return [...ent.person.sameAs, ...(d.own || []), ...(d.reference || [])].map(stripSlash);
 }
 
 // Casa por prefixo de caminho, não por host: github.com/allandoseo é dele, mas
 // github.com/outra-pessoa não. O caractere seguinte precisa ser um separador,
 // senão /allandoseo casaria com /allandoseo-falso.
-function isOwnUrl(u, prefixes) {
+function isDofollowUrl(u, prefixes) {
   const bare = stripSlash(u);
   return prefixes.some((p) => bare === p || (bare.startsWith(p) && /^[/?#]/.test(bare.slice(p.length))));
 }
@@ -408,15 +429,15 @@ function isOwnUrl(u, prefixes) {
 const isExternalHttp = (u) => /^https?:\/\//i.test(u) && !isInternal(u);
 
 function normalizeExternalRel(file, prefixes) {
-  const stats = { own: 0, nofollow: 0, changed: 0 };
+  const stats = { dofollow: 0, nofollow: 0, changed: 0 };
   file.text = file.text.replace(/<a\b[^>]*>/g, (tag) => {
     const href = tag.match(/\shref="([^"]*)"/);
     if (!href || !isExternalHttp(href[1])) return tag;
     const relM = tag.match(/\srel="([^"]*)"/);
     const tokens = relM ? relM[1].split(/\s+/).filter(Boolean) : [];
     let next;
-    if (isOwnUrl(href[1], prefixes)) {
-      stats.own += 1;
+    if (isDofollowUrl(href[1], prefixes)) {
+      stats.dofollow += 1;
       next = tokens.filter((t) => t !== 'nofollow');
     } else {
       stats.nofollow += 1;
@@ -439,10 +460,13 @@ function renderTimelineRows(items) {
   // Array.prototype.sort is stable: ties keep their order in the data file.
   const sorted = [...items].sort((a, b) => (a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : 0));
   return sorted.map((it) => {
+    // Sem nofollow aqui de proposito: quem decide rel de link externo e o passe
+    // normalizeExternalRel, que roda depois sobre o HTML pronto. Duplicar a regra
+    // nos dois lugares fazia uma desfazer a outra a cada build.
     const sources = it.sources.map((s) => (
       isInternal(s.url)
         ? `<a href="${esc(s.url)}">${esc(s.label)}</a>`
-        : `<a href="${esc(s.url)}" rel="nofollow noopener">${esc(s.label)}</a>`
+        : `<a href="${esc(s.url)}" rel="noopener">${esc(s.label)}</a>`
     )).join(', ');
     // data-label alimenta o layout empilhado do celular (ver .stacked em site.css)
     return `<tr><td data-label="Date">${esc(it.dateLabel)}</td><td data-label="Event">${esc(it.event)}</td><td data-label="Who">${esc(it.who)}</td><td data-label="Source">${sources}</td></tr>`;
@@ -470,9 +494,10 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
     const citedRaw = typeof e.cited === 'string' ? e.cited.trim() : '';
     // Fontes internas entram como texto, não como link: esta página só pode ter
     // um link de conteúdo para a home (regra anti-canibalização).
+    // O rel externo sai do passe normalizeExternalRel, nao daqui.
     const cited = !/^https?:\/\/\S+$/i.test(citedRaw) || isInternal(citedRaw)
       ? esc(citedRaw)
-      : `<a href="${esc(citedRaw)}" rel="nofollow noopener">${esc(citedRaw)}</a>`;
+      : `<a href="${esc(citedRaw)}" rel="noopener">${esc(citedRaw)}</a>`;
     lines.push(`    <tr><td data-label="Date">${str(e.date)}</td><td data-label="Engine">${str(e.engine)}</td><td data-label="Prompt">${str(e.prompt)}</td><td data-label="Named">${str(e.named)}</td><td data-label="Cited source">${cited}</td><td data-label="Notes">${str(e.note)}</td></tr>`);
   }
   lines.push('  </tbody>', '</table>', '</div>');
@@ -594,7 +619,7 @@ const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws]
 // A /feed/ fica de fora porque quem a escreve e tools/build_feed.py. Os links
 // externos dela sao todos da propria entidade (rodape e caixa do autor), entao
 // nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
-const prefixes = ownPrefixes(entity);
+const prefixes = dofollowPrefixes(entity);
 const relPages = [home, contest, song, ...archive];
 const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)]);
 
@@ -610,7 +635,7 @@ for (const f of archive) writeText(f);
 writeText(sitemap);
 
 for (const [rel, s] of relStats) {
-  console.log(`  rel  ${rel.padEnd(38)} ${String(s.own).padStart(2)} dofollow (proprios)  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);
+  console.log(`  rel  ${rel.padEnd(38)} ${String(s.dofollow).padStart(2)} dofollow  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);
 }
 
 // O CSV que o Dataset.distribution aponta. Fica fora do sitemap de proposito:
