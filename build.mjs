@@ -516,19 +516,42 @@ function videoCaption(v) {
   return v.owner ? v.caption : `${v.caption} Video by ${v.channel}.`;
 }
 
-// A capa entra como fundo do contêiner, não só dentro do player. O iframe é
-// lazy: até ele carregar, o quadro ficaria preto, e quem passa rolando via um
-// retângulo vazio no lugar do vídeo. Com o fundo, a capa aparece de imediato e
-// o player carrega por cima dela.
+// A capa do vídeo fica limpa até alguém clicar. O iframe do YouTube, mesmo antes
+// do play, cobre a arte com barra de título, nome do canal, selo de IA e botão
+// "assistir no YouTube". Aqui a página mostra só a capa, e o player entra no
+// clique, já tocando. De quebra, a página não carrega o JavaScript do YouTube
+// (cerca de 1 MB por player) para quem nunca aperta play.
+//
+// O gatilho é um link para o YouTube, não um botão: sem JavaScript ele abre o
+// vídeo lá, em vez de não fazer nada.
 function renderVideo(v) {
   const capa = `https://i.ytimg.com/vi/${v.youtubeId}/maxresdefault.jpg`;
   return [
     `<div class="video" id="${esc(v.slot)}" style="background-image:url(${esc(capa)})">`,
-    `  <iframe src="https://www.youtube-nocookie.com/embed/${esc(v.youtubeId)}?rel=0" title="${esc(v.name)}" width="560" height="315" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
+    `  <a class="video-play" href="https://www.youtube.com/watch?v=${esc(v.youtubeId)}" data-yt="${esc(v.youtubeId)}" aria-label="Play: ${esc(v.name)}">`,
+    '    <svg viewBox="0 0 80 80" aria-hidden="true" focusable="false"><circle cx="40" cy="40" r="38" fill="currentColor"/><path d="M33 25 59 40 33 55z" fill="#fff"/></svg>',
+    '  </a>',
     '</div>',
     `<p class="video-caption">${esc(videoCaption(v))}</p>`,
   ];
 }
+
+// Troca a capa pelo player, já tocando. Fica em uma linha só de <script> no fim
+// da página, e só é emitido quando existe vídeo declarado.
+const VIDEO_SCRIPT = `<script>
+document.querySelectorAll('.video a[data-yt]').forEach(function (a) {
+  a.addEventListener('click', function (e) {
+    e.preventDefault();
+    var box = a.parentNode, f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + a.dataset.yt + '?autoplay=1&rel=0';
+    f.title = a.getAttribute('aria-label').replace(/^Play: /, '');
+    f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    f.allowFullscreen = true;
+    box.replaceChildren(f);
+  });
+});
+</script>`;
 
 // O sitemap de vídeo pede a duração em segundos, não em ISO 8601.
 function durationSeconds(iso) {
@@ -589,9 +612,15 @@ function videoNode(v, personId) {
 
 const stripSlash = (u) => u.replace(/\/+$/, '');
 
-function dofollowPrefixes(ent) {
+function dofollowPrefixes(ent, vids = []) {
   const d = ent.dofollow || {};
-  return [...ent.person.sameAs, ...(d.own || []), ...(d.reference || [])].map(stripSlash);
+  // Os videos declarados em data/videos.json com owner=true sao obra do Allan:
+  // entram sozinhos, sem precisar repetir cada URL na mao em entity.json.
+  const proprios = vids.filter((v) => v.owner).flatMap((v) => [
+    `https://www.youtube.com/watch?v=${v.youtubeId}`,
+    `https://youtu.be/${v.youtubeId}`,
+  ]);
+  return [...ent.person.sameAs, ...(d.own || []), ...(d.reference || []), ...proprios].map(stripSlash);
 }
 
 // Casa por prefixo de caminho, não por host: github.com/allandoseo é dele, mas
@@ -714,6 +743,9 @@ for (const slot of VIDEO_SLOTS) {
   const v = videos.find((x) => x.slot === slot);
   replaceMarker(home, slot, v ? block(home, slot, renderVideo(v)) : '');
 }
+replaceMarker(home, 'videoScript', videos.length ? `
+${VIDEO_SCRIPT}
+` : '');
 
 const homeAsOf = asOfReplacer(home, AS_OF_UPPER, `As of ${homeReviewedLong}`);
 // As tres descricoes da home sao iguais e nao carregam data: falam do titulo de
@@ -825,7 +857,7 @@ const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws]
 // A /feed/ fica de fora porque quem a escreve e tools/build_feed.py. Os links
 // externos dela sao todos da propria entidade (rodape e caixa do autor), entao
 // nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
-const prefixes = dofollowPrefixes(entity);
+const prefixes = dofollowPrefixes(entity, videos);
 const relPages = [home, contest, song, ...archive];
 const stamped = relPages.reduce((n, f) => n + stampStylesheets(f), 0);
 if (stamped === 0) fail('no local stylesheet link was versioned; check the <link> markup');
