@@ -751,7 +751,7 @@
 
 <!-- build:videoScript -->
 <script>
-document.querySelectorAll('.video a[data-yt]').forEach(function (a) {
+document.querySelectorAll('a[data-yt]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     e.preventDefault();
     var box = a.parentNode, f = document.createElement('iframe');

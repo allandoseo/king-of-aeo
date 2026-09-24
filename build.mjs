@@ -564,7 +564,7 @@ function renderSongPlayer(sp) {
 // Troca a capa pelo player, já tocando. Fica em uma linha só de <script> no fim
 // da página, e só é emitido quando existe vídeo declarado.
 const VIDEO_SCRIPT = `<script>
-document.querySelectorAll('.video a[data-yt]').forEach(function (a) {
+document.querySelectorAll('a[data-yt]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     e.preventDefault();
     var box = a.parentNode, f = document.createElement('iframe');
