@@ -516,9 +516,14 @@ function videoCaption(v) {
   return v.owner ? v.caption : `${v.caption} Video by ${v.channel}.`;
 }
 
+// A capa entra como fundo do contêiner, não só dentro do player. O iframe é
+// lazy: até ele carregar, o quadro ficaria preto, e quem passa rolando via um
+// retângulo vazio no lugar do vídeo. Com o fundo, a capa aparece de imediato e
+// o player carrega por cima dela.
 function renderVideo(v) {
+  const capa = `https://i.ytimg.com/vi/${v.youtubeId}/maxresdefault.jpg`;
   return [
-    `<div class="video" id="${esc(v.slot)}">`,
+    `<div class="video" id="${esc(v.slot)}" style="background-image:url(${esc(capa)})">`,
     `  <iframe src="https://www.youtube-nocookie.com/embed/${esc(v.youtubeId)}?rel=0" title="${esc(v.name)}" width="560" height="315" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`,
     '</div>',
     `<p class="video-caption">${esc(videoCaption(v))}</p>`,
