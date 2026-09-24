@@ -17,14 +17,12 @@
     "e a linha fica pronta para ser ligada quando o print chegar.",
     "Para publicar uma delas: preencha date e where, e remova o campo pending."
   ],
-
   "datasetId": "https://kingofaeo.pro/#evidence",
   "name": "King of AEO evidence record",
   "description": "Dated record of the evidence behind Allan Oliveira's claim to the King of AEO title, with a status column stating how each line can be checked.",
   "license": "https://creativecommons.org/licenses/by/4.0/",
   "csvPath": "public/evidence.csv",
   "csvUrl": "https://kingofaeo.pro/evidence.csv",
-
   "rows": [
     {
       "date": "2026-09-17",
@@ -82,7 +80,13 @@
       "where": "https://seomais.com.br/",
       "status": "Public record"
     },
-
+    {
+      "date": "2026-09-24",
+      "evidence": "Recognized by SEOMais, the agency Allan Oliveira founded: 2026 verdict",
+      "type": "Agency verdict",
+      "where": "https://seomais.com.br/who-is-the-king-of-aeo/",
+      "status": "Self-reported"
+    },
     {
       "pending": true,
       "date": "[[DATA]]",

@@ -212,6 +212,17 @@ function validateTimeline(items) {
     for (const k of ['dateLabel', 'who', 'event']) {
       if (typeof it[k] !== 'string') fail(`${FILES.timeline}: item ${i} is missing string field "${k}"`);
     }
+    // eventLink marca um trecho do proprio texto do evento como link. O texto tem
+    // de existir, exatamente uma vez, senao o link cairia no lugar errado ou em
+    // lugar nenhum sem ninguem notar.
+    if (it.eventLink !== undefined) {
+      const el = it.eventLink;
+      if (!el || typeof el !== 'object') fail(`${FILES.timeline}: item ${i} "eventLink" must be an object with text and url`);
+      if (typeof el.text !== 'string' || el.text === '') fail(`${FILES.timeline}: item ${i} eventLink.text must be a non-empty string`);
+      if (typeof el.url !== 'string' || !/^(https?:\/\/|\/)\S*$/.test(el.url)) fail(`${FILES.timeline}: item ${i} eventLink.url must be a URL or a root-relative path`);
+      const n = it.event.split(el.text).length - 1;
+      if (n !== 1) fail(`${FILES.timeline}: item ${i} eventLink.text ${JSON.stringify(el.text)} appears ${n} times in the event; it must appear exactly once`);
+    }
     if (!Array.isArray(it.sources)) fail(`${FILES.timeline}: item ${i} "sources" must be an array`);
     it.sources.forEach((s, j) => {
       if (!s || typeof s.label !== 'string' || typeof s.url !== 'string') fail(`${FILES.timeline}: item ${i} source ${j} needs string "label" and "url"`);
@@ -240,6 +251,14 @@ function validateEntity(ent) {
     if (typeof p[k] !== 'string' || p[k] === '') fail(`${FILES.entity}: "person.${k}" must be a non-empty string`);
   }
   if (!Array.isArray(p.sameAs) || p.sameAs.length === 0) fail(`${FILES.entity}: "person.sameAs" must be a non-empty array`);
+  if (p.subjectOf !== undefined) {
+    if (!Array.isArray(p.subjectOf)) fail(`${FILES.entity}: "person.subjectOf" must be an array`);
+    p.subjectOf.forEach((o, i) => {
+      if (!o || typeof o !== 'object' || typeof o['@id'] !== 'string' || !/^https?:\/\/\S+$/.test(o['@id'])) {
+        fail(`${FILES.entity}: person.subjectOf[${i}] needs an "@id" with an absolute http(s) URL`);
+      }
+    });
+  }
   p.sameAs.forEach((u, i) => {
     if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: person.sameAs[${i}] must be an absolute http(s) URL, got ${JSON.stringify(u)}`);
   });
@@ -324,12 +343,19 @@ function findPersonsById(node, id, out = []) {
 // citam os rivais como Person dentro de mentions, sem @id, e eles precisam
 // continuar sem sameAs. Nos com @id igual se fundem no grafo, entao duas
 // paginas que declarem o mesmo @id com listas diferentes se contradizem.
-function patchPersonSameAs(file, person) {
+function patchPersonSameAs(file, person, { subjectOf = false } = {}) {
   return (nodes) => {
     const found = findPersonsById(nodes, person.id);
     if (found.length !== 1) fail(`${file.rel}: expected exactly 1 Person node with "@id":"${person.id}", found ${found.length}`);
     found[0].sameAs = [...person.sameAs];
     found[0].url = person.url;
+    // subjectOf so entra onde foi pedido. Nos com o mesmo @id se fundem, entao
+    // declarar em duas paginas ja basta para o grafo inteiro receber.
+    if (subjectOf && (person.subjectOf || []).length) {
+      found[0].subjectOf = person.subjectOf.map((o) => ({ ...o }));
+    } else {
+      delete found[0].subjectOf;
+    }
   };
 }
 
@@ -698,8 +724,19 @@ function renderTimelineRows(items) {
         ? `<a href="${esc(s.url)}">${esc(s.label)}</a>`
         : `<a href="${esc(s.url)}" rel="noopener">${esc(s.label)}</a>`
     )).join(', ');
+    // O link do eventLink entra depois do escape, sobre o trecho ja escapado, para
+    // o texto do evento continuar sendo dado e nao marcacao.
+    let evento = esc(it.event);
+    if (it.eventLink) {
+      const alvo = esc(it.eventLink.text);
+      if (!evento.includes(alvo)) fail(`${FILES.timeline}: eventLink.text ${JSON.stringify(it.eventLink.text)} disappeared after escaping`);
+      const ancora = isInternal(it.eventLink.url)
+        ? `<a href="${esc(it.eventLink.url)}">${alvo}</a>`
+        : `<a href="${esc(it.eventLink.url)}" rel="noopener">${alvo}</a>`;
+      evento = evento.replace(alvo, () => ancora);
+    }
     // data-label alimenta o layout empilhado do celular (ver .stacked em site.css)
-    return `<tr><td data-label="Date">${esc(it.dateLabel)}</td><td data-label="Event">${esc(it.event)}</td><td data-label="Who">${esc(it.who)}</td><td data-label="Source">${sources}</td></tr>`;
+    return `<tr><td data-label="Date">${esc(it.dateLabel)}</td><td data-label="Event">${evento}</td><td data-label="Who">${esc(it.who)}</td><td data-label="Source">${sources}</td></tr>`;
   });
 }
 
@@ -810,7 +847,7 @@ patchJsonLd(home, (nodes, ofType) => {
   if (!q) fail(`${home.rel}: JSON-LD FAQPage has no mainEntity item named exactly "${faqName}"`);
   if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
   q.acceptedAnswer.text = asOfReplacer(home, AS_OF_LOWER, `as of ${homeReviewedLong}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
-  patchPersonSameAs(home, entity.person)(nodes);
+  patchPersonSameAs(home, entity.person, { subjectOf: true })(nodes);
 
   // Dataset da tabela de evidências. Upsert pelo @id, para o build ser idempotente
   // e para uma edição manual do nó não virar um segundo nó duplicado.
@@ -865,7 +902,7 @@ patchJsonLd(contest, (nodes, ofType) => {
       n.dateModified = isoDateTime(contestUpdated);
     }
   }
-  patchPersonSameAs(contest, entity.person)(nodes);
+  patchPersonSameAs(contest, entity.person, { subjectOf: true })(nodes);
 });
 patchFooterRow(contest, footerRow);
 

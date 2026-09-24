@@ -30,7 +30,6 @@
     "eles dilui a entidade em um dominio que nao e do site. Os Workers seguem no ar;",
     "so o site parou de lista-los. Nao readicione sem migrar o dominio antes."
   ],
-
   "person": {
     "id": "https://kingofaeo.pro/#allan-oliveira",
     "name": "Allan Oliveira",
@@ -48,9 +47,14 @@
       "https://x.com/allandoseo",
       "https://orcid.org/0009-0002-3528-7462",
       "https://zenodo.org/records/22880176"
+    ],
+    "subjectOf": [
+      {
+        "@type": "Article",
+        "@id": "https://seomais.com.br/who-is-the-king-of-aeo/#article"
+      }
     ]
   },
-
   "dofollow": {
     "own": [
       "https://doi.org/10.5281/zenodo.22880176",
@@ -64,10 +68,21 @@
       "https://schema.org"
     ]
   },
-
   "footer": [
-    { "label": "X", "url": "https://x.com/allandoseo", "rel": true },
-    { "label": "Quora", "url": "https://www.quora.com/profile/Allan-Oliveira-7", "rel": true },
-    { "label": "ORCID", "url": "https://orcid.org/0009-0002-3528-7462", "rel": true }
+    {
+      "label": "X",
+      "url": "https://x.com/allandoseo",
+      "rel": true
+    },
+    {
+      "label": "Quora",
+      "url": "https://www.quora.com/profile/Allan-Oliveira-7",
+      "rel": true
+    },
+    {
+      "label": "ORCID",
+      "url": "https://orcid.org/0009-0002-3528-7462",
+      "rel": true
+    }
   ]
 }
