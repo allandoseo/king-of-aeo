@@ -39,7 +39,12 @@
     "    \"uploadDate\": \"2026-09-24\",",
     "    \"duration\": \"PT6M30S\",",
     "    \"caption\": \"...\"",
-    "  }"
+    "  }",
+    "",
+    "songPage: o video de /king-of-aeo-song/. Nao ocupa slot da home, mas usa a",
+    "mesma fachada de capa e play, por isso o id vive aqui e nao chumbado no HTML",
+    "daquela pagina. So youtubeId e title, porque o resto do schema daquele video",
+    "ja e escrito a mao no JSON-LD da propria pagina."
   ],
   "videos": [
     {
@@ -64,5 +69,9 @@
       "duration": "PT3M20S",
       "caption": "Ranking and being quoted are different problems. This one is about the gap between them."
     }
-  ]
+  ],
+  "songPage": {
+    "youtubeId": "4b-dHmjz6O8",
+    "title": "King of AEO Song: The Crown Is in Brazil, by Allan Oliveira"
+  }
 }

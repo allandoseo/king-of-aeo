@@ -507,7 +507,15 @@ function validateVideos(doc) {
     if (!isIsoDate(v.uploadDate)) fail(`${FILES.videos}: videos[${i}] uploadDate must be YYYY-MM-DD, got ${JSON.stringify(v.uploadDate)}`);
     if (!ISO_DURATION.test(v.duration)) fail(`${FILES.videos}: videos[${i}] duration must be ISO 8601 like PT6M30S, got ${JSON.stringify(v.duration)}`);
   });
-  return doc.videos;
+
+  // O player de /king-of-aeo-song/ nao ocupa slot da home, mas usa a mesma
+  // fachada, entao o id vive aqui e nao chumbado no HTML daquela pagina.
+  const sp = doc.songPage;
+  if (!sp || typeof sp !== 'object' || Array.isArray(sp)) fail(`${FILES.videos}: "songPage" must be an object with youtubeId and title`);
+  if (!YT_ID.test(sp.youtubeId || '')) fail(`${FILES.videos}: songPage.youtubeId must be the 11-character YouTube id`);
+  if (typeof sp.title !== 'string' || sp.title === '') fail(`${FILES.videos}: songPage.title must be a non-empty string`);
+
+  return doc;
 }
 
 // Vídeo de terceiro leva o crédito na própria legenda, sem depender de alguém
@@ -524,15 +532,32 @@ function videoCaption(v) {
 //
 // O gatilho é um link para o YouTube, não um botão: sem JavaScript ele abre o
 // vídeo lá, em vez de não fazer nada.
-function renderVideo(v) {
-  const capa = `https://i.ytimg.com/vi/${v.youtubeId}/maxresdefault.jpg`;
+const capaUrl = (id) => `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+
+// O gatilho é o mesmo na home e na página da música: existe um só comportamento
+// de vídeo no site, e um só script para os dois.
+function playTrigger(id, label) {
   return [
-    `<div class="video" id="${esc(v.slot)}" style="background-image:url(${esc(capa)})">`,
-    `  <a class="video-play" href="https://www.youtube.com/watch?v=${esc(v.youtubeId)}" data-yt="${esc(v.youtubeId)}" aria-label="Play: ${esc(v.name)}">`,
-    '    <svg viewBox="0 0 80 80" aria-hidden="true" focusable="false"><circle cx="40" cy="40" r="38" fill="currentColor"/><path d="M33 25 59 40 33 55z" fill="#fff"/></svg>',
-    '  </a>',
+    `<a class="video-play" href="https://www.youtube.com/watch?v=${esc(id)}" data-yt="${esc(id)}" aria-label="Play: ${esc(label)}">`,
+    '  <svg viewBox="0 0 80 80" aria-hidden="true" focusable="false"><circle cx="40" cy="40" r="38" fill="currentColor"/><path d="M33 25 59 40 33 55z" fill="#fff"/></svg>',
+    '</a>',
+  ];
+}
+
+function renderVideo(v) {
+  return [
+    `<div class="video" id="${esc(v.slot)}" style="background-image:url(${esc(capaUrl(v.youtubeId))})">`,
+    ...playTrigger(v.youtubeId, v.name).map((l) => `  ${l}`),
     '</div>',
     `<p class="video-caption">${esc(videoCaption(v))}</p>`,
+  ];
+}
+
+function renderSongPlayer(sp) {
+  return [
+    `<div class="player" style="background-image:url(${esc(capaUrl(sp.youtubeId))})">`,
+    ...playTrigger(sp.youtubeId, sp.title).map((l) => `  ${l}`),
+    '</div>',
   ];
 }
 
@@ -717,7 +742,8 @@ const scoreboard = validateScoreboard(readJson(FILES.scoreboard));
 const entity = validateEntity(readJson(FILES.entity));
 const footerRow = renderFooterRow(entity.footer);
 const evidence = validateEvidence(readJson(FILES.evidence));
-const videos = validateVideos(readJson(FILES.videos));
+const videoDoc = validateVideos(readJson(FILES.videos));
+const videos = videoDoc.videos;
 
 // As duas datas de modificação saem do git, não de data/site.json. Só as datas de
 // publicação continuam declaradas: quando uma página nasceu é fato editorial, não
@@ -849,6 +875,10 @@ patchFooterRow(contest, footerRow);
 // como esta. Sem isto a pagina mantinha uma lista propria e defasada.
 const song = readText(FILES.song);
 patchJsonLd(song, (nodes) => { patchPersonSameAs(song, entity.person)(nodes); });
+replaceMarker(song, 'songPlayer', block(song, 'songPlayer', renderSongPlayer(videoDoc.songPage)));
+replaceMarker(song, 'videoScript', `
+${VIDEO_SCRIPT}
+`);
 
 // --- /archive/: so a politica de rel ---
 const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws].map(readText);
