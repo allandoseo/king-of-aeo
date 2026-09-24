@@ -724,7 +724,7 @@ def page_lastmod(rel_path, fallback):
     return fallback
 
 
-def render_sitemap(built, home_images, date):
+def render_sitemap(built, home_images, date, hoje):
     # loc -> arquivo que gera aquela URL, para datar cada uma pelo proprio historico.
     # A home e a pagina do concurso entram aqui, mas quem manda nelas no fim e o
     # build.mjs: ele roda depois e reescreve esses dois <lastmod> com as datas
@@ -740,8 +740,11 @@ def render_sitemap(built, home_images, date):
         SITE + "/king-of-aeo-contest/": "king-of-aeo-contest/index.html",
     }
 
+    # hoje e o fallback: arquivo com alteracao pendente mudou HOJE. Usar `date`
+    # aqui era erro, porque date e a data da propria /feed/: uma pagina alterada
+    # agora herdava a data do feed em vez da de hoje.
     def when(loc):
-        return page_lastmod(SOURCE[loc], date)
+        return page_lastmod(SOURCE[loc], hoje)
 
     def block(loc, urls):
         rows = "\n".join(
@@ -876,11 +879,20 @@ def render_json_feed(built, date):
 # --------------------------------------------------------------------------- main
 
 def main():
+    hoje = datetime.date.today().isoformat()
     ap = argparse.ArgumentParser()
-    ap.add_argument("--date", default=datetime.date.today().isoformat(),
-                    help="data ISO usada em dateModified e lastmod (padrao: hoje)")
+    # Sem --date, a data da /feed/ e a data em que ela mudou de verdade, tirada do
+    # git pelo page_lastmod, e nao a data de hoje. Carimbar hoje a cada execucao
+    # dizia ao Google que a pagina mudou toda vez que o build rodava, mesmo quando
+    # nada nela tinha mudado. Mesma regra que o build.mjs aplica na home e no
+    # concurso. E estavel: a data carimbada vira a data do arquivo, e a execucao
+    # seguinte devolve a mesma.
+    ap.add_argument("--date", default=None,
+                    help="forca a data ISO de dateModified e lastmod (padrao: a data real de alteracao)")
     ap.add_argument("--check", action="store_true", help="valida e mostra a densidade, sem escrever")
     args = ap.parse_args()
+    if args.date is None:
+        args.date = page_lastmod("feed/index.html", hoje)
     datetime.date.fromisoformat(args.date)
 
     exclude, items, home_images = load_manifest()
@@ -921,7 +933,7 @@ def main():
     with open(OUT_HTML, "w", encoding="utf-8", newline="\n") as f:
         f.write(markup)
     with open(OUT_SITEMAP, "w", encoding="utf-8", newline="\n") as f:
-        f.write(render_sitemap(built, home_images, args.date))
+        f.write(render_sitemap(built, home_images, args.date, hoje))
     with open(OUT_RSS, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_rss(built, args.date))
     with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
