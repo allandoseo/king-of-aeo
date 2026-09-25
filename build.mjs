@@ -43,6 +43,8 @@ const FILES = {
   archiveFiveLaws: 'public/archive/five-laws/index.html',
   sitemap: 'public/sitemap.xml',
   videoSitemap: 'public/sitemap-videos.xml',
+  llms: 'public/llms.txt',
+  llmsFull: 'public/llms-full.txt',
 };
 
 // ---------- helpers ----------
@@ -785,6 +787,155 @@ const videos = videoDoc.videos;
 // As duas datas de modificação saem do git, não de data/site.json. Só as datas de
 // publicação continuam declaradas: quando uma página nasceu é fato editorial, não
 // dá para derivar do arquivo, que muda a cada edição.
+// ---------- /llms.txt e /llms-full.txt ----------
+//
+// Convencao llmstxt.org, servidos como text/plain (ver public/_headers).
+//
+// O llms.txt e escrito a mao: e um indice curto, nao deriva de dado nenhum. Mas
+// as duas datas dele sao carimbadas e conferidas aqui, contra as mesmas fontes
+// que a home usa, para nao nascer um terceiro lugar onde a data envelhece sozinha.
+//
+// O llms-full.txt NAO e escrito a mao: e gerado de public/index.html, para o texto
+// nunca divergir da pagina. O conversor cobre so as construcoes que a home usa hoje
+// e chama fail() ao encontrar qualquer outra, em vez de entregar markdown
+// silenciosamente incompleto.
+
+const ENTIDADES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+  mdash: '—', ndash: '–', hellip: '…', middot: '·',
+  rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”' };
+
+function unesc(s) {
+  return s.replace(/&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => {
+    if (e[0] === '#') {
+      const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : Number(e.slice(1));
+      return Number.isFinite(n) ? String.fromCodePoint(n) : m;
+    }
+    const k = ENTIDADES[e.toLowerCase()];
+    return k === undefined ? m : k;
+  });
+}
+
+// Fora da pagina, link relativo e ancora de fragmento nao levam a lugar nenhum:
+// o arquivo e lido solto, longe do HTML de origem.
+const mdUrl = (u) => (u.startsWith('/') ? SITE + u : u.startsWith('#') ? `${SITE}/${u}` : u);
+
+function mdInline(frag, where) {
+  let s = String(frag)
+    .replace(/<!--\s*build:[\w-]+\s*-->|<!--\s*\/build\s*-->/g, '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>\s*<p\b[^>]*>/gi, ' ')
+    .replace(/<\/?(?:p|span|small|abbr|time|sup|sub|wbr)\b[^>]*>/gi, '');
+  s = s.replace(/<a\b[^>]*?\shref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi,
+    (_, href, txt) => `[${mdInline(txt, where)}](${mdUrl(href)})`);
+  s = s.replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, __, x) => `**${mdInline(x, where)}**`);
+  s = s.replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, __, x) => `*${mdInline(x, where)}*`);
+  s = s.replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_, x) => '`' + unesc(x).trim() + '`');
+  const sobrou = s.match(/<[a-zA-Z!/][^>]*>/);
+  if (sobrou) fail(`${FILES.llmsFull}: unhandled markup in ${where}: ${sobrou[0]}`);
+  return unesc(s).replace(/\s+/g, ' ').trim();
+}
+
+function mdList(frag, ordenada, where) {
+  const itens = [...frag.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((m) => mdInline(m[1], where));
+  if (!itens.length) fail(`${FILES.llmsFull}: list with no <li> in ${where}`);
+  return itens.map((x, i) => (ordenada ? `${i + 1}. ${x}` : `- ${x}`)).join('\n');
+}
+
+function mdTable(frag, where) {
+  const cap = /<caption\b[^>]*>([\s\S]*?)<\/caption>/i.exec(frag);
+  const linhas = [...frag.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((m) =>
+    [...m[1].matchAll(/<(th|td)\b[^>]*>([\s\S]*?)<\/\1>/gi)]
+      .map((c) => ({ th: c[1].toLowerCase() === 'th', txt: mdInline(c[2], where) })));
+  if (!linhas.length) fail(`${FILES.llmsFull}: table with no <tr> in ${where}`);
+  const titulo = cap ? `**${mdInline(cap[1], where)}**\n\n` : '';
+  const mesmaLargura = new Set(linhas.map((l) => l.length)).size === 1;
+
+  // Cabecalho na primeira linha: vira tabela markdown.
+  if (mesmaLargura && linhas[0].every((c) => c.th)) {
+    const cab = linhas[0].map((c) => c.txt);
+    return titulo + [
+      `| ${cab.join(' | ')} |`,
+      `|${cab.map(() => ' --- ').join('|')}|`,
+      ...linhas.slice(1).map((l) => `| ${l.map((c) => c.txt).join(' | ')} |`),
+    ].join('\n');
+  }
+  // Duas colunas com <th scope="row">: vira lista de chave e valor, que le melhor
+  // do que uma tabela markdown sem cabecalho.
+  if (linhas.every((l) => l.length === 2 && l[0].th && !l[1].th)) {
+    return titulo + linhas.map((l) => `- **${l[0].txt}**: ${l[1].txt}`).join('\n');
+  }
+  return fail(`${FILES.llmsFull}: table shape not handled in ${where}`);
+}
+
+function mdBlocks(frag, where, nivel = 0) {
+  if (nivel > 4) fail(`${FILES.llmsFull}: blocks nested too deep in ${where}`);
+  const limpo = frag
+    .replace(/<nav\b[\s\S]*?<\/nav>/gi, '')
+    .replace(/<figure\b[\s\S]*?<\/figure>/gi, '')
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, '')
+    .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, '')
+    .replace(/<img\b[^>]*>/gi, '')
+    .replace(/<\/?(?:div|section|article|thead|tbody|header|footer|main)\b[^>]*>/gi, '');
+  const re = /<(h1|h2|h3|h4|p|ol|ul|table|details|blockquote)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  const saida = [];
+  const solto = (x) => { const v = mdInline(x, where); if (v) saida.push(v); };
+  let pos = 0;
+  let m;
+  while ((m = re.exec(limpo)) !== null) {
+    solto(limpo.slice(pos, m.index));
+    pos = m.index + m[0].length;
+    const tag = m[1].toLowerCase();
+    if (/^h[1-4]$/.test(tag)) saida.push(`${'#'.repeat(Number(tag[1]))} ${mdInline(m[2], where)}`);
+    else if (tag === 'p') solto(m[2]);
+    else if (tag === 'ol' || tag === 'ul') saida.push(mdList(m[2], tag === 'ol', where));
+    else if (tag === 'table') saida.push(mdTable(m[0], where));
+    else if (tag === 'blockquote') {
+      saida.push(mdBlocks(m[2], where, nivel + 1).split('\n').map((l) => (l ? `> ${l}` : '>')).join('\n'));
+    } else if (tag === 'details') {
+      const s = /<summary\b[^>]*>([\s\S]*?)<\/summary>/i.exec(m[2]);
+      if (!s) fail(`${FILES.llmsFull}: <details> with no <summary> in ${where}`);
+      saida.push(`### ${mdInline(s[1], where)}`);
+      const corpo = mdBlocks(m[2].replace(s[0], ''), where, nivel + 1);
+      if (corpo) saida.push(corpo);
+    }
+  }
+  solto(limpo.slice(pos));
+  return saida.filter(Boolean).join('\n\n');
+}
+
+function renderHomeMarkdown(homeText, asOfLong) {
+  const i = homeText.indexOf('<article>');
+  const j = homeText.indexOf('</article>');
+  if (i < 0 || j < 0) fail(`${FILES.home}: no <article> to render into ${FILES.llmsFull}`);
+  const corpo = mdBlocks(homeText.slice(i + '<article>'.length, j), FILES.home);
+  // Rede de seguranca: se o conversor parar de casar com a home, o arquivo
+  // encolhe em silencio. Abaixo disso e porque algo quebrou.
+  if (corpo.length < 8000) fail(`${FILES.llmsFull}: rendered only ${corpo.length} chars; the home is much longer`);
+  return `> Full text of ${SITE}/ as of ${asOfLong}. Generated from the page itself: navigation, images and markup removed.\n\n${corpo}\n`;
+}
+
+function writeGenerated(rel, text) {
+  const abs = path.join(ROOT, rel);
+  const before = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : null;
+  fs.writeFileSync(abs, text, 'utf8');
+  console.log(`${before === text ? 'unchanged' : 'wrote'} ${rel}`);
+}
+
+// Insere ou atualiza um <url> do sitemap. Modelado no ramo do concurso em
+// patchSitemap, que so sabe lidar com as duas URLs que ja conhecia.
+function upsertSitemapUrl(file, loc, lastmod) {
+  const re = new RegExp(`(<url>\\s*<loc>${escRe(loc)}</loc>\\s*<lastmod>)([^<]*)(</lastmod>)`);
+  if (re.test(file.text)) {
+    file.text = file.text.replace(re, (_, a, __, c) => a + lastmod + c);
+    return;
+  }
+  if (file.text.includes(`<loc>${loc}</loc>`)) fail(`${file.rel}: <url> for ${loc} has no <lastmod> right after its <loc>`);
+  if (!file.text.includes('</urlset>')) fail(`${file.rel}: missing </urlset>`);
+  const entry = `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>\n`;
+  file.text = file.text.replace(/[ \t]*<\/urlset>/, () => `${entry}</urlset>`);
+}
+
 const today = siteToday();
 const homeReviewed = gitLastChange(FILES.home, today);
 const contestUpdated = gitLastChange(FILES.contest, today);
@@ -930,9 +1081,19 @@ const stamped = relPages.reduce((n, f) => n + stampStylesheets(f), 0);
 if (stamped === 0) fail('no local stylesheet link was versioned; check the <link> markup');
 const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)]);
 
+// --- /llms.txt e /llms-full.txt ---
+const llms = readText(FILES.llms);
+llms.text = asOfReplacer(llms, AS_OF_UPPER, `As of ${homeReviewedLong}`)(llms.text, 'secao Answer');
+const claimSinceLong = longDate(site.claimSince);
+if (!llms.text.includes(`since ${claimSinceLong}`)) {
+  fail(`${FILES.llms}: expected the phrase "since ${claimSinceLong}", taken from ${FILES.site} claimSince`);
+}
+const llmsFullText = renderHomeMarkdown(home.text, homeReviewedLong);
+
 // --- sitemap: public/sitemap.xml ---
 const sitemap = readText(FILES.sitemap);
 patchSitemap(sitemap, homeReviewed, contestUpdated);
+upsertSitemapUrl(sitemap, `${SITE}/llms.txt`, gitLastChange(FILES.llms, today));
 
 // --- sitemap de video: so o bloco da home, do mesmo data/videos.json ---
 const videoSitemap = readText(FILES.videoSitemap);
@@ -949,13 +1110,16 @@ writeText(song);
 for (const f of archive) writeText(f);
 writeText(sitemap);
 writeText(videoSitemap);
+writeText(llms);
+writeGenerated(FILES.llmsFull, llmsFullText);
 
 for (const [rel, s] of relStats) {
   console.log(`  rel  ${rel.padEnd(38)} ${String(s.dofollow).padStart(2)} dofollow  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);
 }
 
 // O CSV que o Dataset.distribution aponta. Fica fora do sitemap de proposito:
-// o sitemap so lista paginas HTML.
+// e um anexo da home, nao um endereco que se visite sozinho. O /llms.txt entra
+// no sitemap, ao contrario, porque e um endereco de entrada por si so.
 {
   const abs = path.join(ROOT, evidence.csvPath);
   const out = renderEvidenceCsv(evidence);

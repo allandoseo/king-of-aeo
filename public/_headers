@@ -11,6 +11,16 @@
   Cache-Control: public, max-age=600
   Content-Type: application/feed+json; charset=utf-8
 
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=600
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=600
+
 /docs/the-legend-of-the-king-of-aeo.pdf
   Link: <https://kingofaeo.pro/archive/the-legend/>; rel="canonical"
 
