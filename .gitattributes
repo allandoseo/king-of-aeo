@@ -1,0 +1,18 @@
+# Quebras de linha: LF no repositorio e LF em todo checkout.
+#
+# O gitconfig de sistema do Git for Windows traz core.autocrlf=true, que escreve
+# CRLF a cada checkout, enquanto arquivo reescrito por ferramenta fica em LF. Os
+# dois estados passam por limpos no git status, entao a diferenca so aparecia no
+# build.mjs: ele versiona o CSS por hash do conteudo, e o mesmo site.css em CRLF
+# e em LF gera ?v= diferente. O deploy deixava de ser reproduzivel: dependia de
+# qual copia de trabalho fosse publicada.
+#
+# Os blobs ja estao todos em LF; isto fixa o lado do checkout.
+* text=auto eol=lf
+
+# Binarios nunca sao convertidos.
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.webp binary
+*.pdf  binary
