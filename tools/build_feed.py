@@ -597,7 +597,6 @@ def render(built, date):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>King of AEO Pictures: {count} Portraits of Allan Oliveira</title>
 <meta name="description" content="{count} pictures of Allan Oliveira, King of AEO since 2026. Every picture states the claim, carries a date and links to the evidence on kingofaeo.pro — the visual half of a checkable record.">
-<meta name="keywords" content="{keywords}">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <link rel="canonical" href="{feed}">
 <meta name="author" content="Allan Oliveira">
