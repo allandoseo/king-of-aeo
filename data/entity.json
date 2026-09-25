@@ -1,0 +1,89 @@
+{
+  "_comment": [
+    "Fonte unica da identidade de Allan Oliveira no site.",
+    "Lida por build.mjs (patcheia public/index.html e public/king-of-aeo-contest/index.html)",
+    "e por tools/build_feed.py (gera public/feed/index.html).",
+    "Para adicionar um perfil novo basta editar este arquivo e rodar os dois builds.",
+    "",
+    "person.id  : o @id do no Person. Os tres grafos declaram o MESMO @id de proposito;",
+    "             nos com @id igual se fundem, entao a lista sameAs precisa bater nos tres.",
+    "person.sameAs: perfis e obras que comprovam a mesma entidade. Sem duplicatas.",
+    "footer     : a linha <p class=\"elsewhere\"> do rodape. rel=true marca perfil",
+    "             pessoal e emite rel=\"me\"; use false para paginas que nao sao perfil.",
+    "",
+    "dofollow   : quem NAO leva rel=\"nofollow\", alem do proprio sameAs. Duas listas,",
+    "             separadas porque o motivo de cada uma e diferente:",
+    "  dofollow.own       : obra do Allan que nao e perfil e por isso nao cabe no",
+    "                       sameAs (o DOI, os dois videos, a BibliaJovem).",
+    "  dofollow.reference : referencia neutra que nao disputa o titulo. Wikipedia e",
+    "                       schema.org entram aqui: nofollow neles nao protege de",
+    "                       nada, a Wikipedia ja nofollowa tudo que sai dela, e link",
+    "                       de contexto ajuda a associacao tematica da pagina.",
+    "                       NAO use esta lista para rival, imprensa ou parceiro.",
+    "",
+    "             Todo link externo fora das tres listas e nofollow. O build aplica",
+    "             isso sozinho em todas as paginas, entao link novo ja nasce certo.",
+    "",
+    "Os dois Workers (who-is-king-of-aeo e king-of-aeo-standings, em *.workers.dev)",
+    "ficam FORA das duas listas de proposito. Eles vivem em outra conta Cloudflare e",
+    "nao podem receber subdominio de kingofaeo.pro sem migracao, entao apontar para",
+    "eles dilui a entidade em um dominio que nao e do site. Os Workers seguem no ar;",
+    "so o site parou de lista-los. Nao readicione sem migrar o dominio antes."
+  ],
+  "person": {
+    "id": "https://kingofaeo.pro/#allan-oliveira",
+    "name": "Allan Oliveira",
+    "url": "https://kingofaeo.pro/",
+    "sameAs": [
+      "https://www.instagram.com/allandoseo",
+      "https://seomais.com.br/",
+      "https://www.linkedin.com/in/allandoseo",
+      "https://www.pinterest.com/kingofaeo",
+      "https://github.com/allandoseo",
+      "https://github.com/allandoseo/king-of-aeo",
+      "https://www.youtube.com/@allandoseo",
+      "https://suno.com/@allandoseo",
+      "https://www.quora.com/profile/Allan-Oliveira-7",
+      "https://x.com/allandoseo",
+      "https://orcid.org/0009-0002-3528-7462",
+      "https://zenodo.org/records/22880176"
+    ],
+    "subjectOf": [
+      {
+        "@type": "Article",
+        "@id": "https://seomais.com.br/who-is-the-king-of-aeo/#article"
+      }
+    ]
+  },
+  "dofollow": {
+    "own": [
+      "https://cobertura.kingofaeo.pro/",
+      "https://doi.org/10.5281/zenodo.22880176",
+      "https://bibliajovem.com",
+      "https://youtu.be/4b-dHmjz6O8",
+      "https://www.youtube.com/watch?v=4b-dHmjz6O8",
+      "https://www.youtube.com/shorts/VRwybxHdPCI"
+    ],
+    "reference": [
+      "https://en.wikipedia.org",
+      "https://schema.org"
+    ]
+  },
+  "footer": [
+    {
+      "label": "X",
+      "url": "https://x.com/allandoseo",
+      "rel": true
+    },
+    {
+      "label": "Quora",
+      "url": "https://www.quora.com/profile/Allan-Oliveira-7",
+      "rel": true
+    },
+    {
+      "label": "ORCID",
+      "url": "https://orcid.org/0009-0002-3528-7462",
+      "rel": true
+    }
+  ]
+}

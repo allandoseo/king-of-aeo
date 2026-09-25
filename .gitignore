@@ -1,2 +1,15 @@
+# Build e cache locais
 .wrangler/
 __pycache__/
+
+# Dependencias
+node_modules/
+
+# Segredos: nunca versionar
+.env
+.env.*
+.dev.vars
+
+# Lixo de sistema operacional
+.DS_Store
+Thumbs.db

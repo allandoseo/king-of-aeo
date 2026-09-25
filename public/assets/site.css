@@ -20,6 +20,8 @@ header.site{border-bottom:1px solid var(--blue-line)}
 .brand svg{width:22px;height:22px}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .nav{display:flex;gap:1.1rem;font-size:.9rem;font-weight:700}
+/* O card voltou a miniatura: a mesma faixa ja toca no player do slot video-1,
+   logo acima, e embedar de novo aqui repetiria a musica na mesma pagina. */
 .songcard{display:grid;grid-template-columns:200px 1fr;gap:1.1rem;align-items:center;border:1px solid var(--blue-line);border-radius:10px;padding:1rem;margin:2rem 0}
 .songcard img{display:block;width:100%;height:auto;border-radius:6px}
 .songcard p{margin:.35rem 0 0;font-size:.95rem}
@@ -54,11 +56,19 @@ th{background:var(--blue-soft);font-weight:800}
 .tldr{background:var(--blue-soft);border-radius:8px;padding:1.1rem 1.25rem;margin:1.5rem 0}
 .tldr p{margin:0 0 .5rem;font-size:.95rem}
 .tldr p:last-child{margin:0}
-.video{position:relative;aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;margin:1.5rem 0}
-.video img{width:100%;height:100%;object-fit:cover;display:block}
-.video button{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;cursor:pointer;color:#fff;font:inherit;font-weight:800;font-size:1rem;display:grid;place-items:center}
-.video button span{background:var(--blue);padding:.7rem 1.2rem;border-radius:999px}
+/* center/cover no-repeat deixa a capa (background-image, posta pelo build em cada
+   bloco) preencher o quadro enquanto o iframe lazy ainda nao carregou. O preto
+   fica so como cor de base, para o caso da capa nao vir. */
+.video{position:relative;aspect-ratio:16/9;background:#000 center/cover no-repeat;border-radius:6px;overflow:hidden;margin:1.5rem 0}
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* Gatilho de play sobre a capa. Discreto de proposito: a capa e a arte do video,
+   e quem cobre ela com barra de titulo, nome de canal e selo e o player do YouTube,
+   que so entra depois do clique. */
+.video-play{position:absolute;inset:0;display:grid;place-items:center;color:var(--blue);text-decoration:none;cursor:pointer}
+.video-play svg{width:76px;height:76px;opacity:.9;filter:drop-shadow(0 2px 10px rgba(0,0,0,.45));transition:transform .15s ease,opacity .15s ease}
+.video-play:hover svg,.video-play:focus-visible svg{transform:scale(1.07);opacity:1}
+.video-play:focus-visible{outline:3px solid var(--gold);outline-offset:-4px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){.video-play svg{transition:none}}
 .video-caption{font-size:.85rem;color:var(--muted);margin:-1rem 0 1.5rem}
 .faq details{border-bottom:1px solid var(--blue-line);padding:.6rem 0}
 .faq summary{cursor:pointer;font-weight:800;list-style:none;display:flex;justify-content:space-between;gap:1rem}
@@ -86,4 +96,21 @@ footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem
   .stacked td:empty{display:none}
   .stacked td::before{content:attr(data-label);display:block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.15rem}
   .stacked caption{text-align:left}
+}
+
+/* Tabela de evidencias da home: Date e Status sao curtos e nao devem quebrar,
+   senao a coluna Status e empurrada para fora do .scroll e some da vista.
+   Abaixo de 640px a tabela vira cartao empilhado (.stacked) e a regra nao vale. */
+@media (min-width:641px){
+  .evidence th:first-child,.evidence td:first-child,
+  .evidence th:last-child,.evidence td:last-child{white-space:nowrap}
+}
+
+/* A tabela de evidencias tem 5 colunas e nao cabe na largura da coluna de texto:
+   a ultima, Status, ficava fora da area visivel e so aparecia com scroll lateral,
+   justo a coluna que diz como cada linha e verificada. Acima de 1040px ela se
+   alarga para os dois lados, centrada na coluna, ate 900px. Abaixo disso vale o
+   .scroll normal e, abaixo de 640px, o cartao empilhado. */
+@media (min-width:1040px){
+  .scroll.wide{width:900px;margin-left:calc((100% - 900px) / 2)}
 }

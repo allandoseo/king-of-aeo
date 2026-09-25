@@ -2,15 +2,22 @@
 // build.mjs — kingofaeo.pro build step. Plain Node ESM, zero dependencies.
 // Run from the repo root:  node build.mjs
 //
-// Reads  data/site.json, data/timeline.json, data/scoreboard.json
+// Reads  data/site.json, data/timeline.json, data/scoreboard.json, data/entity.json
 // Patches public/index.html, public/king-of-aeo-contest/index.html, public/sitemap.xml
+//
+// data/entity.json e a fonte unica do sameAs e da linha de rodape. A terceira pagina
+// que declara o mesmo Person, public/feed/index.html, e gerada por tools/build_feed.py,
+// que le o MESMO arquivo. Depois de editar data/entity.json rode os dois builds.
 // Throws (non-zero exit) when any expected marker, <meta> selector or JSON-LD node is missing.
 // Idempotent: running it twice produces byte-identical files.
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = import.meta.dirname ?? process.cwd();
+const SITE = 'https://kingofaeo.pro';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
   'August', 'September', 'October', 'November', 'December'];
@@ -23,9 +30,19 @@ const FILES = {
   site: 'data/site.json',
   timeline: 'data/timeline.json',
   scoreboard: 'data/scoreboard.json',
+  entity: 'data/entity.json',
+  evidence: 'data/evidence.json',
+  videos: 'data/videos.json',
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
+  song: 'public/king-of-aeo-song/index.html',
+  // As tres de /archive/ sao escritas a mao e o build so passa nelas para
+  // aplicar a politica de rel dos links externos.
+  archiveIndex: 'public/archive/index.html',
+  archiveLegend: 'public/archive/the-legend/index.html',
+  archiveFiveLaws: 'public/archive/five-laws/index.html',
   sitemap: 'public/sitemap.xml',
+  videoSitemap: 'public/sitemap-videos.xml',
 };
 
 // ---------- helpers ----------
@@ -174,8 +191,15 @@ function patchSitemap(file, homeLastmod, contestLastmod) {
 
 function validateSite(site) {
   if (!site || typeof site !== 'object' || Array.isArray(site)) fail(`${FILES.site}: expected an object`);
-  for (const k of ['claimSince', 'homeReviewed', 'contestPublished', 'contestEdited']) {
+  for (const k of ['claimSince', 'contestPublished']) {
     if (!isIsoDate(site[k])) fail(`${FILES.site}: "${k}" must be a YYYY-MM-DD date, got ${JSON.stringify(site[k])}`);
+  }
+  // Datas de modificação escritas à mão envelhecem em silêncio. Se alguém as
+  // trouxer de volta, o build avisa em vez de ignorá-las e deixar duas fontes.
+  for (const k of ['homeReviewed', 'contestEdited']) {
+    if (site[k] !== undefined) {
+      fail(`${FILES.site}: "${k}" is no longer read; the modification date now comes from git (see gitLastChange). Remove the field.`);
+    }
   }
   return site;
 }
@@ -187,6 +211,17 @@ function validateTimeline(items) {
     if (!isIsoDate(it.sort)) fail(`${FILES.timeline}: item ${i} has an invalid "sort" ${JSON.stringify(it.sort)} (expected an ISO date YYYY-MM-DD)`);
     for (const k of ['dateLabel', 'who', 'event']) {
       if (typeof it[k] !== 'string') fail(`${FILES.timeline}: item ${i} is missing string field "${k}"`);
+    }
+    // eventLink marca um trecho do proprio texto do evento como link. O texto tem
+    // de existir, exatamente uma vez, senao o link cairia no lugar errado ou em
+    // lugar nenhum sem ninguem notar.
+    if (it.eventLink !== undefined) {
+      const el = it.eventLink;
+      if (!el || typeof el !== 'object') fail(`${FILES.timeline}: item ${i} "eventLink" must be an object with text and url`);
+      if (typeof el.text !== 'string' || el.text === '') fail(`${FILES.timeline}: item ${i} eventLink.text must be a non-empty string`);
+      if (typeof el.url !== 'string' || !/^(https?:\/\/|\/)\S*$/.test(el.url)) fail(`${FILES.timeline}: item ${i} eventLink.url must be a URL or a root-relative path`);
+      const n = it.event.split(el.text).length - 1;
+      if (n !== 1) fail(`${FILES.timeline}: item ${i} eventLink.text ${JSON.stringify(el.text)} appears ${n} times in the event; it must appear exactly once`);
     }
     if (!Array.isArray(it.sources)) fail(`${FILES.timeline}: item ${i} "sources" must be an array`);
     it.sources.forEach((s, j) => {
@@ -208,21 +243,500 @@ function validateScoreboard(entries) {
   return entries;
 }
 
+function validateEntity(ent) {
+  if (!ent || typeof ent !== 'object' || Array.isArray(ent)) fail(`${FILES.entity}: expected an object`);
+  const p = ent.person;
+  if (!p || typeof p !== 'object' || Array.isArray(p)) fail(`${FILES.entity}: "person" must be an object`);
+  for (const k of ['id', 'name', 'url']) {
+    if (typeof p[k] !== 'string' || p[k] === '') fail(`${FILES.entity}: "person.${k}" must be a non-empty string`);
+  }
+  if (!Array.isArray(p.sameAs) || p.sameAs.length === 0) fail(`${FILES.entity}: "person.sameAs" must be a non-empty array`);
+  if (p.subjectOf !== undefined) {
+    if (!Array.isArray(p.subjectOf)) fail(`${FILES.entity}: "person.subjectOf" must be an array`);
+    p.subjectOf.forEach((o, i) => {
+      if (!o || typeof o !== 'object' || typeof o['@id'] !== 'string' || !/^https?:\/\/\S+$/.test(o['@id'])) {
+        fail(`${FILES.entity}: person.subjectOf[${i}] needs an "@id" with an absolute http(s) URL`);
+      }
+    });
+  }
+  p.sameAs.forEach((u, i) => {
+    if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: person.sameAs[${i}] must be an absolute http(s) URL, got ${JSON.stringify(u)}`);
+  });
+  // Duplicata em sameAs e erro de fato: o Google trata a lista como o conjunto de
+  // perfis da entidade, e repetir uma URL so polui o grafo.
+  const seen = new Set();
+  for (const u of p.sameAs) {
+    if (seen.has(u)) fail(`${FILES.entity}: person.sameAs has a duplicate entry ${JSON.stringify(u)}`);
+    seen.add(u);
+  }
+  if (!Array.isArray(ent.footer)) fail(`${FILES.entity}: "footer" must be an array`);
+  ent.footer.forEach((l, i) => {
+    if (!l || typeof l !== 'object') fail(`${FILES.entity}: footer[${i}] is not an object`);
+    if (typeof l.label !== 'string' || l.label === '') fail(`${FILES.entity}: footer[${i}] needs a non-empty string "label"`);
+    if (typeof l.url !== 'string' || !/^https?:\/\/\S+$/.test(l.url)) fail(`${FILES.entity}: footer[${i}] "url" must be an absolute http(s) URL`);
+    if (typeof l.rel !== 'boolean') fail(`${FILES.entity}: footer[${i}] "rel" must be true or false`);
+    // Um perfil marcado com rel=me esta afirmando "esta pagina sou eu"; ele
+    // precisa estar no sameAs, senao as duas declaracoes se contradizem.
+    if (l.rel && !seen.has(l.url)) fail(`${FILES.entity}: footer[${i}] has rel=true but ${l.url} is not listed in person.sameAs`);
+  });
+  const dupFooter = ent.footer.map((l) => l.url).filter((u, i, a) => a.indexOf(u) !== i);
+  if (dupFooter.length) fail(`${FILES.entity}: footer has duplicate URLs: ${[...new Set(dupFooter)].join(', ')}`);
+
+  // dofollow: as duas listas que escapam do nofollow, além do sameAs.
+  if (ent.dofollow !== undefined) {
+    const d = ent.dofollow;
+    if (!d || typeof d !== 'object' || Array.isArray(d)) fail(`${FILES.entity}: "dofollow" must be an object with "own" and "reference" arrays`);
+    for (const key of Object.keys(d)) {
+      if (key !== 'own' && key !== 'reference') fail(`${FILES.entity}: dofollow has unknown list "${key}"; only "own" and "reference" exist`);
+      if (!Array.isArray(d[key])) fail(`${FILES.entity}: "dofollow.${key}" must be an array`);
+      d[key].forEach((u, i) => {
+        if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: dofollow.${key}[${i}] must be an absolute http(s) URL`);
+        // Repetir no sameAs não quebra nada, mas indica que a entrada está no
+        // lugar errado e que alguém vai editar a cópia que não vale.
+        const inSameAs = [...seen].some((s) => stripSlash(s) === stripSlash(u));
+        if (inSameAs) fail(`${FILES.entity}: dofollow.${key}[${i}] ${u} is already in person.sameAs; remove one of the two`);
+      });
+    }
+    const all = [...(d.own || []), ...(d.reference || [])].map(stripSlash);
+    const dupAll = all.filter((u, i, a) => a.indexOf(u) !== i);
+    if (dupAll.length) fail(`${FILES.entity}: dofollow has duplicate URLs: ${[...new Set(dupAll)].join(', ')}`);
+  }
+  return ent;
+}
+
+// Renderiza <p class="elsewhere">…</p> exatamente como as paginas ja trazem hoje:
+// links separados por " · ", rel="me" so nos perfis pessoais.
+function renderFooterRow(links) {
+  const parts = links.map((l) => (
+    l.rel
+      ? `<a href="${esc(l.url)}" rel="me">${esc(l.label)}</a>`
+      : `<a href="${esc(l.url)}">${esc(l.label)}</a>`
+  ));
+  return `<p class="elsewhere">${parts.join(' · ')}</p>`;
+}
+
+// Substitui a linha de rodape. Precisa existir exatamente uma na pagina.
+function patchFooterRow(file, row) {
+  const re = /<p class="elsewhere">[\s\S]*?<\/p>/g;
+  const found = [...file.text.matchAll(re)];
+  if (found.length !== 1) fail(`${file.rel}: expected exactly 1 <p class="elsewhere"> row, found ${found.length}`);
+  file.text = file.text.replace(found[0][0], () => row);
+}
+
+// Coleta todo no Person com este @id em qualquer profundidade do grafo.
+// A busca precisa ser recursiva porque nem sempre o no esta na raiz do @graph:
+// na pagina da musica ele vive dentro de MusicRecording.creator.
+function findPersonsById(node, id, out = []) {
+  if (Array.isArray(node)) {
+    for (const v of node) findPersonsById(v, id, out);
+  } else if (node && typeof node === 'object') {
+    // Uma referencia pendente ({"@id": …} sozinho) nao e o no real: nao recebe sameAs.
+    const isRef = Object.keys(node).length === 1 && node['@id'] !== undefined;
+    if (hasType(node, 'Person') && node['@id'] === id && !isRef) out.push(node);
+    for (const v of Object.values(node)) findPersonsById(v, id, out);
+  }
+  return out;
+}
+
+// Escreve sameAs e url no no Person cujo @id bate com o de data/entity.json.
+// Filtrar por @id, e nao so por @type, importa: a home e a pagina do concurso
+// citam os rivais como Person dentro de mentions, sem @id, e eles precisam
+// continuar sem sameAs. Nos com @id igual se fundem no grafo, entao duas
+// paginas que declarem o mesmo @id com listas diferentes se contradizem.
+function patchPersonSameAs(file, person, { subjectOf = false } = {}) {
+  return (nodes) => {
+    const found = findPersonsById(nodes, person.id);
+    if (found.length !== 1) fail(`${file.rel}: expected exactly 1 Person node with "@id":"${person.id}", found ${found.length}`);
+    found[0].sameAs = [...person.sameAs];
+    found[0].url = person.url;
+    // subjectOf so entra onde foi pedido. Nos com o mesmo @id se fundem, entao
+    // declarar em duas paginas ja basta para o grafo inteiro receber.
+    if (subjectOf && (person.subjectOf || []).length) {
+      found[0].subjectOf = person.subjectOf.map((o) => ({ ...o }));
+    } else {
+      delete found[0].subjectOf;
+    }
+  };
+}
+
+// ---------- tabela de evidências ----------
+
+const EVIDENCE_STATUS = ['Public record', 'Self-reported', 'Independent'];
+
+function validateEvidence(ev) {
+  if (!ev || typeof ev !== 'object' || Array.isArray(ev)) fail(`${FILES.evidence}: expected an object`);
+  for (const k of ['datasetId', 'name', 'description', 'license', 'csvPath', 'csvUrl']) {
+    if (typeof ev[k] !== 'string' || ev[k] === '') fail(`${FILES.evidence}: "${k}" must be a non-empty string`);
+  }
+  if (!Array.isArray(ev.rows) || ev.rows.length === 0) fail(`${FILES.evidence}: "rows" must be a non-empty array`);
+  ev.rows.forEach((r, i) => {
+    if (!r || typeof r !== 'object') fail(`${FILES.evidence}: rows[${i}] is not an object`);
+    for (const k of ['date', 'evidence', 'type', 'where', 'status']) {
+      if (typeof r[k] !== 'string' || r[k] === '') fail(`${FILES.evidence}: rows[${i}] needs a non-empty string "${k}"`);
+    }
+    // O status alimenta a leitura de confiança da página inteira: um valor fora
+    // da lista descreveria a evidência de um jeito que o texto não explica.
+    if (!EVIDENCE_STATUS.includes(r.status)) {
+      fail(`${FILES.evidence}: rows[${i}] status ${JSON.stringify(r.status)} is not one of ${EVIDENCE_STATUS.join(', ')}`);
+    }
+    if (r.pending !== undefined && r.pending !== true) fail(`${FILES.evidence}: rows[${i}] "pending", when present, must be true`);
+    if (!r.pending) {
+      if (!isIsoDate(r.date) && r.date !== 'Ongoing') fail(`${FILES.evidence}: rows[${i}] date must be YYYY-MM-DD or "Ongoing", got ${JSON.stringify(r.date)}`);
+      if (!/^https?:\/\/\S+$/.test(r.where)) fail(`${FILES.evidence}: rows[${i}] "where" must be an absolute http(s) URL`);
+      // Uma linha publicada não pode carregar marcador de pendência.
+      for (const k of ['date', 'evidence', 'type', 'where', 'status']) {
+        if (r[k].includes('[[')) fail(`${FILES.evidence}: rows[${i}] "${k}" still holds a [[…]] placeholder but the row is not marked pending`);
+      }
+    }
+  });
+  return ev;
+}
+
+const published = (ev) => ev.rows.filter((r) => !r.pending);
+
+// Texto visível do link. O href continua sendo a URL inteira; só o rótulo
+// encolhe, porque uma URL de 250 caracteres arrebenta a tabela no celular.
+function shortUrl(u, max = 34) {
+  const bare = u.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return bare.length <= max ? bare : bare.slice(0, max - 1) + '…';
+}
+
+// Linhas visíveis, mais as pendentes como comentário HTML: elas ficam prontas
+// para uso sem que a página mostre um marcador a quem lê ou a um motor de resposta.
+function renderEvidenceRows(ev) {
+  const cell = (label, v) => `<td data-label="${esc(label)}">${v}</td>`;
+  const link = (u) => (isInternal(u)
+    ? `<a href="${esc(u)}" title="${esc(u)}">${esc(shortUrl(u))}</a>`
+    : `<a href="${esc(u)}" rel="noopener" title="${esc(u)}">${esc(shortUrl(u))}</a>`);
+  const row = (r) => '<tr>'
+    + cell('Date', esc(r.date))
+    + cell('Evidence', esc(r.evidence))
+    + cell('Type', esc(r.type))
+    + cell('Where to check', link(r.where))
+    + cell('Status', esc(r.status))
+    + '</tr>';
+  const lines = published(ev).map(row);
+  const waiting = ev.rows.filter((r) => r.pending);
+  if (waiting.length) {
+    lines.push(`<!-- ${waiting.length} linha(s) aguardando dados; ver data/evidence.json:`);
+    for (const r of waiting) lines.push(`     ${r.date} | ${r.evidence} | ${r.type} | ${r.where} | ${r.status}`);
+    lines.push('-->');
+  }
+  return lines;
+}
+
+// CSV RFC 4180: aspas dobradas, e todo campo entre aspas para não depender do
+// conteúdo. Só as linhas publicadas entram.
+function renderEvidenceCsv(ev) {
+  const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const head = ['Date', 'Evidence', 'Type', 'Where to check', 'Status'];
+  const body = published(ev).map((r) => [r.date, r.evidence, r.type, r.where, r.status].map(q).join(','));
+  return [head.map(q).join(','), ...body].join('\r\n') + '\r\n';
+}
+
 // Um link é interno se for relativo à raiz ou apontar para o próprio domínio.
 // Links internos nunca levam nofollow.
-const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro(\/|$)/i.test(u);
+const isInternal = (u) => u.startsWith('/') || /^https?:\/\/(www\.)?kingofaeo\.pro([/?#]|$)/i.test(u);
+
+// ---------- data real de alteração de cada página ----------
+//
+// A data de modificação não é declarada à mão. Uma data fixa em data/site.json
+// envelhece sem ninguém notar: a página do concurso dizia "editado em 21/09"
+// três dias depois de ter mudado de fato. Ela sai do git:
+//
+//   arquivo com alteração pendente  -> hoje, porque mudou e ainda não foi commitado
+//   arquivo limpo                   -> a data do último commit que o tocou
+//
+// É estável entre execuções: o build carimba a data, o arquivo passa a contê-la,
+// e no build seguinte a mesma data volta. E é automática por dependência: mexer
+// em data/timeline.json muda a página do concurso, logo muda a data dela.
+
+// O site declara tudo em -03:00, então o dia vira no fuso de Brasília.
+function siteToday() {
+  return new Date(Date.now() - (3 * 60 * 60 * 1000)).toISOString().slice(0, 10);
+}
+
+function gitLastChange(rel, fallback) {
+  const abs = path.join(ROOT, rel);
+  const git = (args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 15000 });
+  try {
+    if (git(['status', '--porcelain', '--', abs]).trim()) return fallback;
+    const stamp = git(['log', '-1', '--format=%cs', '--', abs]).trim();
+    if (DATE_RE.test(stamp)) return stamp;
+  } catch {
+    // Fora de um repositório git, ou git indisponível: assume hoje.
+  }
+  return fallback;
+}
+
+// ---------- versão das folhas de estilo ----------
+//
+// O CSS é servido com cache de horas. Quando o HTML muda e depende de uma regra
+// nova, quem já tinha a folha antiga em cache recebe a página nova com o estilo
+// velho: foi assim que o player da música apareceu por cima do texto do card.
+//
+// A correção é o endereço da folha mudar sempre que o conteúdo dela mudar. O
+// build carimba ?v=<hash do arquivo> em cada <link>, então HTML e CSS não têm
+// como ficar dessincronizados, e cada versão pode ser cacheada por muito tempo.
+
+function cssVersion(rel) {
+  const abs = path.join(ROOT, 'public', rel.replace(/^\//, ''));
+  if (!fs.existsSync(abs)) fail(`${rel}: stylesheet not found at ${abs}`);
+  return createHash('sha256').update(fs.readFileSync(abs)).digest('hex').slice(0, 10);
+}
+
+// Reescreve href="/assets/x.css" e href="/assets/x.css?v=antigo" para a versão atual.
+// Zero ocorrências é válido: /king-of-aeo-song/ traz o CSS embutido na própria página.
+function stampStylesheets(file) {
+  const re = /(<link\b[^>]*\shref=")(\/assets\/[A-Za-z0-9._-]+\.css)(?:\?v=[A-Za-z0-9]+)?(")/g;
+  let n = 0;
+  file.text = file.text.replace(re, (_, open, href, close) => {
+    n += 1;
+    return `${open}${href}?v=${cssVersion(href)}${close}`;
+  });
+  // Uma folha local sem versão anula a proteção inteira: a página voltaria a poder
+  // receber HTML novo com CSS velho em cache.
+  const naked = file.text.match(/href="\/assets\/[A-Za-z0-9._-]+\.css"(?!\?)/);
+  if (naked) fail(`${file.rel}: stylesheet ${naked[0]} was left without a ?v= version`);
+  return n;
+}
+
+// ---------- vídeos embedados na home ----------
+//
+// Uma entrada em data/videos.json gera o player, a legenda, o nó VideoObject e a
+// entrada em Article.video. Antes o HTML e o JSON-LD eram escritos à mão e
+// separados, e foi assim que a home passou a declarar dois vídeos da Ahrefs como
+// obra do Allan. Aqui a autoria sai de `owner` e do canal declarado, e um slot
+// sem vídeo não deixa nó órfão no grafo.
+
+const VIDEO_SLOTS = ['video-1', 'video-2'];
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+const ISO_DURATION = /^PT(?:\d+H)?(?:\d+M)?(?:\d+S)?$/;
+
+function validateVideos(doc) {
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) fail(`${FILES.videos}: expected an object`);
+  if (!Array.isArray(doc.videos)) fail(`${FILES.videos}: "videos" must be an array`);
+  const slots = new Set();
+  const ids = new Set();
+  doc.videos.forEach((v, i) => {
+    if (!v || typeof v !== 'object') fail(`${FILES.videos}: videos[${i}] is not an object`);
+    for (const k of ['slot', 'youtubeId', 'channel', 'name', 'description', 'uploadDate', 'duration', 'caption']) {
+      if (typeof v[k] !== 'string' || v[k] === '') fail(`${FILES.videos}: videos[${i}] needs a non-empty string "${k}"`);
+    }
+    if (typeof v.owner !== 'boolean') fail(`${FILES.videos}: videos[${i}] "owner" must be true or false; say plainly whether the channel is Allan's`);
+    if (!VIDEO_SLOTS.includes(v.slot)) fail(`${FILES.videos}: videos[${i}] slot ${JSON.stringify(v.slot)} is not one of ${VIDEO_SLOTS.join(', ')}`);
+    if (slots.has(v.slot)) fail(`${FILES.videos}: slot ${v.slot} is used more than once`);
+    slots.add(v.slot);
+    if (!YT_ID.test(v.youtubeId)) fail(`${FILES.videos}: videos[${i}] youtubeId must be the 11-character YouTube id, got ${JSON.stringify(v.youtubeId)}`);
+    if (ids.has(v.youtubeId)) fail(`${FILES.videos}: youtubeId ${v.youtubeId} appears twice`);
+    ids.add(v.youtubeId);
+    if (!isIsoDate(v.uploadDate)) fail(`${FILES.videos}: videos[${i}] uploadDate must be YYYY-MM-DD, got ${JSON.stringify(v.uploadDate)}`);
+    if (!ISO_DURATION.test(v.duration)) fail(`${FILES.videos}: videos[${i}] duration must be ISO 8601 like PT6M30S, got ${JSON.stringify(v.duration)}`);
+  });
+
+  // O player de /king-of-aeo-song/ nao ocupa slot da home, mas usa a mesma
+  // fachada, entao o id vive aqui e nao chumbado no HTML daquela pagina.
+  const sp = doc.songPage;
+  if (!sp || typeof sp !== 'object' || Array.isArray(sp)) fail(`${FILES.videos}: "songPage" must be an object with youtubeId and title`);
+  if (!YT_ID.test(sp.youtubeId || '')) fail(`${FILES.videos}: songPage.youtubeId must be the 11-character YouTube id`);
+  if (typeof sp.title !== 'string' || sp.title === '') fail(`${FILES.videos}: songPage.title must be a non-empty string`);
+
+  return doc;
+}
+
+// Vídeo de terceiro leva o crédito na própria legenda, sem depender de alguém
+// lembrar de escrevê-lo.
+function videoCaption(v) {
+  return v.owner ? v.caption : `${v.caption} Video by ${v.channel}.`;
+}
+
+// A capa do vídeo fica limpa até alguém clicar. O iframe do YouTube, mesmo antes
+// do play, cobre a arte com barra de título, nome do canal, selo de IA e botão
+// "assistir no YouTube". Aqui a página mostra só a capa, e o player entra no
+// clique, já tocando. De quebra, a página não carrega o JavaScript do YouTube
+// (cerca de 1 MB por player) para quem nunca aperta play.
+//
+// O gatilho é um link para o YouTube, não um botão: sem JavaScript ele abre o
+// vídeo lá, em vez de não fazer nada.
+const capaUrl = (id) => `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+
+// O gatilho é o mesmo na home e na página da música: existe um só comportamento
+// de vídeo no site, e um só script para os dois.
+function playTrigger(id, label) {
+  return [
+    `<a class="video-play" href="https://www.youtube.com/watch?v=${esc(id)}" data-yt="${esc(id)}" aria-label="Play: ${esc(label)}">`,
+    '  <svg viewBox="0 0 80 80" aria-hidden="true" focusable="false"><circle cx="40" cy="40" r="38" fill="currentColor"/><path d="M33 25 59 40 33 55z" fill="#fff"/></svg>',
+    '</a>',
+  ];
+}
+
+function renderVideo(v) {
+  return [
+    `<div class="video" id="${esc(v.slot)}" style="background-image:url(${esc(capaUrl(v.youtubeId))})">`,
+    ...playTrigger(v.youtubeId, v.name).map((l) => `  ${l}`),
+    '</div>',
+    `<p class="video-caption">${esc(videoCaption(v))}</p>`,
+  ];
+}
+
+function renderSongPlayer(sp) {
+  return [
+    `<div class="player" style="background-image:url(${esc(capaUrl(sp.youtubeId))})">`,
+    ...playTrigger(sp.youtubeId, sp.title).map((l) => `  ${l}`),
+    '</div>',
+  ];
+}
+
+// Troca a capa pelo player, já tocando. Fica em uma linha só de <script> no fim
+// da página, e só é emitido quando existe vídeo declarado.
+const VIDEO_SCRIPT = `<script>
+document.querySelectorAll('a[data-yt]').forEach(function (a) {
+  a.addEventListener('click', function (e) {
+    e.preventDefault();
+    var box = a.parentNode, f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + a.dataset.yt + '?autoplay=1&rel=0';
+    f.title = a.getAttribute('aria-label').replace(/^Play: /, '');
+    f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    f.allowFullscreen = true;
+    box.replaceChildren(f);
+  });
+});
+</script>`;
+
+// O sitemap de vídeo pede a duração em segundos, não em ISO 8601.
+function durationSeconds(iso) {
+  const m = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);
+  if (!m) fail(`${FILES.videos}: cannot convert duration ${JSON.stringify(iso)} to seconds`);
+  return (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
+}
+
+// Bloco <url> da home no sitemap de vídeo, um <video:video> por vídeo declarado.
+// A entrada de /king-of-aeo-song/ continua escrita à mão no arquivo, fora do
+// marcador: ela tem tags e descrição próprias que não vêm de data/videos.json.
+function renderHomeVideoSitemap(list, channelUrl) {
+  if (list.length === 0) return '';
+  const rows = list.map((v) => [
+    '    <video:video>',
+    `      <video:thumbnail_loc>https://i.ytimg.com/vi/${esc(v.youtubeId)}/maxresdefault.jpg</video:thumbnail_loc>`,
+    `      <video:title>${esc(v.name)}</video:title>`,
+    `      <video:description>${esc(v.description)}</video:description>`,
+    `      <video:player_loc allow_embed="yes">https://www.youtube-nocookie.com/embed/${esc(v.youtubeId)}</video:player_loc>`,
+    `      <video:content_loc>https://www.youtube.com/watch?v=${esc(v.youtubeId)}</video:content_loc>`,
+    `      <video:duration>${durationSeconds(v.duration)}</video:duration>`,
+    `      <video:publication_date>${isoDateTime(v.uploadDate)}</video:publication_date>`,
+    '      <video:family_friendly>yes</video:family_friendly>',
+    '      <video:requires_subscription>no</video:requires_subscription>',
+    '      <video:live>no</video:live>',
+    v.owner
+      ? `      <video:uploader info="${esc(channelUrl)}">${esc(v.channel)}</video:uploader>`
+      : `      <video:uploader>${esc(v.channel)}</video:uploader>`,
+    '    </video:video>',
+  ].join('\n')).join('\n');
+  return `\n  <url>\n    <loc>${SITE}/</loc>\n${rows}\n  </url>\n`;
+}
+
+function videoNode(v, personId) {
+  return {
+    '@type': 'VideoObject',
+    '@id': `${SITE}/#${v.slot}`,
+    name: v.name,
+    description: v.description,
+    thumbnailUrl: `https://i.ytimg.com/vi/${v.youtubeId}/maxresdefault.jpg`,
+    uploadDate: isoDateTime(v.uploadDate),
+    duration: v.duration,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${v.youtubeId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${v.youtubeId}`,
+    author: v.owner ? { '@id': personId } : { '@type': 'Organization', name: v.channel },
+  };
+}
+
+// ---------- rel dos links externos ----------
+//
+// Política: rel="nofollow" em todo link externo, exceto três grupos declarados em
+// data/entity.json — o sameAs da entidade, dofollow.own (obra do Allan que não é
+// perfil) e dofollow.reference (referência neutra que não disputa o título).
+// Qualquer host fora disso, rival ou não, não recebe voto deste domínio.
+//
+// A regra roda no build sobre o HTML pronto, em vez de ficar escrita à mão em
+// cada <a>, para que um link novo já nasça com o rel certo.
+
+const stripSlash = (u) => u.replace(/\/+$/, '');
+
+function dofollowPrefixes(ent, vids = []) {
+  const d = ent.dofollow || {};
+  // Os videos declarados em data/videos.json com owner=true sao obra do Allan:
+  // entram sozinhos, sem precisar repetir cada URL na mao em entity.json.
+  const proprios = vids.filter((v) => v.owner).flatMap((v) => [
+    `https://www.youtube.com/watch?v=${v.youtubeId}`,
+    `https://youtu.be/${v.youtubeId}`,
+  ]);
+  return [...ent.person.sameAs, ...(d.own || []), ...(d.reference || []), ...proprios].map(stripSlash);
+}
+
+// Casa por prefixo de caminho, não por host: github.com/allandoseo é dele, mas
+// github.com/outra-pessoa não. O caractere seguinte precisa ser um separador,
+// senão /allandoseo casaria com /allandoseo-falso.
+function isDofollowUrl(u, prefixes) {
+  const bare = stripSlash(u);
+  return prefixes.some((p) => bare === p || (bare.startsWith(p) && /^[/?#]/.test(bare.slice(p.length))));
+}
+
+const isExternalHttp = (u) => /^https?:\/\//i.test(u) && !isInternal(u);
+
+function normalizeExternalRel(file, prefixes) {
+  const stats = { dofollow: 0, nofollow: 0, changed: 0 };
+  file.text = file.text.replace(/<a\b[^>]*>/g, (tag) => {
+    const href = tag.match(/\shref="([^"]*)"/);
+    if (!href || !isExternalHttp(href[1])) return tag;
+    const relM = tag.match(/\srel="([^"]*)"/);
+    const tokens = relM ? relM[1].split(/\s+/).filter(Boolean) : [];
+    let next;
+    if (isDofollowUrl(href[1], prefixes)) {
+      stats.dofollow += 1;
+      next = tokens.filter((t) => t !== 'nofollow');
+    } else {
+      stats.nofollow += 1;
+      next = tokens.includes('nofollow') ? [...tokens] : ['nofollow', ...tokens];
+      if (!next.includes('noopener')) next.push('noopener');
+    }
+    const before = relM ? relM[1] : null;
+    const after = next.join(' ');
+    if (before === after || (before === null && after === '')) return tag;
+    stats.changed += 1;
+    if (relM) {
+      return after === '' ? tag.replace(relM[0], '') : tag.replace(relM[0], ` rel="${after}"`);
+    }
+    return tag.replace(/\s*>$/, ` rel="${after}">`);
+  });
+  return stats;
+}
 
 function renderTimelineRows(items) {
   // Array.prototype.sort is stable: ties keep their order in the data file.
   const sorted = [...items].sort((a, b) => (a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : 0));
   return sorted.map((it) => {
+    // Sem nofollow aqui de proposito: quem decide rel de link externo e o passe
+    // normalizeExternalRel, que roda depois sobre o HTML pronto. Duplicar a regra
+    // nos dois lugares fazia uma desfazer a outra a cada build.
     const sources = it.sources.map((s) => (
       isInternal(s.url)
         ? `<a href="${esc(s.url)}">${esc(s.label)}</a>`
-        : `<a href="${esc(s.url)}" rel="nofollow noopener">${esc(s.label)}</a>`
+        : `<a href="${esc(s.url)}" rel="noopener">${esc(s.label)}</a>`
     )).join(', ');
+    // O link do eventLink entra depois do escape, sobre o trecho ja escapado, para
+    // o texto do evento continuar sendo dado e nao marcacao.
+    let evento = esc(it.event);
+    if (it.eventLink) {
+      const alvo = esc(it.eventLink.text);
+      if (!evento.includes(alvo)) fail(`${FILES.timeline}: eventLink.text ${JSON.stringify(it.eventLink.text)} disappeared after escaping`);
+      const ancora = isInternal(it.eventLink.url)
+        ? `<a href="${esc(it.eventLink.url)}">${alvo}</a>`
+        : `<a href="${esc(it.eventLink.url)}" rel="noopener">${alvo}</a>`;
+      evento = evento.replace(alvo, () => ancora);
+    }
     // data-label alimenta o layout empilhado do celular (ver .stacked em site.css)
-    return `<tr><td data-label="Date">${esc(it.dateLabel)}</td><td data-label="Event">${esc(it.event)}</td><td data-label="Who">${esc(it.who)}</td><td data-label="Source">${sources}</td></tr>`;
+    return `<tr><td data-label="Date">${esc(it.dateLabel)}</td><td data-label="Event">${evento}</td><td data-label="Who">${esc(it.who)}</td><td data-label="Source">${sources}</td></tr>`;
   });
 }
 
@@ -247,9 +761,10 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
     const citedRaw = typeof e.cited === 'string' ? e.cited.trim() : '';
     // Fontes internas entram como texto, não como link: esta página só pode ter
     // um link de conteúdo para a home (regra anti-canibalização).
+    // O rel externo sai do passe normalizeExternalRel, nao daqui.
     const cited = !/^https?:\/\/\S+$/i.test(citedRaw) || isInternal(citedRaw)
       ? esc(citedRaw)
-      : `<a href="${esc(citedRaw)}" rel="nofollow noopener">${esc(citedRaw)}</a>`;
+      : `<a href="${esc(citedRaw)}" rel="noopener">${esc(citedRaw)}</a>`;
     lines.push(`    <tr><td data-label="Date">${str(e.date)}</td><td data-label="Engine">${str(e.engine)}</td><td data-label="Prompt">${str(e.prompt)}</td><td data-label="Named">${str(e.named)}</td><td data-label="Cited source">${cited}</td><td data-label="Notes">${str(e.note)}</td></tr>`);
   }
   lines.push('  </tbody>', '</table>', '</div>');
@@ -261,17 +776,39 @@ function renderScoreboardLines(entries, contestPublished, contestUpdated) {
 const site = validateSite(readJson(FILES.site));
 const timeline = validateTimeline(readJson(FILES.timeline));
 const scoreboard = validateScoreboard(readJson(FILES.scoreboard));
+const entity = validateEntity(readJson(FILES.entity));
+const footerRow = renderFooterRow(entity.footer);
+const evidence = validateEvidence(readJson(FILES.evidence));
+const videoDoc = validateVideos(readJson(FILES.videos));
+const videos = videoDoc.videos;
 
-// contestUpdated = max(contestEdited, every scoreboard entry date) — ISO string compare.
-const contestUpdated = [site.contestEdited, ...scoreboard.map((e) => e.date)]
-  .reduce((a, b) => (b > a ? b : a));
+// As duas datas de modificação saem do git, não de data/site.json. Só as datas de
+// publicação continuam declaradas: quando uma página nasceu é fato editorial, não
+// dá para derivar do arquivo, que muda a cada edição.
+const today = siteToday();
+const homeReviewed = gitLastChange(FILES.home, today);
+const contestUpdated = gitLastChange(FILES.contest, today);
+const homeReviewedLong = longDate(homeReviewed);
 
-const homeReviewedLong = longDate(site.homeReviewed);
+for (const [label, published, modified] of [
+  ['home', site.claimSince, homeReviewed],
+  ['contest', site.contestPublished, contestUpdated],
+]) {
+  if (modified < published) fail(`${label}: computed modified date ${modified} is before the declared publication date ${published}`);
+}
 
 // --- home: public/index.html ---
 const home = readText(FILES.home);
 replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
+replaceMarker(home, 'evidence', block(home, 'evidence', renderEvidenceRows(evidence)));
+for (const slot of VIDEO_SLOTS) {
+  const v = videos.find((x) => x.slot === slot);
+  replaceMarker(home, slot, v ? block(home, slot, renderVideo(v)) : '');
+}
+replaceMarker(home, 'videoScript', videos.length ? `
+${VIDEO_SCRIPT}
+` : '');
 
 const homeAsOf = asOfReplacer(home, AS_OF_UPPER, `As of ${homeReviewedLong}`);
 // As tres descricoes da home sao iguais e nao carregam data: falam do titulo de
@@ -288,19 +825,21 @@ const asOfOpcional = (text, where) => {
 patchMeta(home, 'name="description"', asOfOpcional);
 patchMeta(home, 'property="og:description"', asOfOpcional);
 patchMeta(home, 'name="twitter:description"', asOfOpcional);
-patchMeta(home, 'property="article:published_time"', () => isoDateTime(site.claimSince));
-patchMeta(home, 'property="article:modified_time"', () => isoDateTime(site.homeReviewed));
+// A home declara og:type=website, entao nao carrega article:*. A data de
+// revisao vive em og:updated_time; datePublished e dateModified seguem no
+// JSON-LD (Article e WebPage), que e onde o Google realmente le as datas.
+patchMeta(home, 'property="og:updated_time"', () => isoDateTime(homeReviewed));
 
 patchJsonLd(home, (nodes, ofType) => {
   for (const n of ofType('Article')) {
     n.datePublished = isoDateTime(site.claimSince);
-    n.dateModified = isoDateTime(site.homeReviewed);
+    n.dateModified = isoDateTime(homeReviewed);
     if (typeof n.description !== 'string') fail(`${home.rel}: JSON-LD Article has no "description"`);
     n.description = homeAsOf(n.description, 'JSON-LD Article.description');
   }
   for (const n of ofType('WebPage')) {
     n.datePublished = isoDateTime(site.claimSince);
-    n.dateModified = isoDateTime(site.homeReviewed);
+    n.dateModified = isoDateTime(homeReviewed);
   }
   const faqName = 'Who is the King of AEO?';
   const items = ofType('FAQPage').flatMap((f) => (Array.isArray(f.mainEntity) ? f.mainEntity : []));
@@ -308,11 +847,50 @@ patchJsonLd(home, (nodes, ofType) => {
   if (!q) fail(`${home.rel}: JSON-LD FAQPage has no mainEntity item named exactly "${faqName}"`);
   if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
   q.acceptedAnswer.text = asOfReplacer(home, AS_OF_LOWER, `as of ${homeReviewedLong}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
+  patchPersonSameAs(home, entity.person, { subjectOf: true })(nodes);
+
+  // Dataset da tabela de evidências. Upsert pelo @id, para o build ser idempotente
+  // e para uma edição manual do nó não virar um segundo nó duplicado.
+  const wanted = {
+    '@type': 'Dataset',
+    '@id': evidence.datasetId,
+    name: evidence.name,
+    description: evidence.description,
+    url: `${SITE}/#evidence`,
+    creator: { '@id': entity.person.id },
+    license: evidence.license,
+    isAccessibleForFree: true,
+    dateModified: isoDateTime(homeReviewed),
+    distribution: {
+      '@type': 'DataDownload',
+      encodingFormat: 'text/csv',
+      contentUrl: evidence.csvUrl,
+    },
+  };
+  const at = nodes.findIndex((n) => n && n['@id'] === evidence.datasetId);
+  if (at === -1) nodes.push(wanted); else nodes[at] = wanted;
+
+  // Vídeos: apaga os nós de todos os slots e reescreve só os declarados, para que
+  // remover um vídeo do JSON não deixe um VideoObject órfão apontando para um
+  // player que não existe mais na página.
+  const slotIds = VIDEO_SLOTS.map((s) => `${SITE}/#${s}`);
+  for (let i = nodes.length - 1; i >= 0; i -= 1) {
+    if (nodes[i] && slotIds.includes(nodes[i]['@id']) && hasType(nodes[i], 'VideoObject')) nodes.splice(i, 1);
+  }
+  const declared = VIDEO_SLOTS
+    .map((s) => videos.find((v) => v.slot === s))
+    .filter(Boolean);
+  for (const v of declared) nodes.push(videoNode(v, entity.person.id));
+  for (const art of ofType('Article')) {
+    if (declared.length) art.video = declared.map((v) => ({ '@id': `${SITE}/#${v.slot}` }));
+    else delete art.video;
+  }
 });
+patchFooterRow(home, footerRow);
 
 // --- contest: public/king-of-aeo-contest/index.html ---
 const contest = readText(FILES.contest);
-replaceMarker(contest, 'contestEditedLong', longDate(site.contestEdited));
+replaceMarker(contest, 'contestEditedLong', longDate(contestUpdated));
 replaceMarker(contest, 'timeline', block(contest, 'timeline', renderTimelineRows(timeline)));
 replaceMarker(contest, 'scoreboard', block(contest, 'scoreboard', renderScoreboardLines(scoreboard, site.contestPublished, contestUpdated)));
 patchMeta(contest, 'property="article:published_time"', () => isoDateTime(site.contestPublished));
@@ -324,13 +902,64 @@ patchJsonLd(contest, (nodes, ofType) => {
       n.dateModified = isoDateTime(contestUpdated);
     }
   }
+  patchPersonSameAs(contest, entity.person, { subjectOf: true })(nodes);
 });
+patchFooterRow(contest, footerRow);
+
+// --- song: public/king-of-aeo-song/index.html ---
+// A pagina e escrita a mao, mas declara o mesmo Person @id das outras tres.
+// O build so sincroniza esse no; o resto do grafo (musica, video, FAQ) fica
+// como esta. Sem isto a pagina mantinha uma lista propria e defasada.
+const song = readText(FILES.song);
+patchJsonLd(song, (nodes) => { patchPersonSameAs(song, entity.person)(nodes); });
+replaceMarker(song, 'songPlayer', block(song, 'songPlayer', renderSongPlayer(videoDoc.songPage)));
+replaceMarker(song, 'videoScript', `
+${VIDEO_SCRIPT}
+`);
+
+// --- /archive/: so a politica de rel ---
+const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws].map(readText);
+
+// --- rel dos links externos, em todas as paginas que este build controla ---
+// A /feed/ fica de fora porque quem a escreve e tools/build_feed.py. Os links
+// externos dela sao todos da propria entidade (rodape e caixa do autor), entao
+// nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
+const prefixes = dofollowPrefixes(entity, videos);
+const relPages = [home, contest, song, ...archive];
+const stamped = relPages.reduce((n, f) => n + stampStylesheets(f), 0);
+if (stamped === 0) fail('no local stylesheet link was versioned; check the <link> markup');
+const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)]);
 
 // --- sitemap: public/sitemap.xml ---
 const sitemap = readText(FILES.sitemap);
-patchSitemap(sitemap, site.homeReviewed, contestUpdated);
+patchSitemap(sitemap, homeReviewed, contestUpdated);
+
+// --- sitemap de video: so o bloco da home, do mesmo data/videos.json ---
+const videoSitemap = readText(FILES.videoSitemap);
+const ytChannel = entity.person.sameAs.find((u) => /^https:\/\/www\.youtube\.com\//.test(u)) || '';
+replaceMarker(videoSitemap, 'homeVideos', renderHomeVideoSitemap(
+  VIDEO_SLOTS.map((s2) => videos.find((v) => v.slot === s2)).filter(Boolean),
+  ytChannel,
+));
 
 // Everything validated and patched in memory; only now touch the disk.
 writeText(home);
 writeText(contest);
+writeText(song);
+for (const f of archive) writeText(f);
 writeText(sitemap);
+writeText(videoSitemap);
+
+for (const [rel, s] of relStats) {
+  console.log(`  rel  ${rel.padEnd(38)} ${String(s.dofollow).padStart(2)} dofollow  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);
+}
+
+// O CSV que o Dataset.distribution aponta. Fica fora do sitemap de proposito:
+// o sitemap so lista paginas HTML.
+{
+  const abs = path.join(ROOT, evidence.csvPath);
+  const out = renderEvidenceCsv(evidence);
+  const before = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : null;
+  fs.writeFileSync(abs, out, 'utf8');
+  console.log(`${before === out ? 'unchanged' : 'wrote'} ${evidence.csvPath} (${published(evidence).length} linhas)`);
+}

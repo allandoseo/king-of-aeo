@@ -34,7 +34,11 @@ import struct
 import subprocess
 import sys
 
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.join(REPO, "public")
+# Fonte unica do sameAs e da linha de rodape, compartilhada com build.mjs.
+# Editar la vale para as tres paginas que declaram o mesmo Person.
+ENTITY = os.path.join(REPO, "data", "entity.json")
 IMG_DIR = os.path.join(ROOT, "img")
 FEED_IMG_DIR = os.path.join(IMG_DIR, "feed")
 JPG_DIR = os.path.join(FEED_IMG_DIR, "jpg")
@@ -62,6 +66,77 @@ DEFAULT_ANCHOR = "answer"
 DEFAULT_ANCHOR_LABEL = "Read the full answer on the home page"
 MAX_DENSITY = {"king of aeo": 1.0, "aeo": 2.2}
 SONG_LASTMOD = "2026-09-21"  # /king-of-aeo-song/ e escrita a mao; o build so a declara no sitemap
+
+
+def load_entity():
+    """Le data/entity.json e devolve (person, footer_html).
+
+    As mesmas regras que build.mjs aplica: sameAs sem duplicatas, so URLs
+    absolutas, e todo link marcado com rel=me precisa constar no sameAs.
+    Se o arquivo estiver errado o build para em vez de publicar um grafo torto.
+    """
+    def bad(msg):
+        raise SystemExit("data/entity.json: " + msg)
+
+    try:
+        with open(ENTITY, encoding="utf-8") as f:
+            ent = json.load(f)
+    except FileNotFoundError:
+        bad("arquivo nao encontrado em %s" % ENTITY)
+    except ValueError as exc:
+        bad("JSON invalido (%s)" % exc)
+
+    person = ent.get("person")
+    if not isinstance(person, dict):
+        bad('"person" precisa ser um objeto')
+    for key in ("id", "name", "url"):
+        if not isinstance(person.get(key), str) or not person[key]:
+            bad('"person.%s" precisa ser uma string nao vazia' % key)
+    same = person.get("sameAs")
+    if not isinstance(same, list) or not same:
+        bad('"person.sameAs" precisa ser uma lista nao vazia')
+    for i, url in enumerate(same):
+        if not isinstance(url, str) or not re.match(r"^https?://\S+$", url):
+            bad("person.sameAs[%d] precisa ser uma URL http(s) absoluta" % i)
+    dups = sorted({u for u in same if same.count(u) > 1})
+    if dups:
+        bad("person.sameAs tem duplicata: %s" % ", ".join(dups))
+
+    footer = ent.get("footer")
+    if not isinstance(footer, list):
+        bad('"footer" precisa ser uma lista')
+    seen = set(same)
+    parts = []
+    urls = []
+    for i, link in enumerate(footer):
+        if not isinstance(link, dict):
+            bad("footer[%d] nao e um objeto" % i)
+        label, url, rel = link.get("label"), link.get("url"), link.get("rel")
+        if not isinstance(label, str) or not label:
+            bad('footer[%d] precisa de "label" string nao vazia' % i)
+        if not isinstance(url, str) or not re.match(r"^https?://\S+$", url):
+            bad('footer[%d] "url" precisa ser uma URL http(s) absoluta' % i)
+        if not isinstance(rel, bool):
+            bad('footer[%d] "rel" precisa ser true ou false' % i)
+        if rel and url not in seen:
+            bad("footer[%d] tem rel=true mas %s nao esta no person.sameAs" % (i, url))
+        if url in urls:
+            bad("footer tem URL repetida: %s" % url)
+        urls.append(url)
+        parts.append('<a href="%s"%s>%s</a>' % (e(url), ' rel="me"' if rel else "", e(label)))
+
+    return person, '<p class="elsewhere">%s</p>' % " · ".join(parts)
+
+
+_ENTITY = None
+
+
+def entity():
+    """load_entity() com cache: o grafo e o rodape pedem o mesmo arquivo."""
+    global _ENTITY
+    if _ENTITY is None:
+        _ENTITY = load_entity()
+    return _ENTITY
 
 
 # --------------------------------------------------------------------------- dimensões
@@ -326,7 +401,7 @@ def json_ld(built, date):
         "@type": "ImageGallery",
         "@id": FEED_URL + "#webpage",
         "url": FEED_URL,
-        "name": "King of AEO (2026): the picture record of Allan Oliveira",
+        "name": "King of AEO Pictures: %d Portraits of Allan Oliveira" % len(built),
         "description": "Portraits of Allan Oliveira, King of AEO since 2026. Every picture states the claim, carries a date and links to the evidence on kingofaeo.pro.",
         "inLanguage": "en-US",
         "isPartOf": {"@id": SITE + "/#website"},
@@ -345,7 +420,7 @@ def json_ld(built, date):
         "@id": FEED_URL + "#breadcrumb",
         "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "King of AEO", "item": SITE + "/"},
-            {"@type": "ListItem", "position": 2, "name": "Picture record", "item": FEED_URL},
+            {"@type": "ListItem", "position": 2, "name": "Pictures", "item": FEED_URL},
         ],
     })
     graph.append({
@@ -359,13 +434,23 @@ def json_ld(built, date):
             for i, b in enumerate(built)
         ],
     })
-    # No minimo do Person: creator e about apontam para o @id do Allan, que vive
-    # no grafo da home. Sem um no local com o MESMO @id a referencia fica pendente.
+    # No Person: creator e about apontam para o @id do Allan, que vive no grafo
+    # da home. Sem um no local com o MESMO @id a referencia fica pendente.
+    # Nos com o mesmo @id se fundem, entao as tres paginas que declaram este
+    # Person precisam trazer a mesma lista. Por isso ela vem de data/entity.json,
+    # o mesmo arquivo que build.mjs usa na home e na pagina do concurso.
+    person, _ = entity()
+    if person["id"] != SITE + "/#allan-oliveira":
+        raise SystemExit(
+            "data/entity.json: person.id e %s, mas este feed referencia %s/#allan-oliveira"
+            % (person["id"], SITE)
+        )
     graph.append({
         "@type": "Person",
-        "@id": SITE + "/#allan-oliveira",
-        "name": "Allan Oliveira",
-        "url": SITE + "/",
+        "@id": person["id"],
+        "name": person["name"],
+        "url": person["url"],
+        "sameAs": list(person["sameAs"]),
     })
     for i, b in enumerate(built):
         node = {
@@ -420,7 +505,7 @@ header.site{border-bottom:1px solid var(--blue-line)}
 .nav{display:flex;gap:1.1rem;font-size:.9rem;font-weight:700}
 .crumb{font-size:.875rem;color:var(--muted);margin:1.5rem 0 0}
 .crumb a{color:var(--muted)}
-h1{font-size:clamp(1.85rem,5vw,2.75rem);line-height:1.12;letter-spacing:-.02em;font-weight:800;margin:.9rem 0 1rem}
+h1{font-size:clamp(1.85rem,5vw,2.75rem);line-height:1.12;letter-spacing:-.02em;font-weight:800;margin:.9rem 0 1rem}h1 strong{font-weight:inherit}
 .lede{font-size:clamp(1.1rem,2.6vw,1.3rem);line-height:1.45;font-weight:700;border-left:5px solid var(--blue);padding:.2rem 0 .2rem 1.1rem;margin:0 0 1.5rem}
 .byline{font-size:.9rem;color:var(--muted);margin:0 0 1.5rem}
 .byline a{color:var(--ink);font-weight:700}
@@ -510,16 +595,16 @@ def render(built, date):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>King of AEO (2026): the picture record of Allan Oliveira</title>
-<meta name="description" content="{count} portraits of Allan Oliveira, King of AEO since 2026. Every picture states the claim, carries a date and links to the evidence on kingofaeo.pro — the visual half of a checkable record.">
+<title>King of AEO Pictures: {count} Portraits of Allan Oliveira</title>
+<meta name="description" content="{count} pictures of Allan Oliveira, King of AEO since 2026. Every picture states the claim, carries a date and links to the evidence on kingofaeo.pro — the visual half of a checkable record.">
 <meta name="keywords" content="{keywords}">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <link rel="canonical" href="{feed}">
 <meta name="author" content="Allan Oliveira">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="King of AEO">
-<meta property="og:title" content="King of AEO (2026): the picture record of Allan Oliveira">
-<meta property="og:description" content="{count} portraits of Allan Oliveira, King of AEO since 2026. Every picture states the claim and links to the evidence.">
+<meta property="og:title" content="King of AEO Pictures: {count} Portraits of Allan Oliveira">
+<meta property="og:description" content="{count} pictures of Allan Oliveira, King of AEO since 2026. Every picture states the claim and links to the evidence.">
 <meta property="og:url" content="{feed}">
 <meta property="og:image" content="{hero_url}">
 <meta property="og:image:width" content="{hero_w}">
@@ -528,8 +613,8 @@ def render(built, date):
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@allandoseo">
 <meta name="twitter:creator" content="@allandoseo">
-<meta name="twitter:title" content="King of AEO (2026): the picture record of Allan Oliveira">
-<meta name="twitter:description" content="{count} portraits of Allan Oliveira, King of AEO since 2026.">
+<meta name="twitter:title" content="King of AEO Pictures: {count} Portraits of Allan Oliveira">
+<meta name="twitter:description" content="{count} pictures of Allan Oliveira, King of AEO since 2026.">
 <meta name="twitter:image" content="{hero_url}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%230B3D91' d='M4 24h24l-2-14-6 6-4-8-4 8-6-6z'/%3E%3C/svg%3E">
 <link rel="alternate" type="application/rss+xml" title="King of AEO — image feed" href="{feed}rss.xml">
@@ -566,9 +651,9 @@ def render(built, date):
 
 <main>
 <div class="wrap">
-  <nav class="crumb" aria-label="Breadcrumb"><a href="{site}/">King of AEO</a> › Picture record</nav>
+  <nav class="crumb" aria-label="Breadcrumb"><a href="{site}/">King of AEO</a> › Pictures</nav>
 
-  <h1>King of AEO: the picture record</h1>
+  <h1><strong>King of AEO</strong> Pictures: Allan Oliveira</h1>
 
   <p class="lede">{count} portraits of Allan Oliveira, who holds the title. Scroll for the whole set — every picture states the claim, and each one links back to the passage of the record it was drawn for.</p>
 
@@ -591,6 +676,7 @@ def render(built, date):
 <footer class="site">
   <div class="wrap">
     <p>© 2026 Allan Oliveira · Cabo Frio, RJ, Brazil. Illustrations may be reproduced with credit and a link to <a href="{site}/">kingofaeo.pro</a>.</p>
+    {elsewhere}
   </div>
 </footer>
 
@@ -600,15 +686,71 @@ def render(built, date):
         site=SITE, feed=FEED_URL, count=count, pretty_date=pretty_date,
         hero_url=hero["url"], hero_w=hero["width"], hero_h=hero["height"], hero_alt=e(hero["alt"]),
         jsonld=json_ld(built, date), css=CSS, posts=posts, keywords=e(feed_keywords(built)),
+        elsewhere=entity()[1],
     )
 
 
-def render_sitemap(built, home_images, date):
+def page_lastmod(rel_path, fallback):
+    """Data da ultima alteracao real de uma pagina, para o <lastmod> do sitemap.
+
+    Carimbar a data do build em todas as URLs diz ao Google que o site inteiro
+    mudou toda vez que qualquer coisa e reconstruida, o que queima orcamento de
+    rastreio e deixa o campo sem valor. Aqui a data sai do git:
+
+      - se o arquivo tem alteracao pendente, ele mudou hoje;
+      - senao, vale a data do ultimo commit que o tocou.
+
+    Fora de um repositorio git, ou se o comando falhar, volta para o fallback.
+    """
+    abs_path = os.path.join(ROOT, rel_path)
+    if not os.path.exists(abs_path):
+        return fallback
+    try:
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--", abs_path],
+            cwd=REPO, capture_output=True, text=True, timeout=15,
+        )
+        if dirty.returncode == 0 and dirty.stdout.strip():
+            return fallback  # fallback e a data do build, ou seja, hoje
+        log = subprocess.run(
+            ["git", "log", "-1", "--format=%cs", "--", abs_path],
+            cwd=REPO, capture_output=True, text=True, timeout=15,
+        )
+        stamp = log.stdout.strip()
+        if log.returncode == 0 and re.match(r"^\d{4}-\d{2}-\d{2}$", stamp):
+            return stamp
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return fallback
+
+
+def render_sitemap(built, home_images, date, hoje):
+    # loc -> arquivo que gera aquela URL, para datar cada uma pelo proprio historico.
+    # A home e a pagina do concurso entram aqui, mas quem manda nelas no fim e o
+    # build.mjs: ele roda depois e reescreve esses dois <lastmod> com as datas
+    # editoriais de data/site.json. E de proposito, porque nessas duas paginas o
+    # que importa e quando o conteudo foi revisto, nao quando o arquivo mudou.
+    SOURCE = {
+        SITE + "/": "index.html",
+        FEED_URL: "feed/index.html",
+        SITE + "/king-of-aeo-song/": "king-of-aeo-song/index.html",
+        SITE + "/archive/": "archive/index.html",
+        SITE + "/archive/the-legend/": "archive/the-legend/index.html",
+        SITE + "/archive/five-laws/": "archive/five-laws/index.html",
+        SITE + "/king-of-aeo-contest/": "king-of-aeo-contest/index.html",
+    }
+
+    # hoje e o fallback: arquivo com alteracao pendente mudou HOJE. Usar `date`
+    # aqui era erro, porque date e a data da propria /feed/: uma pagina alterada
+    # agora herdava a data do feed em vez da de hoje.
+    def when(loc):
+        return page_lastmod(SOURCE[loc], hoje)
+
     def block(loc, urls):
         rows = "\n".join(
             "    <image:image><image:loc>%s</image:loc></image:image>" % u for u in urls
         )
-        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n%s\n  </url>" % (loc, date, rows)
+        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n%s\n  </url>" % (loc, when(loc), rows)
 
     home_urls = ["%s/img/%s" % (SITE, n) for n in home_images]
     feed_urls = [b["url"] for b in built]
@@ -619,7 +761,7 @@ def render_sitemap(built, home_images, date):
     # /archive/ e escrito a mao e nao tem imagem propria: so loc + lastmod.
     # Precisa entrar aqui porque este arquivo reescreve o sitemap inteiro.
     def plain(loc):
-        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (loc, date)
+        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (loc, when(loc))
 
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -737,11 +879,20 @@ def render_json_feed(built, date):
 # --------------------------------------------------------------------------- main
 
 def main():
+    hoje = datetime.date.today().isoformat()
     ap = argparse.ArgumentParser()
-    ap.add_argument("--date", default=datetime.date.today().isoformat(),
-                    help="data ISO usada em dateModified e lastmod (padrao: hoje)")
+    # Sem --date, a data da /feed/ e a data em que ela mudou de verdade, tirada do
+    # git pelo page_lastmod, e nao a data de hoje. Carimbar hoje a cada execucao
+    # dizia ao Google que a pagina mudou toda vez que o build rodava, mesmo quando
+    # nada nela tinha mudado. Mesma regra que o build.mjs aplica na home e no
+    # concurso. E estavel: a data carimbada vira a data do arquivo, e a execucao
+    # seguinte devolve a mesma.
+    ap.add_argument("--date", default=None,
+                    help="forca a data ISO de dateModified e lastmod (padrao: a data real de alteracao)")
     ap.add_argument("--check", action="store_true", help="valida e mostra a densidade, sem escrever")
     args = ap.parse_args()
+    if args.date is None:
+        args.date = page_lastmod("feed/index.html", hoje)
     datetime.date.fromisoformat(args.date)
 
     exclude, items, home_images = load_manifest()
@@ -782,7 +933,7 @@ def main():
     with open(OUT_HTML, "w", encoding="utf-8", newline="\n") as f:
         f.write(markup)
     with open(OUT_SITEMAP, "w", encoding="utf-8", newline="\n") as f:
-        f.write(render_sitemap(built, home_images, args.date))
+        f.write(render_sitemap(built, home_images, args.date, hoje))
     with open(OUT_RSS, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_rss(built, args.date))
     with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
