@@ -1,31 +1,23 @@
 :root{
   --paper:#ffffff;
   --ink:#14213d;
-  --ink-soft:#243049;   /* corpo dentro de faixa clara */
   --blue:#0b3d91;
   --blue-soft:#e8f0fe;
-  --blue-line:#c5d6f3;
-  /* --line era usada em .toc e em figure.shot img e NUNCA foi definida: as duas
-     bordas caiam para currentColor e saiam em azul-marinho escuro em vez de
-     divisor claro. Definida agora com o tom de divisor do design. */
+  --blue-line:#c5d5f5;
+  /* --line era usada em .toc e em figure.shot img e nunca tinha sido definida:
+     as duas bordas caiam para currentColor e saiam em azul-marinho escuro em
+     vez de divisor claro. Este e o unico pedaco da etapa 1 que ficou, porque
+     conserta defeito e nao muda estilo. */
   --line:#d6e2f7;
-  --muted:#5b6680;      /* texto secundario */
-  --muted-2:#3d4a66;    /* navegacao */
-  --muted-3:#8a94ab;    /* terciario, rotulos */
-  --warm:#fdf1dc;
+  --muted:#5b6478;
   --gold:#c9a227;
-  /* Mono do sistema em vez de carregar IBM Plex Mono: o design pede mono em 38
-     pontos, quase todos rotulos curtos, e uma segunda webfont custa mais do que
-     entrega numa pagina cuja imagem de LCP acabou de ser otimizada. */
   --mono:ui-monospace,SFMono-Regular,"IBM Plex Mono",Menlo,Consolas,monospace;
-  /* 74ch com o corpo em .97rem da os ~680px de coluna que o design usa. Em ch,
-     e nao em px, para a medida acompanhar o tamanho do texto. */
-  --measure:74ch;
+  --measure:68ch;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:Manrope,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-weight:500;font-size:.97rem;line-height:1.7}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Manrope,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-weight:500;font-size:1.0625rem;line-height:1.65}
 a{color:var(--blue);text-decoration-thickness:1px;text-underline-offset:3px}
 a:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 header.site{border-bottom:1px solid var(--blue-line)}
@@ -44,30 +36,26 @@ header.site{border-bottom:1px solid var(--blue-line)}
 .crumb{font-size:.875rem;color:var(--muted);margin:1.5rem 0 0}
 .crumb a{color:var(--muted)}
 .stamp{display:inline-block;margin:1.25rem 0 0;padding:.35rem .7rem;border:1.5px solid var(--blue);border-radius:999px;font-size:.8125rem;font-weight:700;color:var(--blue)}
-h1{font-size:clamp(2.625rem,6vw,4.5rem);line-height:1.04;letter-spacing:-.03em;font-weight:800;margin:1.375rem 0 1.75rem}
-/* O H1 e o paragrafo-resposta sao uma relacao tipografica so. Com o H1 em
-   72px, a resposta em 24px negrito competia com ele em vez de segui-lo. No
-   design ela e 18px normal, e o destaque vem da faixa do hero. A faixa e
-   etapa 2; ate la a regra azul a esquerda segura o destaque. */
-#answer{font-size:1.125rem;line-height:1.7;font-weight:500;color:var(--ink-soft);border-left:3px solid var(--blue);padding:.1rem 0 .1rem 1.1rem;margin:0 0 1.75rem}
+h1{font-size:clamp(1.85rem,5vw,2.75rem);line-height:1.12;letter-spacing:-.02em;font-weight:800;margin:.9rem 0 1rem}
+#answer{font-size:clamp(1.2rem,3vw,1.5rem);line-height:1.4;font-weight:700;border-left:5px solid var(--blue);padding:.2rem 0 .2rem 1.1rem;margin:0 0 1.5rem}
 #answer strong{color:var(--blue)}
-.byline{font-size:.875rem;color:var(--muted);margin:0 0 1.5rem}
+.byline{font-size:.9rem;color:var(--muted);margin:0 0 1.5rem}
 .byline a{color:var(--ink);font-weight:700}
 figure{margin:1.75rem 0}
 figure img{display:block;width:100%;height:auto;border-radius:6px}
-figcaption{font-size:.8125rem;color:var(--muted);margin-top:.5rem}
+figcaption{font-size:.85rem;color:var(--muted);margin-top:.5rem}
 .toc{border:1px solid var(--line);border-radius:10px;padding:1rem 1.25rem;margin:1.75rem 0;font-size:.95rem}
 .toc strong{display:block;margin-bottom:.5rem}
 .toc ol{margin:0;padding-left:1.2rem;columns:2;column-gap:2rem}
 .toc li{margin:.2rem 0;break-inside:avoid}
 @media(max-width:640px){.toc ol{columns:1}}
 .prompt{background:#f6f7f9;border-left:3px solid var(--blue);padding:.7rem .9rem;margin:.6rem 0 1rem;font-family:var(--mono);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
-h2{font-size:clamp(1.75rem,3.6vw,2.25rem);line-height:1.15;letter-spacing:-.025em;font-weight:800;margin:5rem 0 1.25rem;scroll-margin-top:1rem}
-h3{font-size:1.1875rem;line-height:1.25;letter-spacing:-.015em;font-weight:800;margin:1.75rem 0 .5rem}
+h2{font-size:clamp(1.4rem,3.4vw,1.85rem);line-height:1.2;letter-spacing:-.015em;font-weight:800;margin:2.75rem 0 .9rem;scroll-margin-top:1rem}
+h3{font-size:1.15rem;font-weight:800;margin:1.75rem 0 .5rem}
 p{margin:0 0 1.1rem}
 ul,ol{padding-left:1.4rem;margin:0 0 1.2rem}
 li{margin:0 0 .45rem}
-table{width:100%;border-collapse:collapse;font-size:.875rem;margin:1rem 0 1.5rem}
+table{width:100%;border-collapse:collapse;font-size:.95rem;margin:1rem 0 1.5rem}
 th,td{text-align:left;vertical-align:top;padding:.6rem .55rem;border-bottom:1px solid var(--blue-line)}
 th{background:var(--blue-soft);font-weight:800}
 .scroll{overflow-x:auto}
