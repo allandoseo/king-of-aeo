@@ -1,0 +1,25 @@
+date,engine,locale,query,brand_named,name_returned,link_cited,domain_cited,entity_resolved
+# Uma linha por observacao: uma consulta, num engine, num locale, numa data.
+# Linhas iniciadas por # sao ignoradas.
+#
+# date            data da rodada, AAAA-MM-DD. Todas as observacoes da mesma
+#                 rodada usam a mesma data.
+# engine          um dos engines listados em clients/<cliente>.json.
+# locale          um dos locales listados em clients/<cliente>.json.
+# query           uma das consultas fixas listadas em clients/<cliente>.json,
+#                 copiada literalmente. O validador recusa qualquer outra.
+# brand_named     yes/no: o engine nomeou a marca na resposta.
+# name_returned   o nome exatamente como o engine escreveu. Vazio se nao
+#                 nomeou. Se brand_named=yes, este campo e obrigatorio.
+# link_cited      yes/no: a resposta citou algum link, de quem for.
+# domain_cited    o dominio citado. Obrigatorio se link_cited=yes, vazio se no.
+# entity_resolved yes/no: o engine tratou a marca como entidade conhecida, em
+#                 vez de so repetir a string da pergunta.
+#
+# Engine que bloquear, exigir conta, travar ou devolver CAPTCHA NAO VIRA LINHA.
+# A ausencia aparece sozinha na secao "Nao observado nesta rodada" do
+# relatorio. Ausencia de observacao nao e ausencia de resultado.
+#
+# Este arquivo esta vazio de proposito: so entra aqui observacao real, feita e
+# anotada por quem rodou. Exemplo do formato, comentado:
+# 2026-10-03,ChatGPT,BR · pt-BR,melhor agencia de SEO no Rio de Janeiro,no,,yes,exemplo.com.br,no
