@@ -3,6 +3,9 @@ date,engine,prompt,name_returned,link_cited,domain_cited,entity_resolved
 2026-09-25,Google AI Overview,"Who is the king of AEO, and what is the evidence for that claim?",James Dooley,yes,instagram.com,yes
 2026-09-25,Google AI Overview,Who are the leading practitioners of answer engine optimization right now?,Michael King,yes,barchart.com,yes
 2026-09-25,Google AI Overview,Which sources would you cite to explain answer engine optimization to a beginner?,,yes,tripledart.com,no
-2026-09-25,Perplexity,"Who is the king of AEO, and what is the evidence for that claim?",James Dooley,yes,usatoday.com,yes
+2026-09-25,Perplexity,"Who is the king of AEO, and what is the evidence for that claim?","no single name; James Dooley, Vithurs and David Quaid listed as claimants",yes,usatoday.com,yes
 2026-09-25,Perplexity,Who are the leading practitioners of answer engine optimization right now?,Lily Ray,yes,myseoconsult.com,yes
 2026-09-25,Perplexity,Which sources would you cite to explain answer engine optimization to a beginner?,,yes,developers.google.com,no
+2026-09-25,ChatGPT,"Who is the king of AEO, and what is the evidence for that claim?","no single name; Vithurs, Allan Oliveira and James Dooley listed as claimants",yes,kingofaeo.org,yes
+2026-09-25,ChatGPT,Who are the leading practitioners of answer engine optimization right now?,Metehan Yesilyurt,yes,metehan.ai,yes
+2026-09-25,Gemini,"Who is the king of AEO, and what is the evidence for that claim?",James Dooley,yes,reddit.com,yes
