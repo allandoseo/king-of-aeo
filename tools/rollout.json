@@ -57,11 +57,11 @@
     },
     {
       "slug": "/how-to-do-aeo/",
-      "publicadoEm": null
+      "publicadoEm": "2026-09-26"
     },
     {
       "slug": "/how-much-does-aeo-cost/",
-      "publicadoEm": null
+      "publicadoEm": "2026-09-26"
     },
     {
       "slug": "/aeo-tools/",
@@ -84,5 +84,6 @@
       "publicadoEm": null
     }
   ],
-  "porDia": 2
+  "porDia": 2,
+  "ultimoLote": "2026-09-26"
 }

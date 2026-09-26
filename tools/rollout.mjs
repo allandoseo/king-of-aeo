@@ -145,6 +145,9 @@ for (const p of lote) {
 // sem shell nao os resolve. Falhou exatamente aqui na primeira execucao real.
 const roda = (cmd, args) => execFileSync(cmd, args, {
   cwd: RAIZ, stdio: 'inherit', shell: process.platform === 'win32',
+  // O validador precisa saber quais paginas sao deste lote para dar a elas a
+  // carencia de um dia na regra de links entrando.
+  env: { ...process.env, ROLLOUT_BATCH: lote.map((p) => p.slug).join(',') },
 });
 
 // 2. build e validacao ANTES de publicar. Se o guard rail reprovar, a pagina

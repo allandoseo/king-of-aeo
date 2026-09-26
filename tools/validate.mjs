@@ -231,21 +231,18 @@ const MIN_ENTRANDO_PERGUNTAS = 3;
 // link quando a irma dela sair, no lote seguinte. Exigir os tres no mesmo dia
 // faria a regra impedir a publicacao que ela existe para qualificar. No
 // proximo build ela e cobrada como todas as outras.
-const publicadasHoje = (() => {
-  try {
-    const m = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tools/rollout.json'), 'utf8'));
-    const hoje = new Date().toISOString().slice(0, 10);
-    return new Set(m.paginas.filter((p) => p.publicadoEm === hoje).map((p) => p.slug));
-  } catch {
-    return new Set();
-  }
-})();
+// O lote em execucao chega pelo ambiente, posto por tools/rollout.mjs. Ler do
+// manifesto nao funciona: o rollout so grava publicadoEm DEPOIS de o validador
+// passar, entao durante a validacao a pagina ainda nao consta como publicada.
+const publicadasHoje = new Set(
+  (process.env.ROLLOUT_BATCH ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+);
 for (const url of CLUSTER_PERGUNTAS) {
   if (!entrando.has(url)) continue;  // ainda em content/pending/, nao publicada
   const n = entrando.get(url).size;
   if (publicadasHoje.has(url)) {
     if (n < MIN_ENTRANDO_PERGUNTAS) {
-      avisa(url, `${n} link(s) entrando, publicada hoje; cobrada a partir do proximo build`);
+      avisa(url, `${n} link(s) entrando, publicada neste lote; cobrada a partir do proximo build`);
     }
     continue;
   }
