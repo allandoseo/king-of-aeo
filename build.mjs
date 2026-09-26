@@ -1344,6 +1344,60 @@ const VARIANTES = [
   { rel: 'public/allan-oliveira/index.html', loc: `${SITE}/allan-oliveira/` },
 ];
 
+// ---------- cluster: hub, anterior/proxima e relacionadas ----------
+//
+// Ate 26 de setembro de 2026 a nav "More on this subject" existia so na home.
+// Resultado medido por tools/validate.mjs: /allan-oliveira/ e
+// /king-of-answer-engine-optimization/ tinham UMA pagina apontando para elas,
+// a home. Pagina com um unico link entrando depende inteiramente daquele link.
+//
+// Agora cada pagina do cluster recebe o link do hub, a anterior, a proxima e
+// as relacionadas declaradas abaixo. A ordem da lista E a ordem de leitura.
+const CLUSTER = [
+  ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
+  ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
+  ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
+  ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
+  ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
+];
+
+// Equivale ao campo "related" de um frontmatter: declarado a mao, porque
+// proximidade de assunto nao se deduz de contagem de palavra em comum.
+const RELACIONADAS = {
+  '/what-is-aeo/': ['/king-of-answer-engine-optimization/', '/citation-log/'],
+  '/king-of-answer-engine-optimization/': ['/what-is-aeo/', '/king-of-aeo-claimants/'],
+  '/king-of-aeo-claimants/': ['/king-of-answer-engine-optimization/', '/allan-oliveira/'],
+  '/allan-oliveira/': ['/king-of-aeo-claimants/', '/citation-log/'],
+  '/citation-log/': ['/what-is-aeo/', '/allan-oliveira/'],
+};
+
+function renderClusterNav(url) {
+  const i = CLUSTER.findIndex(([u]) => u === url);
+  if (i < 0) fail(`renderClusterNav: ${url} nao esta em CLUSTER`);
+  const acha = (u) => {
+    const r = CLUSTER.find(([x]) => x === u);
+    if (!r) fail(`renderClusterNav: ${u} nao esta em CLUSTER`);
+    return r;
+  };
+  const usados = new Set([url]);
+  const linha = (rotulo, u) => {
+    if (usados.has(u)) return null;
+    usados.add(u);
+    const [href, titulo, nota] = acha(u);
+    return `        <li><strong>${rotulo}:</strong> <a href="${href}">${esc(titulo)}</a> &mdash; ${esc(nota)}</li>`;
+  };
+  const L = [
+    '      <strong>More on this subject</strong>',
+    '      <p>This page is part of the King of AEO record. The <a href="/">main claim page</a> carries the dated evidence and names every rival claim.</p>',
+    '      <ul>',
+  ];
+  if (i > 0) L.push(linha('Previous', CLUSTER[i - 1][0]));
+  if (i < CLUSTER.length - 1) L.push(linha('Next', CLUSTER[i + 1][0]));
+  for (const rel of RELACIONADAS[url] ?? []) L.push(linha('Related', rel));
+  L.push('      </ul>');
+  return L.filter(Boolean).join(`\n`);
+}
+
 function renderNavVariantes() {
   const itens = [
     ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
@@ -1396,12 +1450,26 @@ const PAGINAS = [
 
 const SITEMAPS_FILHOS = ['sitemap-pages.xml', 'sitemap-images.xml', 'sitemap-videos.xml'];
 
+// O lastmod de uma URL e o dateModified que a propria pagina declara, nao a
+// data do build e nao a data do commit. A data de commit mente: um restamp da
+// versao do CSS toca os doze arquivos e faria o sitemap anunciar doze paginas
+// alteradas num dia em que nenhum texto mudou. Cai para a data de commit so
+// quando a pagina nao declara dateModified.
+function dateModifiedDe(rel, fallback) {
+  const abs = path.join(ROOT, rel);
+  if (!fs.existsSync(abs)) return gitLastChange(rel, fallback);
+  const html = fs.readFileSync(abs, 'utf8');
+  const datas = [...html.matchAll(/"dateModified"\s*:\s*"([0-9]{4}-[0-9]{2}-[0-9]{2})/g)]
+    .map((m) => m[1]);
+  return datas.length ? datas.reduce((a, b) => (b > a ? b : a)) : gitLastChange(rel, fallback);
+}
+
 function renderPagesSitemap(fallback) {
   const linhas = PAGINAS.map(({ loc, arquivo }) => {
     if (arquivo && !fs.existsSync(path.join(ROOT, arquivo))) {
       fail(`${FILES.sitemapPages}: ${loc} points at ${arquivo}, which does not exist`);
     }
-    const quando = arquivo ? `\n    <lastmod>${gitLastChange(arquivo, fallback)}</lastmod>` : '';
+    const quando = arquivo ? `\n    <lastmod>${dateModifiedDe(arquivo, fallback)}</lastmod>` : '';
     return `  <url>\n    <loc>${esc(loc)}</loc>${quando}\n  </url>`;
   });
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${linhas.join('\n')}\n</urlset>\n`;
@@ -1625,7 +1693,7 @@ const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws]
 // externos dela sao todos da propria entidade (rodape e caixa do autor), entao
 // nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
 // --- paginas de variacao ---
-const variantes = VARIANTES.map(({ rel }) => {
+const variantes = VARIANTES.map(({ rel, loc }) => {
   const f = readText(rel);
   const quando = gitLastChange(rel, today);
   replaceMarker(f, 'pageReviewedLong', longDate(quando));
@@ -1635,6 +1703,7 @@ const variantes = VARIANTES.map(({ rel }) => {
     }
   });
   patchMeta(f, 'property="article:modified_time"', () => isoDateTime(quando));
+  replaceMarker(f, 'clusterNav', `\n${renderClusterNav(new URL(loc).pathname)}\n    `);
   return f;
 });
 replaceMarker(home, 'moreOnThis', `\n${renderNavVariantes()}\n    `);
@@ -1644,6 +1713,7 @@ replaceMarker(home, 'independentRule', `\n${renderRegraIndependente()}\n    `);
 // --- /citation-log/ ---
 const citacaoPagina = readText(FILES.citationLog);
 replaceMarker(home, 'verifyPrompts', `\n${renderHomePrompts()}\n    `);
+replaceMarker(citacaoPagina, 'clusterNav', `\n${renderClusterNav('/citation-log/')}\n    `);
 replaceMarker(citacaoPagina, 'citationPrompts', `\n${renderCitacaoPrompts()}\n    `);
 replaceMarker(citacaoPagina, 'citationLog', `\n${renderCitacaoTabela(citacoes)}\n    `);
 patchCitacaoDataset(citacaoPagina, citacoes, gitLastChange(CITACAO_CSV, today));

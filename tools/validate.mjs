@@ -1,0 +1,228 @@
+#!/usr/bin/env node
+// validate.mjs — guard rails do site. Le o que o build escreveu e reprova.
+//
+//   node tools/validate.mjs            avisos nao quebram o build
+//   node tools/validate.mjs --strict   todo aviso vira erro
+//
+// POR QUE EXISTEM DOIS NIVEIS.
+//
+// As regras de tamanho (description entre 120 e 158, title ate 60, minimo de
+// 500 palavras, minimo de 2 links entrando) foram medidas contra o site real
+// em 26 de setembro de 2026: 9 das 12 paginas reprovavam. Fazer o build quebrar
+// naquele dia significaria reescrever 9 descriptions e 2 titles de paginas ja
+// indexadas, o que e decisao editorial, nao decisao de build.
+//
+// Entao elas saem como AVISO, e o --strict existe para o dia em que o conteudo
+// estiver ajustado. As regras que ninguem viola hoje (JSON-LD invalido, slug
+// duplicado, link interno quebrado, referencia @id orfa) quebram desde ja: nao
+// ha conflito, e sao as que causam dano real e silencioso.
+//
+// Este programa NAO escreve nada. Ele so le e reprova.
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+const RAIZ = path.join(import.meta.dirname ?? process.cwd(), '..');
+const PUB = path.join(RAIZ, 'public');
+const ESTRITO = process.argv.includes('--strict');
+
+const LIMITES = {
+  palavrasMin: 500,
+  descMin: 120,
+  descMax: 158,
+  titleMax: 60,
+  entrantesMin: 2,
+};
+
+// O /404.html e servido pelo Cloudflare quando nada casa. Nao tem canonical,
+// nao tem JSON-LD, ninguem linka para ele e ele nao deve ter 500 palavras.
+// Medi-lo pelas regras de conteudo so produziria ruido permanente no relatorio.
+const SEM_REGRA_DE_CONTEUDO = new Set(['/404.html']);
+
+const erros = [];
+const avisos = [];
+const falha = (url, msg) => erros.push({ url, msg });
+const avisa = (url, msg) => (ESTRITO ? erros : avisos).push({ url, msg });
+
+// ---------- leitura ----------
+
+function paginas(dir = PUB, saida = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) paginas(p, saida);
+    else if (e.name.endsWith('.html')) saida.push(p);
+  }
+  return saida;
+}
+
+function urlDe(abs) {
+  const rel = path.relative(PUB, abs).split(path.sep).join('/');
+  return rel === 'index.html' ? '/' : '/' + rel.replace(/index\.html$/, '');
+}
+
+function semMarcacao(html) {
+  return html
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function pega(html, re) {
+  const m = html.match(re);
+  return m ? m[1].trim() : '';
+}
+
+// Um href interno pode apontar para uma pagina, um arquivo servido ou uma
+// ancora. Aqui so interessa se o alvo existe no que vai ser publicado.
+function alvoExiste(href) {
+  const limpo = href.split('#')[0].split('?')[0];
+  if (!limpo || limpo === '/') return fs.existsSync(path.join(PUB, 'index.html'));
+  const base = path.join(PUB, limpo.replace(/^\//, ''));
+  if (limpo.endsWith('/')) return fs.existsSync(path.join(base, 'index.html'));
+  return fs.existsSync(base) || fs.existsSync(path.join(base, 'index.html'));
+}
+
+function normaliza(href) {
+  const limpo = href.split('#')[0].split('?')[0];
+  return limpo === '' ? null : limpo;
+}
+
+// ---------- coleta ----------
+
+const docs = paginas().map((abs) => {
+  const html = fs.readFileSync(abs, 'utf8');
+  const corpo = html.match(/<body[\s\S]*<\/body>/i)?.[0] ?? html;
+  const blocos = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+    .map((m) => m[1]);
+  return {
+    abs,
+    url: urlDe(abs),
+    title: pega(html, /<title>([\s\S]*?)<\/title>/),
+    desc: pega(html, /<meta name="description" content="([\s\S]*?)"\s*\/?>/),
+    canonical: pega(html, /<link rel="canonical" href="([^"]+)"/),
+    h1: semMarcacao(pega(html, /<h1[^>]*>([\s\S]*?)<\/h1>/)),
+    palavras: semMarcacao(html).split(' ').filter(Boolean).length,
+    blocos,
+    hrefs: [...corpo.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]),
+  };
+});
+
+// ---------- 1. JSON-LD valido e sem referencia @id orfa ----------
+
+for (const d of docs) {
+  if (!d.blocos.length) {
+    if (!SEM_REGRA_DE_CONTEUDO.has(d.url)) avisa(d.url, 'nenhum bloco JSON-LD');
+    continue;
+  }
+  for (const [i, cru] of d.blocos.entries()) {
+    let dado;
+    try {
+      dado = JSON.parse(cru);
+    } catch (e) {
+      falha(d.url, `JSON-LD invalido no bloco ${i + 1}: ${e.message}`);
+      continue;
+    }
+    const grafo = dado['@graph'] ?? [dado];
+    const ids = grafo.map((n) => n && n['@id']).filter(Boolean);
+    const repetido = ids.find((x, k) => ids.indexOf(x) !== k);
+    if (repetido) falha(d.url, `@id repetido no @graph: ${repetido}`);
+    const conhecidos = new Set(ids);
+    const visita = (n) => {
+      if (Array.isArray(n)) return n.forEach(visita);
+      if (!n || typeof n !== 'object') return;
+      const chaves = Object.keys(n);
+      if (chaves.length === 1 && chaves[0] === '@id'
+          && String(n['@id']).startsWith('https://kingofaeo.pro/#') && !conhecidos.has(n['@id'])) {
+        falha(d.url, `referencia @id orfa: ${n['@id']}`);
+      }
+      Object.values(n).forEach(visita);
+    };
+    visita(grafo);
+  }
+}
+
+// ---------- 2. slug duplicado ----------
+
+const porCanonical = new Map();
+for (const d of docs) {
+  if (!d.canonical) {
+    if (!SEM_REGRA_DE_CONTEUDO.has(d.url)) avisa(d.url, 'sem <link rel="canonical">');
+    continue;
+  }
+  const antes = porCanonical.get(d.canonical);
+  if (antes) falha(d.url, `canonical duplicado, ja usado por ${antes}: ${d.canonical}`);
+  else porCanonical.set(d.canonical, d.url);
+}
+
+// ---------- 3. link interno quebrado, e grafo de links ----------
+
+const entrando = new Map(docs.map((d) => [d.url, new Set()]));
+for (const d of docs) {
+  const daqui = new Set();
+  for (const href of d.hrefs) {
+    const alvo = normaliza(href);
+    if (!alvo) continue;
+    if (!alvoExiste(alvo)) {
+      falha(d.url, `link interno quebrado: ${alvo}`);
+      continue;
+    }
+    if (entrando.has(alvo) && alvo !== d.url) daqui.add(alvo);
+  }
+  for (const alvo of daqui) entrando.get(alvo).add(d.url);
+}
+
+// ---------- 4. regras de tamanho e de ligacao ----------
+
+for (const d of docs) {
+  if (SEM_REGRA_DE_CONTEUDO.has(d.url)) continue;
+  if (d.palavras < LIMITES.palavrasMin) {
+    avisa(d.url, `${d.palavras} palavras, minimo ${LIMITES.palavrasMin}`);
+  }
+  if (!d.desc) {
+    avisa(d.url, 'sem meta description');
+  } else if (d.desc.length < LIMITES.descMin || d.desc.length > LIMITES.descMax) {
+    avisa(d.url, `description com ${d.desc.length} caracteres, fora de ${LIMITES.descMin}-${LIMITES.descMax}`);
+  }
+  if (d.title.length > LIMITES.titleMax) {
+    avisa(d.url, `title com ${d.title.length} caracteres, maximo ${LIMITES.titleMax}`);
+  }
+  if (!d.h1) avisa(d.url, 'sem <h1>');
+  const n = entrando.get(d.url).size;
+  if (n < LIMITES.entrantesMin) {
+    avisa(d.url, `${n} pagina(s) apontando para ela, minimo ${LIMITES.entrantesMin}`);
+  }
+}
+
+// ---------- relatorio ----------
+
+docs.sort((a, b) => a.url.localeCompare(b.url));
+const larg = Math.max(...docs.map((d) => d.url.length), 3);
+console.log(`validate: ${docs.length} paginas${ESTRITO ? '  (--strict: todo aviso e erro)' : ''}`);
+console.log();
+console.log(`${'URL'.padEnd(larg)}  ${'pal'.padStart(5)}  ${'ttl'.padStart(3)}  ${'desc'.padStart(4)}  ${'ent'.padStart(3)}`);
+console.log('-'.repeat(larg + 24));
+for (const d of docs) {
+  console.log(`${d.url.padEnd(larg)}  ${String(d.palavras).padStart(5)}  `
+    + `${String(d.title.length).padStart(3)}  ${String(d.desc.length).padStart(4)}  `
+    + `${String(entrando.get(d.url).size).padStart(3)}`);
+}
+console.log();
+
+const mostra = (rotulo, lista) => {
+  if (!lista.length) return;
+  console.log(`${rotulo} (${lista.length}):`);
+  for (const { url, msg } of lista) console.log(`  ${url}  ${msg}`);
+  console.log();
+};
+mostra('ERRO', erros);
+mostra('AVISO', avisos);
+
+if (erros.length) {
+  console.error(`validate: ${erros.length} erro(s). Build reprovado.`);
+  process.exit(1);
+}
+console.log(avisos.length
+  ? `validate: sem erros, ${avisos.length} aviso(s). Rode com --strict para trata-los como erro.`
+  : 'validate: tudo passa, inclusive em --strict.');
