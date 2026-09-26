@@ -35,8 +35,9 @@ header.site{border-bottom:1px solid var(--blue-line)}
   .bar{gap:.35rem}
   .nav{width:100%;gap:.35rem 1rem;font-size:.85rem}
   /* inline-block para o padding contar na caixa: como <a> inline, o alvo
-     media 34px de altura, abaixo dos 44 que um dedo pede. */
-  .nav a{display:inline-block;padding:.5rem 0}
+     media 34px de altura. .7rem leva a caixa a 44px, que e a recomendacao da
+     Apple e o nivel AAA do WCAG. Custa uns 13px de cabecalho no celular. */
+  .nav a{display:inline-block;padding:.7rem 0}
 }
 /* O card voltou a miniatura: a mesma faixa ja toca no player do slot video-1,
    logo acima, e embedar de novo aqui repetiria a musica na mesma pagina. */
