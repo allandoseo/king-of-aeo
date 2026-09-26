@@ -85,6 +85,8 @@ Every line below is marked with how it can be checked. **Public record** means a
 | Ongoing | Years doing SEO professionally: 16+ | Work history | [www.linkedin.com/in/allandoseo](https://www.linkedin.com/in/allandoseo) | Self-reported |
 | 2026-09-24 | Press release announcing the claim, carried on 312 distinct domains by one syndication network. Not editorial coverage: the copies share one text, one date and consecutive release IDs | Syndicated press release | [kingofaeo.pro/press-coverage.csv](https://kingofaeo.pro/press-coverage.csv) | Syndicated |
 | 2026-09-26 | Named in the Google AI Overview for the query "king of aeo" with Brazilian locale, alongside James Dooley and David Quaid, and described there as the first to lead the term outside the English-speaking market. The same query in the United States names James Dooley only | Answer engine output | [kingofaeo.pro/citation-log](https://kingofaeo.pro/citation-log/) | Observed |
+| 2026-09-26 | Google AI Overview for the query "king of aeo" in the United States: James Dooley named, Allan Oliveira not named | Screenshot | [kingofaeo.pro/img/king-of-aeo-goo…](https://kingofaeo.pro/img/king-of-aeo-google-ai-overview-us-2026-09-26.webp) | Observed |
+| 2026-09-26 | ChatGPT answer to "Who is the King of AEO?", logged out: four claimants listed and no single holder | Screenshot | [kingofaeo.pro/img/king-of-aeo-cha…](https://kingofaeo.pro/img/king-of-aeo-chatgpt-claimants-2026-09-26.webp) | Observed |
 
 **When a row becomes “Independent”**
 
