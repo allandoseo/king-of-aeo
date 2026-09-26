@@ -308,6 +308,8 @@
 
     <h1>Citation log</h1>
 
+    <p class="byline">Cite as: &ldquo;Citation log&rdquo;, https://kingofaeo.pro/citation-log/, reviewed <!-- build:logReviewedLong -->26 September 2026<!-- /build -->.</p>
+
     <p id="answer">This page records what answer engines actually return when asked who the King of AEO is. Runs are published here <strong>whether or not the result favours this site</strong>. The table is generated at build time from <a href="/citation-log.csv">citation-log.csv</a>, which is the citable artefact: one row per engine per prompt per run, under CC BY 4.0.</p>
 
     <h2 id="method">Method</h2>
@@ -354,6 +356,43 @@
     </table>
     </div>
     <p>12 rows, every one of them also in <a href="/citation-log.csv">citation-log.csv</a>.</p>
+    <!-- /build -->
+
+    <h2 id="series">Runs by engine and market, week by week</h2>
+
+    <!-- build:logSeries -->
+    <div class="scroll wide">
+    <table class="stacked">
+      <thead><tr><th>Engine</th><th>Market</th><th><a href="/citation-log/2026-w39/">2026-w39</a></th></tr></thead>
+      <tbody>
+        <tr><td data-label="Engine">ChatGPT</td><td data-label="Market">BR</td><td data-label="2026-w39">3</td></tr>
+        <tr><td data-label="Engine">ChatGPT</td><td data-label="Market">US</td><td data-label="2026-w39">—</td></tr>
+        <tr><td data-label="Engine">Claude</td><td data-label="Market">BR</td><td data-label="2026-w39">—</td></tr>
+        <tr><td data-label="Engine">Claude</td><td data-label="Market">US</td><td data-label="2026-w39">—</td></tr>
+        <tr><td data-label="Engine">Perplexity</td><td data-label="Market">BR</td><td data-label="2026-w39">3</td></tr>
+        <tr><td data-label="Engine">Perplexity</td><td data-label="Market">US</td><td data-label="2026-w39">—</td></tr>
+        <tr><td data-label="Engine">Gemini</td><td data-label="Market">BR</td><td data-label="2026-w39">1</td></tr>
+        <tr><td data-label="Engine">Gemini</td><td data-label="Market">US</td><td data-label="2026-w39">—</td></tr>
+        <tr><td data-label="Engine">Google AI Overview</td><td data-label="Market">BR</td><td data-label="2026-w39">1</td></tr>
+        <tr><td data-label="Engine">Google AI Overview</td><td data-label="Market">US</td><td data-label="2026-w39">4</td></tr>
+        <tr><td data-label="Engine">Copilot</td><td data-label="Market">BR</td><td data-label="2026-w39">—</td></tr>
+        <tr><td data-label="Engine">Copilot</td><td data-label="Market">US</td><td data-label="2026-w39">—</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Each cell is the number of runs observed. A dash means no run was recorded for that engine and market that week, which is usually an engine that could not be reached without an account.</p>
+    <!-- /build -->
+
+    <h2 id="weeks">Weeks</h2>
+
+    <p>Each week with at least five runs gets its own page and its own CSV. A week below that
+    threshold does not get a page: a thin week published as a page becomes a URL someone later
+    cites as if it were a measurement.</p>
+
+    <!-- build:logWeeks -->
+    <ul>
+        <li><a href="/citation-log/2026-w39/">2026-w39</a> &mdash; 12 runs, 25 September 2026 to 26 September 2026 (<a href="/citation-log/2026-w39.csv">CSV</a>)</li>
+    </ul>
     <!-- /build -->
 
     <h2 id="data">The data</h2>

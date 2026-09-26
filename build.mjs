@@ -1597,6 +1597,253 @@ function renderNavVariantes() {
     .concat(['      </ul>']).join('\n');
 }
 
+// ---------- paginas semanais do citation log ----------
+//
+// Uma semana e dado puro: as linhas do CSV agrupadas por semana ISO. Entao a
+// pagina inteira e gerada, e nao mantida a mao. O que NAO e gerado e a leitura
+// do que aconteceu: ela vem de data/citation-weeks.json e o build reprova uma
+// semana publicavel sem nota. Texto de "what changed" gerado por template seria
+// exatamente o tipo de conteudo que esta pagina existe para nao ser.
+//
+// REGRA DE SEGURANCA: semana com menos de MIN_RUNS_SEMANA runs nao vira pagina.
+// Melhor nao existir do que existir fina, e uma semana rala publicada vira uma
+// URL que alguem cita depois como se fosse medicao.
+const MIN_RUNS_SEMANA = 5;
+
+function semanaIso(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const alvo = new Date(d);
+  alvo.setUTCDate(alvo.getUTCDate() + 4 - (alvo.getUTCDay() || 7));
+  const ano = alvo.getUTCFullYear();
+  const jan1 = new Date(Date.UTC(ano, 0, 1));
+  const n = Math.ceil(((alvo - jan1) / 86400000 + 1) / 7);
+  return `${ano}-w${n}`;
+}
+
+function mercadoDe(locale) {
+  return String(locale).split('·')[0].trim() || locale;
+}
+
+function agrupaSemanas(citacoes) {
+  const por = new Map();
+  for (const r of citacoes) {
+    const s = semanaIso(r.date);
+    if (!por.has(s)) por.set(s, []);
+    por.get(s).push(r);
+  }
+  return [...por.entries()]
+    .map(([semana, runs]) => ({
+      semana,
+      runs: runs.slice().sort((a, b) => (a.date + a.engine).localeCompare(b.date + b.engine)),
+      de: runs.reduce((a, r) => (r.date < a ? r.date : a), runs[0].date),
+      ate: runs.reduce((a, r) => (r.date > a ? r.date : a), runs[0].date),
+    }))
+    .sort((a, b) => a.semana.localeCompare(b.semana));
+}
+
+function renderTabelaSemana(runs) {
+  const linhas = runs.map((r) => '        <tr>'
+    + `<td data-label="Date">${esc(r.date)}</td>`
+    + `<td data-label="Engine">${esc(r.engine)}</td>`
+    + `<td data-label="Market">${esc(mercadoDe(r.locale))}</td>`
+    + `<td data-label="Name returned">${esc(r.name_returned || '—')}</td>`
+    + `<td data-label="Source cited">${esc(r.domain_cited || '—')}</td>`
+    + `<td data-label="Entity resolved">${esc(r.entity_resolved)}</td></tr>`);
+  return ['    <div class="scroll wide">', '    <table class="stacked">',
+    '      <thead><tr><th>Date</th><th>Engine</th><th>Market</th><th>Name returned</th>'
+    + '<th>Source cited</th><th>Entity resolved</th></tr></thead>',
+    '      <tbody>', ...linhas, '      </tbody>', '    </table>', '    </div>'].join('\n');
+}
+
+// O resumo numerico e gerado porque e contagem, nao prosa.
+function resumoSemana(runs) {
+  const mercados = [...new Set(runs.map((r) => mercadoDe(r.locale)))].sort();
+  const porMercado = mercados.map((m) => `${runs.filter((r) => mercadoDe(r.locale) === m).length} ${m}`);
+  const resolvidas = runs.filter((r) => r.entity_resolved === 'yes').length;
+  const nossas = runs.filter((r) => (r.domain_cited || '').includes('kingofaeo.pro')).length;
+  const semRun = CITACAO_ENGINES.filter((e) => !runs.some((r) => r.engine === e));
+  const partes = [
+    `<strong>${runs.length} runs</strong> this week (${porMercado.join(', ')}).`,
+    `Entity resolved in ${resolvidas} of ${runs.length}.`,
+    `kingofaeo.pro cited as a source in ${nossas} of ${runs.length}.`,
+  ];
+  if (semRun.length) {
+    partes.push(`No run produced an observation on ${semRun.join(' or ')}: `
+      + 'an engine that could not be reached does not become a row.');
+  }
+  return `    <p>${partes.join(' ')}</p>`;
+}
+
+function citeAs(loc, quando) {
+  return '    <p class="byline">Cite as: &ldquo;Citation log, '
+    + `${esc(quando)}&rdquo;, ${esc(loc)}, reviewed ${esc(longDate(today))}.</p>`;
+}
+
+function renderPaginasSemanais(citacoes, notas) {
+  const semanas = agrupaSemanas(citacoes);
+  const publicaveis = semanas.filter((s) => s.runs.length >= MIN_RUNS_SEMANA);
+  const molde = fs.readFileSync(path.join(ROOT, FILES.citationLog), 'utf8');
+  const escritas = [];
+
+  for (const [k, s] of publicaveis.entries()) {
+    const nota = notas?.semanas?.[s.semana]?.nota;
+    if (!nota) {
+      fail(`data/citation-weeks.json: week ${s.semana} has ${s.runs.length} runs and no "nota". `
+        + 'Write what changed that week, from the data. It is not generated on purpose.');
+    }
+    const loc = `${SITE}/citation-log/${s.semana}/`;
+    const csvLoc = `${SITE}/citation-log/${s.semana}.csv`;
+    const ant = publicaveis[k - 1];
+    const prox = publicaveis[k + 1];
+
+    const grafo = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Dataset',
+          '@id': `${loc}#dataset`,
+          name: `Answer engine citation log, ${s.semana}`,
+          description: `Every answer engine run recorded between ${s.de} and ${s.ate}: engine, `
+            + 'market, name returned, source cited and whether the entity was resolved.',
+          url: loc,
+          temporalCoverage: `${s.de}/${s.ate}`,
+          license: 'https://creativecommons.org/licenses/by/4.0/',
+          isPartOf: { '@id': `${SITE}/citation-log/#dataset` },
+          creator: { '@id': `${SITE}/#allan-oliveira` },
+          distribution: [{
+            '@type': 'DataDownload',
+            encodingFormat: 'text/csv',
+            contentUrl: csvLoc,
+          }],
+          variableMeasured: CITACAO_COLUNAS.map((c) => ({
+            '@type': 'PropertyValue', name: c.chave, description: c.desc,
+          })),
+        },
+        {
+          '@type': 'WebPage', '@id': `${loc}#webpage`, url: loc,
+          name: `Citation log, ${s.semana}`,
+          description: `Answer engine runs recorded between ${s.de} and ${s.ate}, with what each `
+            + 'engine returned in each market.',
+          inLanguage: 'en-US',
+          isPartOf: { '@id': `${SITE}/#website` },
+          datePublished: isoDateTime(s.ate),
+          dateModified: isoDateTime(s.ate),
+          breadcrumb: { '@id': `${loc}#breadcrumb` },
+        },
+        {
+          '@type': 'BreadcrumbList', '@id': `${loc}#breadcrumb`,
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'King of AEO', item: `${SITE}/` },
+            { '@type': 'ListItem', position: 2, name: 'Citation log', item: `${SITE}/citation-log/` },
+            { '@type': 'ListItem', position: 3, name: s.semana, item: loc },
+          ],
+        },
+      ],
+    };
+
+    const navSemanas = ['    <nav class="tldr" aria-label="Weeks">', '      <ul>',
+      `        <li><strong>Hub:</strong> <a href="/citation-log/">All weeks and the method</a></li>`];
+    if (ant) navSemanas.push(`        <li><strong>Previous:</strong> <a href="/citation-log/${ant.semana}/">${esc(ant.semana)}</a></li>`);
+    if (prox) navSemanas.push(`        <li><strong>Next:</strong> <a href="/citation-log/${prox.semana}/">${esc(prox.semana)}</a></li>`);
+    navSemanas.push('      </ul>', '    </nav>');
+
+    const corpo = [
+      `    <nav class="crumb" aria-label="Breadcrumb"><a href="${SITE}/">King of AEO</a> &rsaquo; `
+        + `<a href="/citation-log/">Citation log</a> &rsaquo; ${esc(s.semana)}</nav>`,
+      '',
+      `    <h1>Citation log, ${esc(s.semana)}</h1>`,
+      '',
+      `    <p id="answer"><strong>Answer engine runs recorded between ${esc(longDate(s.de))} and `
+        + `${esc(longDate(s.ate))}. Every run is listed below, including the ones that returned `
+        + 'nothing useful, and the raw rows are published as CSV.</strong></p>',
+      citeAs(loc, s.semana),
+      '',
+      '    <h2>What changed this week</h2>',
+      '',
+      nota.split('\n').map((l) => (l.trim() ? `    ${l.trim()}` : '')).join('\n'),
+      '',
+      '    <h2>The runs</h2>',
+      '',
+      resumoSemana(s.runs),
+      renderTabelaSemana(s.runs),
+      '',
+      `    <p>Raw rows for this week: <a href="/citation-log/${s.semana}.csv">${s.semana}.csv</a>. `
+        + 'The cumulative file across every week is <a href="/citation-log.csv">citation-log.csv</a>, '
+        + 'and <a href="/citation-log/">the hub</a> carries the method, the exact prompts and the '
+        + 'editorial rule.</p>',
+      '',
+      ...navSemanas,
+    ].join('\n');
+
+    let t = molde;
+    const titulo = `Citation Log ${s.semana}: What Answer Engines Returned`;
+    t = t.replace(/<title>[\s\S]*?<\/title>/, `<title>${titulo}</title>`);
+    t = t.replace(/<meta name="description" content="[\s\S]*?"\s*\/?>/,
+      `<meta name="description" content="Every answer engine run recorded between ${s.de} and `
+      + `${s.ate}: engine, market, name returned and source cited. Raw rows as CSV.">`);
+    t = t.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="${loc}"`);
+    t = t.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/,
+      `<script type="application/ld+json">\n${JSON.stringify(grafo, null, 2)}\n</script>`);
+    const i = t.indexOf('    <nav class="crumb"');
+    const j = t.indexOf('  </article>');
+    if (i < 0 || j < 0) fail(`${FILES.citationLog}: cannot find the article body to use as a week template`);
+    t = t.slice(0, i) + corpo + '\n' + t.slice(j);
+
+    const rel = `public/citation-log/${s.semana}/index.html`;
+    fs.mkdirSync(path.dirname(path.join(ROOT, rel)), { recursive: true });
+    writeGenerated(rel, t);
+
+    // CSV da semana, com as mesmas colunas do acumulado
+    const cab = CITACAO_COLUNAS.map((c) => c.chave);
+    const csv = [cab.join(','), ...s.runs.map((r) => cab.map((c) => {
+      const v = String(r[c] ?? '');
+      return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+    }).join(','))].join('\n');
+    writeGenerated(`public/citation-log/${s.semana}.csv`, `${csv}\n`);
+    escritas.push({ ...s, loc, csvLoc });
+  }
+
+  const finas = semanas.filter((s) => s.runs.length < MIN_RUNS_SEMANA);
+  for (const s of finas) {
+    console.log(`  semana ${s.semana}: ${s.runs.length} run(s), abaixo de ${MIN_RUNS_SEMANA}; `
+      + 'pagina nao gerada de proposito');
+  }
+  return escritas;
+}
+
+// Serie historica por engine, separando mercado. Uma coluna por semana.
+function renderSerieHub(citacoes, semanas) {
+  if (!semanas.length) return '    <p>No week has reached the minimum number of runs yet.</p>';
+  const mercados = [...new Set(citacoes.map((r) => mercadoDe(r.locale)))].sort();
+  const linhas = [];
+  for (const eng of CITACAO_ENGINES) {
+    for (const m of mercados) {
+      const celulas = semanas.map((s) => {
+        const n = s.runs.filter((r) => r.engine === eng && mercadoDe(r.locale) === m).length;
+        return `<td data-label="${esc(s.semana)}">${n || '—'}</td>`;
+      });
+      linhas.push(`        <tr><td data-label="Engine">${esc(eng)}</td>`
+        + `<td data-label="Market">${esc(m)}</td>${celulas.join('')}</tr>`);
+    }
+  }
+  const cab = semanas.map((s) => `<th><a href="/citation-log/${s.semana}/">${esc(s.semana)}</a></th>`);
+  return ['    <div class="scroll wide">', '    <table class="stacked">',
+    `      <thead><tr><th>Engine</th><th>Market</th>${cab.join('')}</tr></thead>`,
+    '      <tbody>', ...linhas, '      </tbody>', '    </table>', '    </div>',
+    '    <p>Each cell is the number of runs observed. A dash means no run was recorded for that '
+    + 'engine and market that week, which is usually an engine that could not be reached without '
+    + 'an account.</p>'].join('\n');
+}
+
+function renderListaSemanas(semanas) {
+  if (!semanas.length) return '    <p>No week page has been published yet.</p>';
+  const itens = semanas.slice().reverse().map((s) => '        <li>'
+    + `<a href="/citation-log/${s.semana}/">${esc(s.semana)}</a> &mdash; `
+    + `${s.runs.length} runs, ${esc(longDate(s.de))} to ${esc(longDate(s.ate))} `
+    + `(<a href="/citation-log/${s.semana}.csv">CSV</a>)</li>`);
+  return ['    <ul>', ...itens, '    </ul>'].join('\n');
+}
+
 // ---------- sitemaps ----------
 //
 // Um dono por arquivo. Antes o build.mjs corrigia o sitemap.xml e o
@@ -1627,6 +1874,16 @@ const PAGINAS = [
   { loc: CITACAO_URL, arquivo: FILES.citationLog },
   ...VARIANTES.map(({ rel, loc }) => ({ loc, arquivo: rel })),
   { loc: `${SITE}/citation-log.csv`, arquivo: CITACAO_CSV },
+  // As paginas semanais e os CSVs por semana sao gerados: entram no sitemap
+  // lendo o disco, para uma semana nova aparecer sem editar esta lista.
+  ...(fs.existsSync(path.join(ROOT, 'public/citation-log'))
+    ? fs.readdirSync(path.join(ROOT, 'public/citation-log'), { withFileTypes: true })
+        .filter((e) => /^\d{4}-w\d{1,2}$/.test(e.name))
+        .flatMap((e) => ([
+          { loc: `${SITE}/citation-log/${e.name}/`, arquivo: `public/citation-log/${e.name}/index.html` },
+          { loc: `${SITE}/citation-log/${e.name}.csv`, arquivo: `public/citation-log/${e.name}.csv` },
+        ]))
+    : []),
   { loc: `${SITE}/llms.txt`, arquivo: FILES.llms },
   { loc: `${SITE}/llms-full.txt`, arquivo: FILES.llmsFull },
   { loc: `${SITE}/evidence.csv`, arquivo: 'public/evidence.csv' },
@@ -1917,6 +2174,16 @@ replaceMarker(home, 'verifyPrompts', `\n${renderHomePrompts()}\n    `);
 replaceMarker(citacaoPagina, 'clusterNav', `\n${renderClusterNav('/citation-log/')}\n    `);
 replaceMarker(citacaoPagina, 'citationPrompts', `\n${renderCitacaoPrompts()}\n    `);
 replaceMarker(citacaoPagina, 'citationLog', `\n${renderCitacaoTabela(citacoes)}\n    `);
+
+// As semanas sao geradas antes de o hub ser preenchido, porque o hub lista
+// o que foi gerado. O molde da pagina semanal e lido do disco, entao ele
+// pega o cabecalho e o rodape da versao anterior do hub, que e o que se
+// quer: so o corpo do artigo e substituido.
+const notasSemanais = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/citation-weeks.json'), 'utf8'));
+const semanasLog = renderPaginasSemanais(citacoes, notasSemanais);
+replaceMarker(citacaoPagina, 'logSeries', `\n${renderSerieHub(citacoes, semanasLog)}\n    `);
+replaceMarker(citacaoPagina, 'logWeeks', `\n${renderListaSemanas(semanasLog)}\n    `);
+replaceMarker(citacaoPagina, 'logReviewedLong', longDate(today));
 patchCitacaoDataset(citacaoPagina, citacoes, gitLastChange(CITACAO_CSV, today));
 replaceMarker(home, 'latestRun', `\n${renderLatestRun(citacoes)}\n    `);
 

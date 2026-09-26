@@ -234,9 +234,19 @@ const MIN_ENTRANDO_PERGUNTAS = 3;
 // O lote em execucao chega pelo ambiente, posto por tools/rollout.mjs. Ler do
 // manifesto nao funciona: o rollout so grava publicadoEm DEPOIS de o validador
 // passar, entao durante a validacao a pagina ainda nao consta como publicada.
-const publicadasHoje = new Set(
-  (process.env.ROLLOUT_BATCH ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-);
+// Duas fontes, e as duas sao necessarias. Durante a execucao do rollout o
+// manifesto ainda nao registrou a publicacao, entao o lote vem do ambiente.
+// Depois dela, no resto do dia, qualquer build precisa dar a mesma carencia,
+// senao o site fica sem poder subir ate a irma da pagina sair no dia seguinte.
+const publicadasHoje = (() => {
+  const s = new Set((process.env.ROLLOUT_BATCH ?? '').split(',').map((x) => x.trim()).filter(Boolean));
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tools/rollout.json'), 'utf8'));
+    const hoje = new Date().toISOString().slice(0, 10);
+    for (const p of m.paginas) if (p.publicadoEm === hoje) s.add(p.slug);
+  } catch { /* sem manifesto, vale so o ambiente */ }
+  return s;
+})();
 for (const url of CLUSTER_PERGUNTAS) {
   if (!entrando.has(url)) continue;  // ainda em content/pending/, nao publicada
   const n = entrando.get(url).size;
