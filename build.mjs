@@ -1398,7 +1398,8 @@ const VARIANTES = [
     .map((s) => ({ rel: `public/${s}/index.html`, loc: `${SITE}/${s}/` })),
   // Indice dos reivindicantes e uma pagina por reivindicante. Citam as fontes
   // pelo nome do dominio, em texto simples: nenhuma delas linka para fora.
-  ...['', 'james-dooley', 'david-quaid', 'vithurs', 'edward-sturm', 'julian-goldie', 'stephane-morera']
+  ...['', 'james-dooley', 'david-quaid', 'vithurs', 'edward-sturm', 'julian-goldie',
+    'stephane-morera', 'jesper-nissen']
     .map((s) => ({
       rel: `public/claimants/${s ? `${s}/` : ''}index.html`,
       loc: `${SITE}/claimants/${s ? `${s}/` : ''}`,
