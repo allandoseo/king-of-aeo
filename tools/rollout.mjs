@@ -94,14 +94,17 @@ if (SO_STATUS || !naFila.length) {
   process.exit(0);
 }
 
-// Um lote por dia. Rodar duas vezes no mesmo dia nao publica seis.
-const jaHoje = publicadas.filter((p) => p.publicadoEm === hoje());
-if (jaHoje.length >= LOTE) {
-  console.log(`rollout: o lote de ${hoje()} ja saiu (${jaHoje.map((p) => p.slug).join(', ')}).`);
+// Um lote por dia. A primeira versao contava tudo que tinha publicadoEm igual
+// a hoje, o que incluia paginas publicadas por outros caminhos no mesmo dia:
+// com onze delas no manifesto, o lote de dois ficou bloqueado por paginas que
+// nao tinham nada a ver com esta fila. O que se quer limitar e a EXECUCAO, e
+// e ela que fica registrada.
+if (manifesto.ultimoLote === hoje()) {
+  console.log(`rollout: o lote de ${hoje()} ja foi executado. Nada a fazer.`);
   process.exit(0);
 }
 
-const lote = naFila.slice(0, LOTE - jaHoje.length);
+const lote = naFila.slice(0, LOTE);
 // Uma execucao pode morrer DEPOIS de mover e ANTES de registrar a data, e foi
 // o que aconteceu na primeira vez, quando o deploy nao conseguiu invocar o
 // wrangler. Nesse estado a pagina esta em public/ e o manifesto ainda diz que
@@ -171,6 +174,7 @@ roda('node', ['tools/indexnow.mjs']);
 
 // 5. so agora o manifesto registra a data
 for (const p of lote) { p.publicadoEm = hoje(); delete p._retomada; }
+manifesto.ultimoLote = hoje();
 fs.writeFileSync(MANIFESTO, `${JSON.stringify(manifesto, null, 2)}\n`, 'utf8');
 console.log();
 console.log(`rollout: lote de ${hoje()} publicado. Restam ${naFila.length - lote.length} na fila.`);
