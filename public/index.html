@@ -603,9 +603,11 @@
     <h2 id="verify">Verify it yourself</h2>
     <p>A claim about answer engines should be testable by the person reading it, not taken on trust. Answer engines are non-deterministic: the same prompt can return different sources on different days, in different countries and for different accounts. That cuts both ways, and it is the reason this section gives you the procedure instead of a screenshot. A screenshot proves what one machine said once; a procedure lets you check what the machines say today.</p>
     <p>Open a fresh session, with no memory of earlier chats and no personalization, and ask a question a real person would ask. Neutral phrasing matters, because a prompt that already contains the answer will get it echoed back:</p>
+    <!-- build:verifyPrompts -->
     <p class="prompt">Who is the king of AEO, and what is the evidence for that claim?</p>
     <p class="prompt">Who are the leading practitioners of answer engine optimization right now?</p>
     <p class="prompt">Which sources would you cite to explain answer engine optimization to a beginner?</p>
+    <!-- /build -->
     <p>Then read what comes back the way an auditor would. Three things are worth separating. First, whether a name is <em>mentioned</em>, which costs the engine nothing. Second, whether a page is <em>cited</em> with a link, which means the engine committed to a source. Third, whether the engine <em>resolved the entity</em>, naming the person and the work rather than repeating a phrase it found. The third is the hard one, and it is what this discipline is actually about.</p>
     <p>Run the same prompts across more than one engine, and repeat them a week later. A single answer is an anecdote. A pattern that holds across engines and across time is the closest thing to evidence this field currently offers, and it is the standard this page asks to be judged by. If the pattern does not hold, that is a finding too, and corrections are published here in place with a new date.</p>
 

@@ -1009,6 +1009,15 @@ function lerCitacoes() {
   });
 }
 
+// Os mesmos tres prompts na secao "Verify it yourself" da home. Estavam
+// escritos a mao la e em CITACAO_PROMPTS aqui: dois lugares para a mesma
+// promessa, e nada obrigando os dois a concordar. A home pedia ao leitor que
+// rodasse um conjunto, o validador do CSV cobrava outro, e a divergencia so
+// apareceria quando ja estivesse publicada.
+function renderHomePrompts() {
+  return CITACAO_PROMPTS.map((p) => `    <p class="prompt">${esc(p)}</p>`).join('\n');
+}
+
 function renderCitacaoPrompts() {
   return `    <ol class="prompts">\n${CITACAO_PROMPTS.map((p) => `      <li>${esc(p)}</li>`).join('\n')}\n    </ol>`;
 }
@@ -1385,6 +1394,7 @@ const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws]
 // --- /citation-log/ ---
 const citacoes = lerCitacoes();
 const citacaoPagina = readText(FILES.citationLog);
+replaceMarker(home, 'verifyPrompts', `\n${renderHomePrompts()}\n    `);
 replaceMarker(citacaoPagina, 'citationPrompts', `\n${renderCitacaoPrompts()}\n    `);
 replaceMarker(citacaoPagina, 'citationLog', `\n${renderCitacaoTabela(citacoes)}\n    `);
 patchCitacaoDataset(citacaoPagina, citacoes, gitLastChange(CITACAO_CSV, today));
