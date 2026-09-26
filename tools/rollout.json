@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "Ordem do manifesto E ordem de publicacao: quem esta primeiro sai primeiro.",
+    "A pagina so entra em public/ no dia dela; ate la fica em content/pending/,",
+    "e build.mjs a ignora por filtro de existencia. O IndexNow recebe so as URLs",
+    "do lote do dia.",
+    "",
+    "Sete dos dez slugs pedidos em 26/09/2026 nao entraram: quatro repetiam",
+    "secoes que a home ja publica, /who-is-the-king-of-aeo/ disputaria com o H1",
+    "da propria home a consulta principal do site, e /how-much-does-aeo-cost/ e",
+    "/aeo-tools/ exigiriam dado que este site nao tem."
+  ],
+  "paginas": [
+    {
+      "slug": "/aeo-vs-geo/",
+      "publicadoEm": null
+    },
+    {
+      "slug": "/how-to-measure-aeo/",
+      "publicadoEm": null
+    },
+    {
+      "slug": "/aeo-vs-seo/",
+      "publicadoEm": null
+    }
+  ]
+}

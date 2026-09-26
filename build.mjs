@@ -1376,7 +1376,12 @@ const VARIANTES = [
   { rel: 'public/king-of-aeo-claimants/index.html', loc: `${SITE}/king-of-aeo-claimants/` },
   { rel: 'public/king-of-answer-engine-optimization/index.html', loc: `${SITE}/king-of-answer-engine-optimization/` },
   { rel: 'public/allan-oliveira/index.html', loc: `${SITE}/allan-oliveira/` },
-];
+  // Paginas de pergunta, publicadas em lotes por tools/rollout.mjs. O filtro
+  // abaixo e o que torna o lote possivel: enquanto o arquivo nao esta em
+  // public/, a pagina nao existe para o sitemap nem para o build.
+  ...['how-to-measure-aeo', 'aeo-vs-geo', 'aeo-vs-seo']
+    .map((s) => ({ rel: `public/${s}/index.html`, loc: `${SITE}/${s}/` })),
+].filter(({ rel }) => fs.existsSync(path.join(ROOT, rel)));
 
 // ---------- cluster: hub, anterior/proxima e relacionadas ----------
 //
@@ -1389,11 +1394,17 @@ const VARIANTES = [
 // as relacionadas declaradas abaixo. A ordem da lista E a ordem de leitura.
 const CLUSTER = [
   ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
+  ['/aeo-vs-seo/', 'AEO vs SEO', 'what changes when the unit stops being the page'],
+  ['/aeo-vs-geo/', 'AEO vs GEO', 'two labels for nearly the same work, and what the engines show instead'],
+  ['/how-to-measure-aeo/', 'How to measure AEO', 'the protocol behind the citation log, including what does not become a row'],
   ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
   ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
   ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
   ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
-];
+// Pagina que ainda nao saiu de content/pending/ nao entra na nav: linkar para
+// ela produziria 404, e tools/validate.mjs reprova link interno quebrado. E o
+// que permite publicar em lotes sem editar esta lista a cada lote.
+].filter(([u]) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
 
 // Equivale ao campo "related" de um frontmatter: declarado a mao, porque
 // proximidade de assunto nao se deduz de contagem de palavra em comum.
