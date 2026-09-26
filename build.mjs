@@ -39,6 +39,7 @@ const FILES = {
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
   song: 'public/king-of-aeo-song/index.html',
+  feed: 'public/feed/index.html',
   // As tres de /archive/ sao escritas a mao e o build so passa nelas para
   // aplicar a politica de rel dos links externos.
   archiveIndex: 'public/archive/index.html',
@@ -242,6 +243,28 @@ function validateEntity(ent) {
     if (typeof p[k] !== 'string' || p[k] === '') fail(`${FILES.entity}: "person.${k}" must be a non-empty string`);
   }
   if (!Array.isArray(p.sameAs) || p.sameAs.length === 0) fail(`${FILES.entity}: "person.sameAs" must be a non-empty array`);
+  // A entidade so serve se estiver completa: campo que falta aqui some das doze
+  // paginas de uma vez.
+  for (const k of ['jobTitle', 'description', 'disambiguatingDescription', 'image']) {
+    if (typeof p[k] !== 'string' || p[k] === '') fail(`${FILES.entity}: "person.${k}" must be a non-empty string`);
+  }
+  for (const k of ['alternateName', 'knowsAbout']) {
+    if (!Array.isArray(p[k]) || p[k].length === 0) fail(`${FILES.entity}: "person.${k}" must be a non-empty array`);
+  }
+  for (const k of ['address', 'homeLocation']) {
+    if (!p[k] || typeof p[k] !== 'object' || Array.isArray(p[k])) fail(`${FILES.entity}: "person.${k}" must be an object`);
+  }
+  const org = ent.organization;
+  if (!org || typeof org !== 'object' || Array.isArray(org)) fail(`${FILES.entity}: "organization" must be an object`);
+  for (const k of ['id', 'name', 'url']) {
+    if (typeof org[k] !== 'string' || org[k] === '') fail(`${FILES.entity}: "organization.${k}" must be a non-empty string`);
+  }
+  const web = ent.website;
+  if (!web || typeof web !== 'object' || Array.isArray(web)) fail(`${FILES.entity}: "website" must be an object`);
+  for (const k of ['id', 'name', 'url']) {
+    if (typeof web[k] !== 'string' || web[k] === '') fail(`${FILES.entity}: "website.${k}" must be a non-empty string`);
+  }
+  if (!Array.isArray(web.hasPart)) fail(`${FILES.entity}: "website.hasPart" must be an array`);
   if (p.subjectOf !== undefined) {
     if (!Array.isArray(p.subjectOf)) fail(`${FILES.entity}: "person.subjectOf" must be an array`);
     p.subjectOf.forEach((o, i) => {
@@ -317,38 +340,12 @@ function patchFooterRow(file, row) {
 // Coleta todo no Person com este @id em qualquer profundidade do grafo.
 // A busca precisa ser recursiva porque nem sempre o no esta na raiz do @graph:
 // na pagina da musica ele vive dentro de MusicRecording.creator.
-function findPersonsById(node, id, out = []) {
-  if (Array.isArray(node)) {
-    for (const v of node) findPersonsById(v, id, out);
-  } else if (node && typeof node === 'object') {
-    // Uma referencia pendente ({"@id": …} sozinho) nao e o no real: nao recebe sameAs.
-    const isRef = Object.keys(node).length === 1 && node['@id'] !== undefined;
-    if (hasType(node, 'Person') && node['@id'] === id && !isRef) out.push(node);
-    for (const v of Object.values(node)) findPersonsById(v, id, out);
-  }
-  return out;
-}
 
 // Escreve sameAs e url no no Person cujo @id bate com o de data/entity.json.
 // Filtrar por @id, e nao so por @type, importa: a home e a pagina do concurso
 // citam os rivais como Person dentro de mentions, sem @id, e eles precisam
 // continuar sem sameAs. Nos com @id igual se fundem no grafo, entao duas
 // paginas que declarem o mesmo @id com listas diferentes se contradizem.
-function patchPersonSameAs(file, person, { subjectOf = false } = {}) {
-  return (nodes) => {
-    const found = findPersonsById(nodes, person.id);
-    if (found.length !== 1) fail(`${file.rel}: expected exactly 1 Person node with "@id":"${person.id}", found ${found.length}`);
-    found[0].sameAs = [...person.sameAs];
-    found[0].url = person.url;
-    // subjectOf so entra onde foi pedido. Nos com o mesmo @id se fundem, entao
-    // declarar em duas paginas ja basta para o grafo inteiro receber.
-    if (subjectOf && (person.subjectOf || []).length) {
-      found[0].subjectOf = person.subjectOf.map((o) => ({ ...o }));
-    } else {
-      delete found[0].subjectOf;
-    }
-  };
-}
 
 // ---------- tabela de evidências ----------
 
@@ -1134,6 +1131,107 @@ function patchCitacaoDataset(file, linhas, modificado) {
   });
 }
 
+// ---------- entidade canonica ----------
+//
+// Antes o site tinha TRES objetos Person diferentes: 14 campos na home, 6 na
+// pagina do concurso, 5 em cinco paginas, e quatro paginas sem no nenhum, so
+// com referencias @id penduradas. Para um motor que tenta resolver a entidade,
+// isso nao e uma pessoa descrita de tres jeitos: sao tres descricoes que ele
+// precisa decidir se falam da mesma pessoa.
+//
+// Agora o no sai inteiro de data/entity.json e e escrito, identico, nas doze
+// paginas. Editar o JSON-LD de uma pagina a mao nao adianta: o build reescreve.
+//
+// A ordem das chaves e fixa de proposito. E ela que faz a serializacao sair
+// byte a byte igual em toda pagina, que e o que torna a igualdade verificavel
+// em vez de acreditada.
+
+function personCanonico(ent) {
+  const p = ent.person;
+  const no = {};
+  no['@type'] = 'Person';
+  no['@id'] = p.id;
+  no.name = p.name;
+  no.alternateName = [...p.alternateName];
+  no.jobTitle = p.jobTitle;
+  no.description = p.description;
+  no.disambiguatingDescription = p.disambiguatingDescription;
+  no.url = p.url;
+  no.image = p.image;
+  // worksFor aponta por @id para o no Organization, que existe na mesma pagina.
+  // Antes era um objeto solto, sem @id: um no que nenhum outro podia referenciar
+  // e que, por isso, nao se funde com nada no grafo.
+  no.worksFor = { '@id': ent.organization.id };
+  no.knowsAbout = [...p.knowsAbout];
+  no.address = JSON.parse(JSON.stringify(p.address));
+  no.homeLocation = JSON.parse(JSON.stringify(p.homeLocation));
+  no.sameAs = [...p.sameAs];
+  if ((p.subjectOf || []).length) no.subjectOf = JSON.parse(JSON.stringify(p.subjectOf));
+  return no;
+}
+
+function orgCanonica(ent) {
+  const o = ent.organization;
+  return {
+    '@type': 'Organization',
+    '@id': o.id,
+    name: o.name,
+    url: o.url,
+    description: o.description,
+    areaServed: o.areaServed,
+    founder: { '@id': ent.person.id },
+  };
+}
+
+// Substitui o no existente no lugar em que ele esta, ou acrescenta ao @graph se
+// a pagina ainda nao o tinha. Mais de um no com o mesmo @id para o build: dois
+// nos com a mesma identidade e justamente o defeito que isto veio corrigir.
+function siteCanonico(ent) {
+  const w = ent.website;
+  return {
+    '@type': 'WebSite',
+    '@id': w.id,
+    url: w.url,
+    name: w.name,
+    inLanguage: w.inLanguage,
+    publisher: { '@id': ent.person.id },
+    hasPart: JSON.parse(JSON.stringify(w.hasPart)),
+  };
+}
+
+// A /feed/ declara 62 ImageObject cujo subjectOf aponta para o Article da home.
+// Sem um no com esse @id na propria pagina, sao 62 referencias que um consumidor
+// lendo uma pagina de cada vez nao resolve. Um stub basta: como o @id e o mesmo,
+// ele se funde com o no completo da home para quem le o site inteiro, e resolve
+// sozinho para quem le so esta pagina.
+function patchStubArtigoHome(file, ent) {
+  return (nodes) => {
+    const id = `${SITE}/#article`;
+    if (!file.text.includes(`"@id": "${id}"`)) return;
+    if (nodes.some((n) => n && typeof n === 'object' && n['@id'] === id && Object.keys(n).length > 1)) return;
+    nodes.push({ '@type': 'Article', '@id': id, url: `${SITE}/`, isPartOf: { '@id': ent.website.id } });
+  };
+}
+
+function patchEntidadeCanonica(file, ent) {
+  return (nodes) => {
+    if (!Array.isArray(nodes)) fail(`${file.rel}: JSON-LD is not a @graph array`);
+    for (const no of [personCanonico(ent), orgCanonica(ent), siteCanonico(ent)]) {
+      const id = no['@id'];
+      const reais = nodes.filter((n) => n && typeof n === 'object'
+        && n['@id'] === id && Object.keys(n).length > 1);
+      if (reais.length > 1) fail(`${file.rel}: ${reais.length} nodes carry "@id":"${id}"; only one may`);
+      if (reais.length === 1) {
+        const alvo = reais[0];
+        for (const k of Object.keys(alvo)) delete alvo[k];
+        Object.assign(alvo, no);
+      } else {
+        nodes.push(no);
+      }
+    }
+  };
+}
+
 // ---------- paginas de variacao ----------
 //
 // Uma pagina por intencao de busca, cada uma com conteudo proprio. Nao sao
@@ -1344,7 +1442,6 @@ patchJsonLd(home, (nodes, ofType) => {
   if (!q) fail(`${home.rel}: JSON-LD FAQPage has no mainEntity item named exactly "${faqName}"`);
   if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
   q.acceptedAnswer.text = asOfReplacer(home, AS_OF_LOWER, `as of ${homeReviewedLong}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
-  patchPersonSameAs(home, entity.person, { subjectOf: true })(nodes);
 
   // Dataset da tabela de evidências. Upsert pelo @id, para o build ser idempotente
   // e para uma edição manual do nó não virar um segundo nó duplicado.
@@ -1399,7 +1496,6 @@ patchJsonLd(contest, (nodes, ofType) => {
       n.dateModified = isoDateTime(contestUpdated);
     }
   }
-  patchPersonSameAs(contest, entity.person, { subjectOf: true })(nodes);
 });
 patchFooterRow(contest, footerRow);
 
@@ -1408,7 +1504,6 @@ patchFooterRow(contest, footerRow);
 // O build so sincroniza esse no; o resto do grafo (musica, video, FAQ) fica
 // como esta. Sem isto a pagina mantinha uma lista propria e defasada.
 const song = readText(FILES.song);
-patchJsonLd(song, (nodes) => { patchPersonSameAs(song, entity.person)(nodes); });
 replaceMarker(song, 'songPlayer', block(song, 'songPlayer', renderSongPlayer(videoDoc.songPage)));
 replaceMarker(song, 'videoScript', `
 ${VIDEO_SCRIPT}
@@ -1430,7 +1525,6 @@ const variantes = VARIANTES.map(({ rel }) => {
     for (const tipo of ['Article', 'WebPage']) {
       for (const n of ofType(tipo)) n.dateModified = isoDateTime(quando);
     }
-    patchPersonSameAs(f, entity.person)(nodes);
   });
   patchMeta(f, 'property="article:modified_time"', () => isoDateTime(quando));
   return f;
@@ -1445,6 +1539,16 @@ replaceMarker(citacaoPagina, 'citationPrompts', `\n${renderCitacaoPrompts()}\n  
 replaceMarker(citacaoPagina, 'citationLog', `\n${renderCitacaoTabela(citacoes)}\n    `);
 patchCitacaoDataset(citacaoPagina, citacoes, gitLastChange(CITACAO_CSV, today));
 replaceMarker(home, 'latestRun', `\n${renderLatestRun(citacoes)}\n    `);
+
+// --- entidade canonica em todas as paginas ---
+// O feed e escrito por tools/build_feed.py; aqui so o no da entidade e
+// corrigido, para as doze paginas declararem a mesma pessoa.
+const feed = readText(FILES.feed);
+const todasPaginas = [home, contest, song, feed, citacaoPagina, ...variantes, ...archive];
+for (const f of todasPaginas) {
+  patchJsonLd(f, patchEntidadeCanonica(f, entity));
+  patchJsonLd(f, patchStubArtigoHome(f, entity));
+}
 
 const prefixes = dofollowPrefixes(entity, videos);
 const relPages = [home, contest, song, citacaoPagina, ...variantes, ...archive];
@@ -1481,6 +1585,7 @@ writeText(song);
 for (const f of archive) writeText(f);
 writeText(citacaoPagina);
 for (const f of variantes) writeText(f);
+writeText(feed);
 writeText(videoSitemap);
 writeText(llms);
 writeGenerated(FILES.llmsFull, llmsFullText);

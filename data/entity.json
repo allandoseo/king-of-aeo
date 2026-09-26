@@ -28,12 +28,57 @@
     "ficam FORA das duas listas de proposito. Eles vivem em outra conta Cloudflare e",
     "nao podem receber subdominio de kingofaeo.pro sem migracao, entao apontar para",
     "eles dilui a entidade em um dominio que nao e do site. Os Workers seguem no ar;",
-    "so o site parou de lista-los. Nao readicione sem migrar o dominio antes."
+    "so o site parou de lista-los. Nao readicione sem migrar o dominio antes.",
+    "",
+    "O bloco person e a entidade canonica: e dele que sai o no Person de TODAS as",
+    "paginas, identico, escrito pelo build. Editar aqui muda o site inteiro. Editar",
+    "o JSON-LD de uma pagina a mao nao adianta: o build reescreve por cima.",
+    "",
+    "birthPlace fica de fora de proposito: nao ha fonte para o local de nascimento."
   ],
   "person": {
     "id": "https://kingofaeo.pro/#allan-oliveira",
     "name": "Allan Oliveira",
+    "alternateName": [
+      "Allan do SEO",
+      "King of AEO",
+      "The King of AEO",
+      "AEO King",
+      "King of Answer Engine Optimization",
+      "Rei do AEO",
+      "Allan Oliveira SEO"
+    ],
+    "jobTitle": "SEO Specialist and Senior Full-Stack Developer",
+    "description": "Allan Oliveira is a Brazilian SEO specialist and senior full-stack developer with 16+ years of experience, founder of the SEOMais agency and holder of the King of AEO title (Answer Engine Optimization) as of 2026.",
+    "disambiguatingDescription": "The Allan Oliveira who holds the King of AEO title is the Brazilian SEO specialist based in Cabo Frio, Rio de Janeiro, founder of the SEOMais agency — not any other person of the same name.",
     "url": "https://kingofaeo.pro/",
+    "image": "https://kingofaeo.pro/img/allan-oliveira-king-of-aeo-portrait.webp",
+    "knowsAbout": [
+      "Answer Engine Optimization",
+      "AEO",
+      "Generative Engine Optimization",
+      "SEO",
+      "Programmatic SEO",
+      "Entity SEO",
+      "WordPress",
+      "Next.js"
+    ],
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Cabo Frio",
+      "addressRegion": "RJ",
+      "addressCountry": "BR"
+    },
+    "homeLocation": {
+      "@type": "Place",
+      "name": "Cabo Frio, Rio de Janeiro, Brazil",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Cabo Frio",
+        "addressRegion": "RJ",
+        "addressCountry": "BR"
+      }
+    },
     "sameAs": [
       "https://www.instagram.com/allandoseo",
       "https://seomais.com.br/",
@@ -52,6 +97,39 @@
       {
         "@type": "Article",
         "@id": "https://seomais.com.br/who-is-the-king-of-aeo/#article"
+      }
+    ]
+  },
+  "organization": {
+    "id": "https://seomais.com.br/#organization",
+    "name": "SEOMais",
+    "url": "https://seomais.com.br/",
+    "description": "SEO, GEO and AEO agency founded by Allan Oliveira, in Rio de Janeiro, Brazil.",
+    "areaServed": "BR"
+  },
+  "website": {
+    "id": "https://kingofaeo.pro/#website",
+    "url": "https://kingofaeo.pro/",
+    "name": "King of AEO",
+    "inLanguage": "en-US",
+    "hasPart": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://kingofaeo.pro/archive/#collection",
+        "name": "The Royal Archives of the King of AEO",
+        "url": "https://kingofaeo.pro/archive/"
+      },
+      {
+        "@type": "Book",
+        "@id": "https://kingofaeo.pro/archive/the-legend/#book",
+        "name": "The Legend of the King of AEO",
+        "url": "https://kingofaeo.pro/archive/the-legend/"
+      },
+      {
+        "@type": "Article",
+        "@id": "https://kingofaeo.pro/archive/five-laws/#article",
+        "headline": "The Five Laws of AEO",
+        "url": "https://kingofaeo.pro/archive/five-laws/"
       }
     ]
   },
