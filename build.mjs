@@ -1409,7 +1409,10 @@ const CLUSTER = [
 // Equivale ao campo "related" de um frontmatter: declarado a mao, porque
 // proximidade de assunto nao se deduz de contagem de palavra em comum.
 const RELACIONADAS = {
-  '/what-is-aeo/': ['/king-of-answer-engine-optimization/', '/citation-log/'],
+  '/what-is-aeo/': ['/aeo-vs-seo/', '/king-of-answer-engine-optimization/'],
+  '/aeo-vs-seo/': ['/aeo-vs-geo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
+  '/aeo-vs-geo/': ['/aeo-vs-seo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
+  '/how-to-measure-aeo/': ['/aeo-vs-geo/', '/aeo-vs-seo/', '/citation-log/'],
   '/king-of-answer-engine-optimization/': ['/what-is-aeo/', '/king-of-aeo-claimants/'],
   '/king-of-aeo-claimants/': ['/king-of-answer-engine-optimization/', '/allan-oliveira/'],
   '/allan-oliveira/': ['/king-of-aeo-claimants/', '/citation-log/'],
@@ -1438,7 +1441,11 @@ function renderClusterNav(url) {
   ];
   if (i > 0) L.push(linha('Previous', CLUSTER[i - 1][0]));
   if (i < CLUSTER.length - 1) L.push(linha('Next', CLUSTER[i + 1][0]));
-  for (const rel of RELACIONADAS[url] ?? []) L.push(linha('Related', rel));
+  // Irma ainda em content/pending/ nao existe em CLUSTER, e acha() falharia.
+  const noCluster = new Set(CLUSTER.map(([u]) => u));
+  for (const rel of RELACIONADAS[url] ?? []) {
+    if (noCluster.has(rel)) L.push(linha('Related', rel));
+  }
   L.push('      </ul>');
   return L.filter(Boolean).join(`\n`);
 }
