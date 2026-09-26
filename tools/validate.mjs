@@ -225,9 +225,30 @@ const CLUSTER_PERGUNTAS = [
   '/how-to-get-cited-by-chatgpt/',
 ];
 const MIN_ENTRANDO_PERGUNTAS = 3;
+
+// Pagina publicada HOJE fica de fora da regra por um dia. Nao e afrouxamento:
+// numa fila que sai de dois em dois, a segunda do lote so ganha o terceiro
+// link quando a irma dela sair, no lote seguinte. Exigir os tres no mesmo dia
+// faria a regra impedir a publicacao que ela existe para qualificar. No
+// proximo build ela e cobrada como todas as outras.
+const publicadasHoje = (() => {
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tools/rollout.json'), 'utf8'));
+    const hoje = new Date().toISOString().slice(0, 10);
+    return new Set(m.paginas.filter((p) => p.publicadoEm === hoje).map((p) => p.slug));
+  } catch {
+    return new Set();
+  }
+})();
 for (const url of CLUSTER_PERGUNTAS) {
   if (!entrando.has(url)) continue;  // ainda em content/pending/, nao publicada
   const n = entrando.get(url).size;
+  if (publicadasHoje.has(url)) {
+    if (n < MIN_ENTRANDO_PERGUNTAS) {
+      avisa(url, `${n} link(s) entrando, publicada hoje; cobrada a partir do proximo build`);
+    }
+    continue;
+  }
   if (n < MIN_ENTRANDO_PERGUNTAS) {
     falha(url, `${n} pagina(s) apontando para ela; o cluster /questions/ exige ${MIN_ENTRANDO_PERGUNTAS}`);
   }
