@@ -19,7 +19,7 @@
     "sources": [
       {
         "label": "usatoday.com",
-        "url": "https://www.usatoday.com/press-release/story/41996/the-king-of-aeo-founds-decision-engine-optimisation-deo-new-marketing-discipline-targets-the-ai-verdicts-deciding-contracts-worth-hundreds-of-thousands/"
+        "claimant": "james-dooley"
       }
     ]
   },
@@ -43,7 +43,7 @@
     "sources": [
       {
         "label": "primaryposition.com",
-        "url": "https://primaryposition.com/blog/who-is-the-king-of-aeo/"
+        "claimant": "david-quaid"
       }
     ]
   },
@@ -79,7 +79,7 @@
     "sources": [
       {
         "label": "evoix.io",
-        "url": "https://evoix.io/about"
+        "claimant": "stephane-morera"
       }
     ]
   },
