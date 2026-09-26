@@ -1149,7 +1149,15 @@ function renderLatestRun(linhas) {
   linhasTabela,
   '        </tbody>',
   '      </table>',
-  '      </div>'].join('\n');
+  '      </div>',
+  // A semana da ultima run, quando ela ja virou pagina. Como o link sai de
+  // existsSync, ele nunca aponta para uma semana que o build decidiu nao
+  // gerar por ter menos de cinco runs.
+  ...(fs.existsSync(path.join(ROOT, `public/citation-log/${semanaIso(ultima)}/index.html`))
+    ? [`      <p>Every run of this week, with the raw rows as CSV, is on `
+       + `<a href="/citation-log/${semanaIso(ultima)}/">${esc(semanaIso(ultima))}</a>.</p>`]
+    : []),
+  ].join('\n');
 }
 
 function patchCitacaoDataset(file, linhas, modificado) {
