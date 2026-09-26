@@ -88,6 +88,13 @@
       "status": "Self-reported"
     },
     {
+      "date": "2026-09-24",
+      "evidence": "Press release announcing the claim, carried on 312 distinct domains by one syndication network. Not editorial coverage: the copies share one text, one date and consecutive release IDs",
+      "type": "Syndicated press release",
+      "where": "https://kingofaeo.pro/press-coverage.csv",
+      "status": "Syndicated"
+    },
+    {
       "pending": true,
       "date": "[[DATA]]",
       "evidence": "Google AI Overview, US, query \"king of aeo\"",

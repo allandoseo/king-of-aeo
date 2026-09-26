@@ -349,7 +349,10 @@ function patchFooterRow(file, row) {
 
 // ---------- tabela de evidências ----------
 
-const EVIDENCE_STATUS = ['Public record', 'Self-reported', 'Independent'];
+// Syndicated existe para o caso em que uma so distribuicao aparece em muitos
+// dominios. Sem esse valor, a unica saida honesta seria chamar de Public record
+// algo que o leitor leria como cobertura editorial.
+const EVIDENCE_STATUS = ['Public record', 'Self-reported', 'Syndicated', 'Independent'];
 
 function validateEvidence(ev) {
   if (!ev || typeof ev !== 'object' || Array.isArray(ev)) fail(`${FILES.evidence}: expected an object`);
@@ -1131,6 +1134,62 @@ function patchCitacaoDataset(file, linhas, modificado) {
   });
 }
 
+// ---------- regra de promocao para "Independent" ----------
+//
+// A tabela de evidencias so vale enquanto a coluna Status significar algo. Sem
+// um criterio escrito, "Independent" vira o que o dono da pagina quiser que
+// seja, e a coluna passa a decorar em vez de informar.
+//
+// Os numeros da regra saem de public/press-coverage.csv, nao do texto: assim a
+// pagina nao pode afirmar 312 enquanto o arquivo diz outra coisa. Se o CSV
+// encolher, o texto encolhe junto.
+
+const PRESS_CSV = 'public/press-coverage.csv';
+
+function lePressCoverage() {
+  const abs = path.join(ROOT, PRESS_CSV);
+  if (!fs.existsSync(abs)) fail(`${PRESS_CSV}: file not found`);
+  const linhas = fs.readFileSync(abs, 'utf8').replace(/\r\n?/g, '\n').split('\n')
+    .filter((l) => l.trim());
+  const cab = linhas[0].split(',');
+  const esperado = ['domain', 'url', 'date', 'release_id', 'kind'];
+  if (cab.join(',') !== esperado.join(',')) {
+    fail(`${PRESS_CSV}: header must be "${esperado.join(',')}", got "${cab.join(',')}"`);
+  }
+  const corpo = linhas.slice(1).map((l) => l.split(','));
+  const dominios = new Set(corpo.map((c) => c[0]));
+  const ids = corpo.map((c) => Number(c[3])).filter(Number.isFinite);
+  const datas = new Set(corpo.map((c) => c[2]));
+  if (dominios.size !== corpo.length) {
+    fail(`${PRESS_CSV}: ${corpo.length} rows but ${dominios.size} distinct domains; one row per domain is the point`);
+  }
+  return {
+    linhas: corpo.length,
+    dominios: dominios.size,
+    idMin: Math.min(...ids),
+    idMax: Math.max(...ids),
+    data: [...datas][0],
+    umaData: datas.size === 1,
+  };
+}
+
+function renderRegraIndependente() {
+  const p = lePressCoverage();
+  const faixa = p.idMax - p.idMin + 1;
+  return [
+    '      <strong>When a row becomes &ldquo;Independent&rdquo;</strong>',
+    '      <p>A row is marked Independent only when all four of these hold, and it keeps the label only while they keep holding:</p>',
+    '      <ol>',
+    '        <li>The publisher has no commercial relationship with Allan Oliveira or SEOMais, and was not paid for the item, directly or through a distributor, an agency or an affiliate arrangement.</li>',
+    '        <li>The publisher chose to publish it. An item that arrived through a syndication feed, a press-release wire or a submission from this side fails here, however many domains carry it.</li>',
+    '        <li>The item contains words the publisher wrote about the subject, not only a quoted release.</li>',
+    '        <li>It sits at a stable public URL carrying a visible date, and that URL is recorded in <a href="/evidence.csv">evidence.csv</a>, so the claim can be checked without asking.</li>',
+    '      </ol>',
+    `      <p>Applied honestly, that rule currently leaves this record with <strong>no Independent rows at all</strong>. The press release of ${esc(longDate(p.data))} is the clearest case: it reached <strong>${p.dominios} distinct domains</strong>, and it fails the second test on every one of them. The ${p.linhas} copies share one text, one date and release identifiers running from ${p.idMin} to ${p.idMax} &mdash; ${p.linhas} numbers inside a span of ${faixa}, which is what one distribution run looks like, not ${p.dominios} editorial decisions. It is one row here, marked Syndicated, and the full list is published as <a href="/press-coverage.csv">press-coverage.csv</a> so anyone can check that reading.</p>`,
+    '      <p>Rival claims in this contest rest on the same mechanism, described as coverage. The distinction is stated here because a record that inflates its own strongest-looking number cannot ask to be believed about the rest.</p>',
+  ].join('\n');
+}
+
 // ---------- entidade canonica ----------
 //
 // Antes o site tinha TRES objetos Person diferentes: 14 campos na home, 6 na
@@ -1294,6 +1353,7 @@ const PAGINAS = [
   { loc: `${SITE}/llms.txt`, arquivo: FILES.llms },
   { loc: `${SITE}/llms-full.txt`, arquivo: FILES.llmsFull },
   { loc: `${SITE}/evidence.csv`, arquivo: 'public/evidence.csv' },
+  { loc: `${SITE}/press-coverage.csv`, arquivo: PRESS_CSV },
   { loc: 'https://cobertura.kingofaeo.pro/', arquivo: null },
 ];
 
@@ -1530,6 +1590,8 @@ const variantes = VARIANTES.map(({ rel }) => {
   return f;
 });
 replaceMarker(home, 'moreOnThis', `\n${renderNavVariantes()}\n    `);
+
+replaceMarker(home, 'independentRule', `\n${renderRegraIndependente()}\n    `);
 
 // --- /citation-log/ ---
 const citacoes = lerCitacoes();
