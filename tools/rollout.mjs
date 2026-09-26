@@ -97,13 +97,21 @@ if (jaHoje.length >= LOTE) {
 }
 
 const lote = naFila.slice(0, LOTE - jaHoje.length);
+// Uma execucao pode morrer DEPOIS de mover e ANTES de registrar a data, e foi
+// o que aconteceu na primeira vez, quando o deploy nao conseguiu invocar o
+// wrangler. Nesse estado a pagina esta em public/ e o manifesto ainda diz que
+// nao saiu: a execucao seguinte retoma dali em vez de travar.
 for (const p of lote) {
-  if (!fs.existsSync(caminhoPendente(p.slug))) {
+  const emPendente = fs.existsSync(caminhoPendente(p.slug));
+  const emPublico = fs.existsSync(caminhoPublico(p.slug));
+  if (emPendente && emPublico) {
+    morre(`${p.slug}: existe em content/pending/ E em public/. Apague um dos dois antes de seguir`);
+  }
+  if (!emPendente && !emPublico) {
     morre(`${p.slug}: nao ha arquivo em ${path.relative(RAIZ, caminhoPendente(p.slug))}`);
   }
-  if (fs.existsSync(caminhoPublico(p.slug))) {
-    morre(`${p.slug}: ja existe em public/. Ou ja foi publicada, ou o manifesto esta errado`);
-  }
+  p._retomada = emPublico;
+  if (emPublico) console.log(`  ${p.slug} ja estava em public/: retomando execucao interrompida`);
 }
 
 console.log(`rollout: lote de ${hoje()} — ${lote.length} pagina(s)`);
@@ -117,6 +125,7 @@ if (SECO) {
 
 // 1. move para public/
 for (const p of lote) {
+  if (p._retomada) continue;
   const destino = caminhoPublico(p.slug);
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   fs.copyFileSync(caminhoPendente(p.slug), destino);
@@ -124,7 +133,11 @@ for (const p of lote) {
   console.log(`  movida  ${path.relative(RAIZ, destino)}`);
 }
 
-const roda = (cmd, args) => execFileSync(cmd, args, { cwd: RAIZ, stdio: 'inherit' });
+// shell: true no Windows porque npx e wrangler sao shims .cmd, e execFileSync
+// sem shell nao os resolve. Falhou exatamente aqui na primeira execucao real.
+const roda = (cmd, args) => execFileSync(cmd, args, {
+  cwd: RAIZ, stdio: 'inherit', shell: process.platform === 'win32',
+});
 
 // 2. build e validacao ANTES de publicar. Se o guard rail reprovar, a pagina
 //    volta para a fila: e melhor atrasar um dia do que publicar quebrado.
@@ -133,6 +146,7 @@ try {
   roda('node', ['tools/validate.mjs']);
 } catch {
   for (const p of lote) {
+    if (p._retomada) continue;
     const origem = caminhoPublico(p.slug);
     const volta = caminhoPendente(p.slug);
     fs.mkdirSync(path.dirname(volta), { recursive: true });
@@ -151,7 +165,7 @@ fs.writeFileSync(FILA, `${JSON.stringify(lote.map((p) => SITE + p.slug), null, 2
 roda('node', ['tools/indexnow.mjs']);
 
 // 5. so agora o manifesto registra a data
-for (const p of lote) p.publicadoEm = hoje();
+for (const p of lote) { p.publicadoEm = hoje(); delete p._retomada; }
 fs.writeFileSync(MANIFESTO, `${JSON.stringify(manifesto, null, 2)}\n`, 'utf8');
 console.log();
 console.log(`rollout: lote de ${hoje()} publicado. Restam ${naFila.length - lote.length} na fila.`);
