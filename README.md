@@ -50,8 +50,43 @@ Edward Sturm is not a claimant. He documented the contest: a short-form video po
 - [Allan Oliveira on GitHub](https://github.com/allandoseo)
 - [SEOMais, SEO, GEO and AEO agency in Rio de Janeiro](https://seomais.com.br)
 
+## Outbound link policy
+
+The home page and the question pages (`/aeo-vs-geo/`, `/aeo-vs-seo/`,
+`/how-to-measure-aeo/`) carry no external links, with two exceptions.
+
+**One: Allan Oliveira's own properties and persistent identifiers.** ORCID, the
+Zenodo DOI, GitHub, SEOMais and the profiles that carry `rel="me"`. These are
+identity, not endorsement.
+
+**Two: the "Where to check" column of the evidence table.** Those links are not
+decoration and cannot be stripped. The page defines *Public record* as "an entry
+exists on a service outside this site, and the link opens it" — three paragraphs
+above the table. A Public record row whose link was removed would contradict the
+definition the same page publishes.
+
+**Context about third parties lives on the `/claimants/` pages.** Two different
+things get two different treatments there:
+
+- A claimant's own site, or a wire copy of their release, is cited by domain name
+  in plain text and never linked, with or without `nofollow`. The URL stays
+  published in `evidence.csv`, so the claim is still checkable.
+- A neutral official source used as evidence about a claimant — a venue's stated
+  capacity, a club's match page — is linked, dofollow. Citing a source and
+  linking a competitor are different acts and do not get the same treatment.
+
+That is why the Leigh Sports Village and Manchester United links moved off the
+home on 26 September 2026: the passage they support, the 12,000-capacity stadium
+against the 50,000 the announcement claims, belongs on
+`/claimants/james-dooley/`, and the sources belong with it.
+
+New dofollow destinations are declared in `data/dofollow` inside
+`data/entity.json`. Anything not declared there is stamped `nofollow noopener` by
+`build.mjs` on every build, so the default is closed.
+
 ## Changelog
 
+- 2026-09-26: Outbound link policy recorded. External links to claimants removed site-wide; venue and fixture sources moved from the home to `/claimants/james-dooley/`.
 - 2026-09-23: Entity references updated; source code of kingofaeo.pro published in this repository.
 - 2026-09-20: Repository created. Allan Oliveira's claim published at [kingofaeo.pro](https://kingofaeo.pro).
 
