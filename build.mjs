@@ -3,7 +3,8 @@
 // Run from the repo root:  node build.mjs
 //
 // Reads  data/site.json, data/timeline.json, data/scoreboard.json, data/entity.json
-// Patches public/index.html, public/king-of-aeo-contest/index.html, public/sitemap.xml
+// Patches public/index.html, public/king-of-aeo-contest/index.html
+// Gera  public/llms-full.txt, public/sitemap-pages.xml e o indice public/sitemap.xml
 //
 // data/entity.json e a fonte unica do sameAs e da linha de rodape. A terceira pagina
 // que declara o mesmo Person, public/feed/index.html, e gerada por tools/build_feed.py,
@@ -41,7 +42,9 @@ const FILES = {
   archiveIndex: 'public/archive/index.html',
   archiveLegend: 'public/archive/the-legend/index.html',
   archiveFiveLaws: 'public/archive/five-laws/index.html',
-  sitemap: 'public/sitemap.xml',
+  sitemapIndex: 'public/sitemap.xml',
+  sitemapPages: 'public/sitemap-pages.xml',
+  sitemapImages: 'public/sitemap-images.xml',
   videoSitemap: 'public/sitemap-videos.xml',
   llms: 'public/llms.txt',
   llmsFull: 'public/llms-full.txt',
@@ -171,23 +174,6 @@ function patchJsonLd(file, patch) {
 }
 
 // ---------- sitemap ----------
-
-function patchSitemap(file, homeLastmod, contestLastmod) {
-  const homeRe = /(<url>\s*<loc>https:\/\/kingofaeo\.pro\/<\/loc>\s*<lastmod>)([^<]*)(<\/lastmod>)/;
-  if (!homeRe.test(file.text)) fail(`${file.rel}: no <url> with <loc>https://kingofaeo.pro/</loc> followed by <lastmod>`);
-  file.text = file.text.replace(homeRe, (_, a, __, c) => a + homeLastmod + c);
-
-  const contestLoc = 'https://kingofaeo.pro/king-of-aeo-contest/';
-  const contestRe = /(<url>\s*<loc>https:\/\/kingofaeo\.pro\/king-of-aeo-contest\/<\/loc>\s*<lastmod>)([^<]*)(<\/lastmod>)/;
-  if (contestRe.test(file.text)) {
-    file.text = file.text.replace(contestRe, (_, a, __, c) => a + contestLastmod + c);
-  } else {
-    if (file.text.includes(`<loc>${contestLoc}</loc>`)) fail(`${file.rel}: contest <url> exists but has no <lastmod> directly after its <loc>`);
-    if (!file.text.includes('</urlset>')) fail(`${file.rel}: missing </urlset>`);
-    const entry = `  <url>\n    <loc>${contestLoc}</loc>\n    <lastmod>${contestLastmod}</lastmod>\n  </url>\n`;
-    file.text = file.text.replace(/[ \t]*<\/urlset>/, () => `${entry}</urlset>`);
-  }
-}
 
 // ---------- data validation + rendering ----------
 
@@ -922,18 +908,120 @@ function writeGenerated(rel, text) {
   console.log(`${before === text ? 'unchanged' : 'wrote'} ${rel}`);
 }
 
-// Insere ou atualiza um <url> do sitemap. Modelado no ramo do concurso em
-// patchSitemap, que so sabe lidar com as duas URLs que ja conhecia.
-function upsertSitemapUrl(file, loc, lastmod) {
-  const re = new RegExp(`(<url>\\s*<loc>${escRe(loc)}</loc>\\s*<lastmod>)([^<]*)(</lastmod>)`);
-  if (re.test(file.text)) {
-    file.text = file.text.replace(re, (_, a, __, c) => a + lastmod + c);
-    return;
+// ---------- sitemaps ----------
+//
+// Um dono por arquivo. Antes o build.mjs corrigia o sitemap.xml e o
+// tools/build_feed.py o reescrevia inteiro, entao o que um punha o outro
+// apagava: o /llms.txt teria sumido na proxima geracao do feed.
+//
+//   sitemap.xml         indice     <- aqui
+//   sitemap-pages.xml   paginas    <- aqui
+//   sitemap-images.xml  imagens    <- tools/build_feed.py
+//   sitemap-videos.xml  videos     <- aqui (lastmod), marcador homeVideos
+//
+// Nenhum lastmod e escrito a mao: todos saem de gitLastChange, isto e, da data
+// do ultimo commit que tocou o arquivo que gera aquela URL, ou de hoje se o
+// arquivo tem alteracao pendente. Carimbar a data do build em tudo diz ao
+// rastreador que o site inteiro mudou a cada deploy, e o campo perde o valor.
+
+// loc -> arquivo que gera aquela URL. arquivo null = fora deste repositorio,
+// entao a URL entra sem <lastmod>: o protocolo permite, e inventar uma data
+// para uma pagina que nao controlamos e exatamente o que corroi o campo.
+const PAGINAS = [
+  { loc: `${SITE}/`, arquivo: FILES.home },
+  { loc: `${SITE}/king-of-aeo-contest/`, arquivo: FILES.contest },
+  { loc: `${SITE}/feed/`, arquivo: 'public/feed/index.html' },
+  { loc: `${SITE}/king-of-aeo-song/`, arquivo: FILES.song },
+  { loc: `${SITE}/archive/`, arquivo: FILES.archiveIndex },
+  { loc: `${SITE}/archive/the-legend/`, arquivo: FILES.archiveLegend },
+  { loc: `${SITE}/archive/five-laws/`, arquivo: FILES.archiveFiveLaws },
+  { loc: `${SITE}/llms.txt`, arquivo: FILES.llms },
+  { loc: `${SITE}/llms-full.txt`, arquivo: FILES.llmsFull },
+  { loc: `${SITE}/evidence.csv`, arquivo: 'public/evidence.csv' },
+  { loc: 'https://cobertura.kingofaeo.pro/', arquivo: null },
+];
+
+const SITEMAPS_FILHOS = ['sitemap-pages.xml', 'sitemap-images.xml', 'sitemap-videos.xml'];
+
+function renderPagesSitemap(fallback) {
+  const linhas = PAGINAS.map(({ loc, arquivo }) => {
+    if (arquivo && !fs.existsSync(path.join(ROOT, arquivo))) {
+      fail(`${FILES.sitemapPages}: ${loc} points at ${arquivo}, which does not exist`);
+    }
+    const quando = arquivo ? `\n    <lastmod>${gitLastChange(arquivo, fallback)}</lastmod>` : '';
+    return `  <url>\n    <loc>${esc(loc)}</loc>${quando}\n  </url>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${linhas.join('\n')}\n</urlset>\n`;
+}
+
+// O lastmod de um sitemap filho e o maior lastmod que ele declara: e isso que
+// diz ao rastreador se vale a pena reabrir aquele arquivo.
+function maiorLastmod(texto, fallback) {
+  const datas = [...texto.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((m) => m[1].trim()).filter(isIsoDate);
+  return datas.length ? datas.reduce((a, b) => (b > a ? b : a)) : fallback;
+}
+
+function renderSitemapIndex(fallback, conteudos) {
+  const linhas = SITEMAPS_FILHOS.map((nome) => {
+    const texto = conteudos[nome] ?? (() => {
+      const abs = path.join(ROOT, 'public', nome);
+      if (!fs.existsSync(abs)) fail(`public/${nome}: listed in the sitemap index but missing from disk`);
+      return fs.readFileSync(abs, 'utf8');
+    })();
+    return `  <sitemap>\n    <loc>${SITE}/${nome}</loc>\n    <lastmod>${maiorLastmod(texto, fallback)}</lastmod>\n  </sitemap>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${linhas.join('\n')}\n</sitemapindex>\n`;
+}
+
+// O sitemap de video tinha <lastmod>2026-09-21</lastmod> escrito a mao, parado
+// enquanto o sitemap de paginas ja dizia 24/09 para a MESMA URL. Dois sitemaps
+// discordando sobre a mesma pagina e pior do que nao declarar data nenhuma.
+function stampVideoLastmods(file, fallback) {
+  const fonte = new Map(PAGINAS.filter((p) => p.arquivo).map((p) => [p.loc, p.arquivo]));
+  let n = 0;
+  file.text = file.text.replace(
+    /(<loc>)([^<]+)(<\/loc>)(\s*<lastmod>[^<]*<\/lastmod>)?/g,
+    (todo, abre, loc, fecha, tinha) => {
+      const arquivo = fonte.get(loc.trim());
+      if (!arquivo) return todo;
+      n += 1;
+      return `${abre}${loc}${fecha}\n    <lastmod>${gitLastChange(arquivo, fallback)}</lastmod>`;
+    },
+  );
+  if (n === 0) fail(`${file.rel}: no <loc> matched a known page; lastmod could not be stamped`);
+  return n;
+}
+
+// ---------- fila do IndexNow ----------
+//
+// O ping so vale para URL que mudou de verdade. Aqui o build compara o
+// sitemap-pages.xml que vai gravar com o que estava no disco e enfileira o que
+// mudou de lastmod, ou nasceu agora. A fila acumula entre builds e so e
+// esvaziada por tools/indexnow.mjs, depois de o ping ter sido aceito: assim um
+// build rodado duas vezes nao perde o que a primeira rodada achou.
+const INDEXNOW_FILA = 'tools/indexnow-queue.json';
+
+function lastmodsPorLoc(texto) {
+  const mapa = new Map();
+  for (const m of texto.matchAll(/<loc>([^<]+)<\/loc>(?:\s*<lastmod>([^<]*)<\/lastmod>)?/g)) {
+    mapa.set(m[1].trim(), (m[2] || '').trim());
   }
-  if (file.text.includes(`<loc>${loc}</loc>`)) fail(`${file.rel}: <url> for ${loc} has no <lastmod> right after its <loc>`);
-  if (!file.text.includes('</urlset>')) fail(`${file.rel}: missing </urlset>`);
-  const entry = `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>\n`;
-  file.text = file.text.replace(/[ \t]*<\/urlset>/, () => `${entry}</urlset>`);
+  return mapa;
+}
+
+function enfileiraIndexNow(rel, novoTexto) {
+  const abs = path.join(ROOT, rel);
+  const antes = fs.existsSync(abs) ? lastmodsPorLoc(fs.readFileSync(abs, 'utf8')) : new Map();
+  const depois = lastmodsPorLoc(novoTexto);
+  const mudou = [...depois].filter(([loc, d]) => antes.get(loc) !== d).map(([loc]) => loc);
+  if (!mudou.length) return [];
+
+  const filaAbs = path.join(ROOT, INDEXNOW_FILA);
+  const atual = fs.existsSync(filaAbs) ? JSON.parse(fs.readFileSync(filaAbs, 'utf8')) : [];
+  const juntas = [...new Set([...(Array.isArray(atual) ? atual : []), ...mudou])].sort();
+  fs.mkdirSync(path.dirname(filaAbs), { recursive: true });
+  fs.writeFileSync(filaAbs, `${JSON.stringify(juntas, null, 2)}\n`, 'utf8');
+  return mudou;
 }
 
 const today = siteToday();
@@ -1090,10 +1178,9 @@ if (!llms.text.includes(`since ${claimSinceLong}`)) {
 }
 const llmsFullText = renderHomeMarkdown(home.text, homeReviewedLong);
 
-// --- sitemap: public/sitemap.xml ---
-const sitemap = readText(FILES.sitemap);
-patchSitemap(sitemap, homeReviewed, contestUpdated);
-upsertSitemapUrl(sitemap, `${SITE}/llms.txt`, gitLastChange(FILES.llms, today));
+// --- sitemap de paginas ---
+const paginasSitemap = renderPagesSitemap(today);
+const indexNowNovas = enfileiraIndexNow(FILES.sitemapPages, paginasSitemap);
 
 // --- sitemap de video: so o bloco da home, do mesmo data/videos.json ---
 const videoSitemap = readText(FILES.videoSitemap);
@@ -1102,16 +1189,25 @@ replaceMarker(videoSitemap, 'homeVideos', renderHomeVideoSitemap(
   VIDEO_SLOTS.map((s2) => videos.find((v) => v.slot === s2)).filter(Boolean),
   ytChannel,
 ));
+stampVideoLastmods(videoSitemap, today);
 
 // Everything validated and patched in memory; only now touch the disk.
 writeText(home);
 writeText(contest);
 writeText(song);
 for (const f of archive) writeText(f);
-writeText(sitemap);
 writeText(videoSitemap);
 writeText(llms);
 writeGenerated(FILES.llmsFull, llmsFullText);
+writeGenerated(FILES.sitemapPages, paginasSitemap);
+// O indice le os filhos ja gravados; por isso vem por ultimo.
+writeGenerated(FILES.sitemapIndex, renderSitemapIndex(today, {
+  'sitemap-pages.xml': paginasSitemap,
+  'sitemap-videos.xml': videoSitemap.text,
+}));
+if (indexNowNovas.length) {
+  console.log(`  IndexNow: ${indexNowNovas.length} URL(s) com lastmod novo na fila (${INDEXNOW_FILA})`);
+}
 
 for (const [rel, s] of relStats) {
   console.log(`  rel  ${rel.padEnd(38)} ${String(s.dofollow).padStart(2)} dofollow  ${String(s.nofollow).padStart(2)} nofollow  ${s.changed} alterado(s)`);

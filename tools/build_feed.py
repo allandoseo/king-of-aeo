@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gera /feed/index.html e sitemap.xml.
+"""Gera /feed/index.html e sitemap-images.xml.
 
 Fontes:
   img/feed/     -> as imagens DO FEED (é essa pasta que alimenta a página)
@@ -44,7 +44,7 @@ FEED_IMG_DIR = os.path.join(IMG_DIR, "feed")
 JPG_DIR = os.path.join(FEED_IMG_DIR, "jpg")
 MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feed-manifest.json")
 OUT_HTML = os.path.join(ROOT, "feed", "index.html")
-OUT_SITEMAP = os.path.join(ROOT, "sitemap.xml")
+OUT_IMAGE_SITEMAP = os.path.join(ROOT, "sitemap-images.xml")
 OUT_RSS = os.path.join(ROOT, "feed", "rss.xml")
 OUT_JSON = os.path.join(ROOT, "feed", "feed.json")
 
@@ -65,7 +65,6 @@ CLAIM_MUST_NAME = "allan oliveira"
 DEFAULT_ANCHOR = "answer"
 DEFAULT_ANCHOR_LABEL = "Read the full answer on the home page"
 MAX_DENSITY = {"king of aeo": 1.0, "aeo": 2.2}
-SONG_LASTMOD = "2026-09-21"  # /king-of-aeo-song/ e escrita a mao; o build so a declara no sitemap
 
 
 def load_entity():
@@ -723,20 +722,23 @@ def page_lastmod(rel_path, fallback):
     return fallback
 
 
-def render_sitemap(built, home_images, date, hoje):
+def render_image_sitemap(built, home_images, date, hoje):
+    """Sitemap de imagens: so as URLs que tem imagem propria.
+
+    Antes esta funcao escrevia o sitemap.xml inteiro, inclusive paginas sem
+    imagem nenhuma. Isso punha dois programas escrevendo o mesmo arquivo: o
+    build.mjs corrigia lastmod e acrescentava URLs, e a geracao seguinte do feed
+    reescrevia tudo por cima, apagando o que o build.mjs tinha posto. O /llms.txt
+    desapareceria na proxima rodada.
+
+    Agora cada arquivo tem um dono so: este gera sitemap-images.xml, e o
+    build.mjs gera sitemap-pages.xml e o indice sitemap.xml.
+    """
     # loc -> arquivo que gera aquela URL, para datar cada uma pelo proprio historico.
-    # A home e a pagina do concurso entram aqui, mas quem manda nelas no fim e o
-    # build.mjs: ele roda depois e reescreve esses dois <lastmod> com as datas
-    # editoriais de data/site.json. E de proposito, porque nessas duas paginas o
-    # que importa e quando o conteudo foi revisto, nao quando o arquivo mudou.
     SOURCE = {
         SITE + "/": "index.html",
         FEED_URL: "feed/index.html",
         SITE + "/king-of-aeo-song/": "king-of-aeo-song/index.html",
-        SITE + "/archive/": "archive/index.html",
-        SITE + "/archive/the-legend/": "archive/the-legend/index.html",
-        SITE + "/archive/five-laws/": "archive/five-laws/index.html",
-        SITE + "/king-of-aeo-contest/": "king-of-aeo-contest/index.html",
     }
 
     # hoje e o fallback: arquivo com alteracao pendente mudou HOJE. Usar `date`
@@ -753,14 +755,6 @@ def render_sitemap(built, home_images, date, hoje):
 
     home_urls = ["%s/img/%s" % (SITE, n) for n in home_images]
     feed_urls = [b["url"] for b in built]
-    # /king-of-aeo-song/ e escrita a mao e nao tem imagem propria: entra so com loc + lastmod
-    song = block(SITE + "/king-of-aeo-song/",
-                 [SITE + "/img/feed/king-of-aeo-rio-de-janeiro-sunset.webp"])
-
-    # /archive/ e escrito a mao e nao tem imagem propria: so loc + lastmod.
-    # Precisa entrar aqui porque este arquivo reescreve o sitemap inteiro.
-    def plain(loc):
-        return "  <url>\n    <loc>%s</loc>\n    <lastmod>%s</lastmod>\n  </url>" % (loc, when(loc))
 
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -768,11 +762,8 @@ def render_sitemap(built, home_images, date, hoje):
         'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n'
         + block(SITE + "/", home_urls) + "\n"
         + block(FEED_URL, feed_urls) + "\n"
-        + song + "\n"
-        + plain(SITE + "/archive/") + "\n"
-        + plain(SITE + "/archive/the-legend/") + "\n"
-        + plain(SITE + "/archive/five-laws/") + "\n"
-        + plain(SITE + "/king-of-aeo-contest/") + "\n"
+        + block(SITE + "/king-of-aeo-song/",
+                [SITE + "/img/feed/king-of-aeo-rio-de-janeiro-sunset.webp"]) + "\n"
         "</urlset>\n"
     )
 
@@ -931,13 +922,14 @@ def main():
     os.makedirs(os.path.dirname(OUT_HTML), exist_ok=True)
     with open(OUT_HTML, "w", encoding="utf-8", newline="\n") as f:
         f.write(markup)
-    with open(OUT_SITEMAP, "w", encoding="utf-8", newline="\n") as f:
-        f.write(render_sitemap(built, home_images, args.date, hoje))
+    with open(OUT_IMAGE_SITEMAP, "w", encoding="utf-8", newline="\n") as f:
+        f.write(render_image_sitemap(built, home_images, args.date, hoje))
     with open(OUT_RSS, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_rss(built, args.date))
     with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_json_feed(built, args.date))
-    print("\nEscrito: feed/index.html, feed/rss.xml, feed/feed.json e sitemap.xml (lastmod %s)" % args.date)
+    print("\nEscrito: feed/index.html, feed/rss.xml, feed/feed.json e sitemap-images.xml (lastmod %s)" % args.date)
+    print("Rode tambem: node build.mjs  (ele gera sitemap-pages.xml e o indice sitemap.xml)")
     print("Deploy:  wrangler pages deploy public --project-name=kingofaeo --branch=main")
     return 0
 

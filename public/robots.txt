@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
+
 Sitemap: https://kingofaeo.pro/sitemap.xml
-Sitemap: https://kingofaeo.pro/sitemap-videos.xml

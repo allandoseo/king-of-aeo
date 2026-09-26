@@ -1,0 +1,15 @@
+{
+  "name": "kingofaeo-pro",
+  "private": true,
+  "description": "Site kingofaeo.pro. Node ESM puro, sem dependencias: os scripts abaixo so chamam o que ja existe no repositorio.",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:feed": "python tools/build_feed.py",
+    "indexnow": "node tools/indexnow.mjs",
+    "indexnow:dry": "node tools/indexnow.mjs --dry-run",
+    "deploy": "wrangler pages deploy public --project-name=kingofaeo --branch=main"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

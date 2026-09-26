@@ -13,3 +13,6 @@ node_modules/
 # Lixo de sistema operacional
 .DS_Store
 Thumbs.db
+
+# Fila local do IndexNow: estado transitorio, esvaziado apos o ping
+tools/indexnow-queue.json
