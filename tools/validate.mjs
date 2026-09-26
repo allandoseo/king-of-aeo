@@ -129,13 +129,22 @@ for (const d of docs) {
     const repetido = ids.find((x, k) => ids.indexOf(x) !== k);
     if (repetido) falha(d.url, `@id repetido no @graph: ${repetido}`);
     const conhecidos = new Set(ids);
+    // So e orfa a referencia a um fragmento DESTE documento. Um @id como
+    // https://kingofaeo.pro/#article citado em /feed/ aponta para o no que a
+    // home define, e isso e o proposito de @id global e estavel: ligar dados
+    // entre documentos. A primeira versao desta regra reprovou 63 referencias
+    // legitimas do feed e barrou o deploy. O erro era da regra.
+    const base = d.canonical ? d.canonical.split('#')[0] : null;
     const visita = (n) => {
       if (Array.isArray(n)) return n.forEach(visita);
       if (!n || typeof n !== 'object') return;
       const chaves = Object.keys(n);
-      if (chaves.length === 1 && chaves[0] === '@id'
-          && String(n['@id']).startsWith('https://kingofaeo.pro/#') && !conhecidos.has(n['@id'])) {
-        falha(d.url, `referencia @id orfa: ${n['@id']}`);
+      if (chaves.length === 1 && chaves[0] === '@id') {
+        const ref = String(n['@id']);
+        const [doc, frag] = [ref.split('#')[0], ref.includes('#')];
+        if (frag && base && doc === base && !conhecidos.has(ref)) {
+          falha(d.url, `referencia @id orfa no proprio documento: ${ref}`);
+        }
       }
       Object.values(n).forEach(visita);
     };
