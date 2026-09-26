@@ -1394,7 +1394,8 @@ const VARIANTES = [
   // Paginas de pergunta, publicadas em lotes por tools/rollout.mjs. O filtro
   // abaixo e o que torna o lote possivel: enquanto o arquivo nao esta em
   // public/, a pagina nao existe para o sitemap nem para o build.
-  ...['how-to-measure-aeo', 'aeo-vs-geo', 'aeo-vs-seo', 'questions']
+  ...['how-to-measure-aeo', 'aeo-vs-geo', 'aeo-vs-seo', 'questions',
+    'how-to-do-aeo', 'how-much-does-aeo-cost', 'aeo-tools', 'how-to-optimize-a-page-for-aeo', 'why-is-aeo-important', 'how-to-rank-in-ai-overviews', 'how-to-get-cited-by-chatgpt']
     .map((s) => ({ rel: `public/${s}/index.html`, loc: `${SITE}/${s}/` })),
   // Indice dos reivindicantes e uma pagina por reivindicante. Citam as fontes
   // pelo nome do dominio, em texto simples: nenhuma delas linka para fora.
@@ -1413,8 +1414,34 @@ const VARIANTES = [
 // respondem outra coisa. Agora tem hub, e o hub lista SOZINHO o que existe em
 // disco, lendo title, description e dateModified da propria pagina. Lista
 // escrita a mao envelhece na primeira vez que alguem edita uma description.
-const QUESTIONS = ['/aeo-vs-geo/', '/aeo-vs-seo/', '/how-to-measure-aeo/']
-  .filter((u) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
+const QUESTIONS = [
+  '/aeo-vs-geo/',
+  '/aeo-vs-seo/',
+  '/how-to-measure-aeo/',
+  '/how-to-do-aeo/',
+  '/how-much-does-aeo-cost/',
+  '/aeo-tools/',
+  '/how-to-optimize-a-page-for-aeo/',
+  '/why-is-aeo-important/',
+  '/how-to-rank-in-ai-overviews/',
+  '/how-to-get-cited-by-chatgpt/',
+].filter((u) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
+
+// As irmas de cada pagina, declaradas. Com dez paginas no cluster, deixar o
+// render listar "todas as outras" daria sete links de Related por pagina, que
+// e lista de navegacao, nao recomendacao. No maximo tres, e so as publicadas.
+const IRMAS_PERGUNTAS = {
+  '/aeo-vs-geo/': ['/aeo-vs-seo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
+  '/aeo-vs-seo/': ['/aeo-vs-geo/', '/how-to-measure-aeo/', '/why-is-aeo-important/'],
+  '/how-to-measure-aeo/': ['/aeo-vs-geo/', '/how-to-rank-in-ai-overviews/', '/citation-log/'],
+  '/how-to-do-aeo/': ['/how-to-optimize-a-page-for-aeo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
+  '/how-to-optimize-a-page-for-aeo/': ['/how-to-do-aeo/', '/how-to-rank-in-ai-overviews/', '/how-to-measure-aeo/'],
+  '/how-to-rank-in-ai-overviews/': ['/how-to-get-cited-by-chatgpt/', '/how-to-optimize-a-page-for-aeo/', '/how-to-measure-aeo/'],
+  '/how-to-get-cited-by-chatgpt/': ['/how-to-rank-in-ai-overviews/', '/how-to-measure-aeo/', '/what-is-aeo/'],
+  '/how-much-does-aeo-cost/': ['/aeo-tools/', '/how-to-do-aeo/', '/how-to-measure-aeo/'],
+  '/aeo-tools/': ['/how-much-does-aeo-cost/', '/how-to-measure-aeo/', '/how-to-do-aeo/'],
+  '/why-is-aeo-important/': ['/what-is-aeo/', '/aeo-vs-seo/', '/how-to-measure-aeo/'],
+};
 
 function metaDaPagina(url) {
   const html = fs.readFileSync(path.join(ROOT, `public${url}index.html`), 'utf8');
@@ -1451,10 +1478,14 @@ function renderNavPerguntas(url) {
     '      <ul>'];
   if (i > 0) L.push(`        <li><strong>Previous:</strong> <a href="${QUESTIONS[i - 1]}">${esc(nome(QUESTIONS[i - 1]))}</a></li>`);
   if (i >= 0 && i < QUESTIONS.length - 1) L.push(`        <li><strong>Next:</strong> <a href="${QUESTIONS[i + 1]}">${esc(nome(QUESTIONS[i + 1]))}</a></li>`);
-  for (const u of QUESTIONS) {
-    if (u !== url && u !== QUESTIONS[i - 1] && u !== QUESTIONS[i + 1]) {
-      L.push(`        <li><strong>Related:</strong> <a href="${u}">${esc(nome(u))}</a></li>`);
-    }
+  const usadas = new Set([url, QUESTIONS[i - 1], QUESTIONS[i + 1]]);
+  let n = 0;
+  for (const u of IRMAS_PERGUNTAS[url] ?? []) {
+    if (n >= 3 || usadas.has(u)) continue;
+    if (!fs.existsSync(path.join(ROOT, `public${u}index.html`))) continue;
+    usadas.add(u);
+    n += 1;
+    L.push(`        <li><strong>Related:</strong> <a href="${u}">${esc(nome(u))}</a></li>`);
   }
   L.push('      </ul>');
   return L.join(`\n`);

@@ -210,13 +210,23 @@ for (const d of docs) {
 // unico link, e uma regra que so avisa nao garante nada. O hub da um link, a
 // anterior ou a proxima da outro, e a irmã em Related da o terceiro: se o
 // numero cair abaixo de tres, alguma dessas ligacoes se perdeu e o build para.
-const CLUSTER_PERGUNTAS = ['/aeo-vs-geo/', '/aeo-vs-seo/', '/how-to-measure-aeo/'];
+// Todas as paginas do cluster, publicadas ou nao. As que ainda estao em
+// content/pending/ sao ignoradas abaixo; as que ja sairam tem de ter tres.
+const CLUSTER_PERGUNTAS = [
+  '/aeo-vs-geo/',
+  '/aeo-vs-seo/',
+  '/how-to-measure-aeo/',
+  '/how-to-do-aeo/',
+  '/how-much-does-aeo-cost/',
+  '/aeo-tools/',
+  '/how-to-optimize-a-page-for-aeo/',
+  '/why-is-aeo-important/',
+  '/how-to-rank-in-ai-overviews/',
+  '/how-to-get-cited-by-chatgpt/',
+];
 const MIN_ENTRANDO_PERGUNTAS = 3;
 for (const url of CLUSTER_PERGUNTAS) {
-  if (!entrando.has(url)) {
-    falha(url, 'listada no cluster /questions/ mas nao existe em public/');
-    continue;
-  }
+  if (!entrando.has(url)) continue;  // ainda em content/pending/, nao publicada
   const n = entrando.get(url).size;
   if (n < MIN_ENTRANDO_PERGUNTAS) {
     falha(url, `${n} pagina(s) apontando para ela; o cluster /questions/ exige ${MIN_ENTRANDO_PERGUNTAS}`);

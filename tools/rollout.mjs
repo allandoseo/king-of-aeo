@@ -29,7 +29,9 @@ const PENDENTES = path.join(RAIZ, 'content/pending');
 const PUBLICO = path.join(RAIZ, 'public');
 const FILA = path.join(RAIZ, 'tools/indexnow-queue.json');
 const SITE = 'https://kingofaeo.pro';
-const LOTE = 3;
+// O tamanho do lote vem do manifesto: e decisao editorial, nao constante de
+// codigo, e muda de campanha para campanha. Tres e o padrao antigo.
+const LOTE_PADRAO = 3;
 
 const SECO = process.argv.includes('--dry-run');
 const SO_STATUS = process.argv.includes('--status');
@@ -49,7 +51,9 @@ function leManifesto() {
   if (!Array.isArray(d.paginas)) morre('manifesto sem a lista "paginas"');
   const vistos = new Set();
   for (const p of d.paginas) {
-    if (!/^\/[a-z0-9-]+\/$/.test(p.slug)) morre(`slug fora do formato: ${p.slug}`);
+    // Aceita caminho aninhado: /claimants/james-dooley/ e tao valido quanto
+    // /aeo-tools/, e a versao de um nivel so reprovava o cluster inteiro.
+    if (!/^\/[a-z0-9-]+(\/[a-z0-9-]+)*\/$/.test(p.slug)) morre(`slug fora do formato: ${p.slug}`);
     if (vistos.has(p.slug)) morre(`slug repetido no manifesto: ${p.slug}`);
     vistos.add(p.slug);
   }
@@ -67,6 +71,7 @@ function caminhoPublico(slug) {
 // A ordem do manifesto E a ordem de publicacao. Quem esta primeiro sai primeiro,
 // e por isso a lista comeca pela pagina de maior valor.
 const manifesto = leManifesto();
+const LOTE = Number(manifesto.porDia) > 0 ? Number(manifesto.porDia) : LOTE_PADRAO;
 const publicadas = manifesto.paginas.filter((p) => p.publicadoEm);
 const naFila = manifesto.paginas.filter((p) => !p.publicadoEm);
 
