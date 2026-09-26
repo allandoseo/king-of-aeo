@@ -115,7 +115,8 @@ footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem
   .scroll.wide{width:900px;margin-left:calc((100% - 900px) / 2)}
 }
 
-figure.wide img{border:1px solid var(--line)}
-@media (min-width:1040px){
-  figure.wide{width:900px;margin-left:calc((100% - 900px) / 2)}
-}
+/* Captura de tela alinhada a coluna de texto, como o resto do corpo. Chegou a
+   sair para 900px junto com as tabelas largas, e ficou desalinhada: tabela
+   larga precisa da largura, imagem nao, e a diferenca se via na pagina.
+   A borda fica, senao a captura, que e branca, se dissolve no fundo. */
+figure.shot img{border:1px solid var(--line)}
