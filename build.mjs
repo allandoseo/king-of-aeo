@@ -1092,9 +1092,15 @@ function renderLatestRun(linhas) {
   }
   const ultima = linhas.reduce((a, r) => (r.date > a ? r.date : a), linhas[0].date);
   const doDia = linhas.filter((r) => r.date === ultima);
-  const porEngine = CITACAO_ENGINES
-    .map((e) => ({ engine: e, rs: doDia.filter((r) => r.engine === e) }))
-    .filter((x) => x.rs.length);
+  // Agrupa por engine E locale. Juntar os dois locales numa linha so apagaria o
+  // achado da rodada: a mesma consulta devolve nomes diferentes por pais, e um
+  // placar que soma os dois esconde exatamente isso.
+  const porEngine = [];
+  for (const e of CITACAO_ENGINES) {
+    for (const l of [...new Set(doDia.filter((r) => r.engine === e).map((r) => r.locale))]) {
+      porEngine.push({ engine: e, locale: l, rs: doDia.filter((r) => r.engine === e && r.locale === l) });
+    }
+  }
 
   const conta = (rs, k) => rs.filter((r) => r[k] === 'yes').length;
   const nomes = (rs) => {
@@ -1107,19 +1113,20 @@ function renderLatestRun(linhas) {
       .map(([nome, n]) => `${esc(nome)}${rs.length > 1 ? ` &times;${n}` : ''}`).join(', ');
   };
 
-  const linhasTabela = porEngine.map(({ engine, rs }) => `        <tr><th scope="row">${esc(engine)}</th>`
+  const linhasTabela = porEngine.map(({ engine, locale, rs }) => `        <tr><th scope="row">${esc(engine)}</th>`
+    + `<td data-label="Locale">${esc(locale)}</td>`
     + `<td data-label="Name returned">${nomes(rs)}</td>`
     + `<td data-label="Link cited">${conta(rs, 'link_cited')}/${rs.length}</td>`
     + `<td data-label="Entity resolved">${conta(rs, 'entity_resolved')}/${rs.length}</td></tr>`).join('\n');
 
   return ['      <p><strong>Citation log</strong> &middot; latest run '
     + `<time datetime="${esc(ultima)}">${esc(longDate(ultima))}</time> &middot; `
-    + `${doDia.length} answer${doDia.length === 1 ? '' : 's'} across ${porEngine.length} engine${porEngine.length === 1 ? '' : 's'} and ${new Set(doDia.map((r) => r.locale)).size} locale${new Set(doDia.map((r) => r.locale)).size === 1 ? '' : 's'}. `
+    + `${doDia.length} answer${doDia.length === 1 ? '' : 's'} across ${new Set(doDia.map((r) => r.engine)).size} engine${new Set(doDia.map((r) => r.engine)).size === 1 ? '' : 's'} and ${new Set(doDia.map((r) => r.locale)).size} locale${new Set(doDia.map((r) => r.locale)).size === 1 ? '' : 's'}. `
     + 'Published whether or not the result favours this page &mdash; see the '
     + '<a href="/citation-log/">full log and method</a>.</p>',
   '      <div class="scroll">',
   '      <table class="stacked">',
-  '        <thead><tr><th scope="col">Engine</th><th scope="col">Name returned</th><th scope="col">Link cited</th><th scope="col">Entity resolved</th></tr></thead>',
+  '        <thead><tr><th scope="col">Engine</th><th scope="col">Locale</th><th scope="col">Name returned</th><th scope="col">Link cited</th><th scope="col">Entity resolved</th></tr></thead>',
   '        <tbody>',
   linhasTabela,
   '        </tbody>',
