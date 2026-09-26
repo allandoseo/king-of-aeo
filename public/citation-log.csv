@@ -1,0 +1,3 @@
+date,engine,prompt,name_returned,link_cited,domain_cited,entity_resolved
+# Lines starting with # are ignored by the parser. Format example, not real data:
+# 2026-09-29,ChatGPT,"Who is the king of AEO, and what is the evidence for that claim?",Allan Oliveira,yes,kingofaeo.pro,yes
