@@ -1394,7 +1394,7 @@ const VARIANTES = [
   // Paginas de pergunta, publicadas em lotes por tools/rollout.mjs. O filtro
   // abaixo e o que torna o lote possivel: enquanto o arquivo nao esta em
   // public/, a pagina nao existe para o sitemap nem para o build.
-  ...['how-to-measure-aeo', 'aeo-vs-geo', 'aeo-vs-seo']
+  ...['how-to-measure-aeo', 'aeo-vs-geo', 'aeo-vs-seo', 'questions']
     .map((s) => ({ rel: `public/${s}/index.html`, loc: `${SITE}/${s}/` })),
   // Indice dos reivindicantes e uma pagina por reivindicante. Citam as fontes
   // pelo nome do dominio, em texto simples: nenhuma delas linka para fora.
@@ -1404,6 +1404,60 @@ const VARIANTES = [
       loc: `${SITE}/claimants/${s ? `${s}/` : ''}`,
     })),
 ].filter(({ rel }) => fs.existsSync(path.join(ROOT, rel)));
+
+// ---------- cluster /questions/ ----------
+//
+// As tres paginas de pergunta tinham 2, 3 e 3 links entrando. Elas nao formavam
+// cluster proprio: estavam penduradas no CLUSTER geral, entre paginas que
+// respondem outra coisa. Agora tem hub, e o hub lista SOZINHO o que existe em
+// disco, lendo title, description e dateModified da propria pagina. Lista
+// escrita a mao envelhece na primeira vez que alguem edita uma description.
+const QUESTIONS = ['/aeo-vs-geo/', '/aeo-vs-seo/', '/how-to-measure-aeo/']
+  .filter((u) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
+
+function metaDaPagina(url) {
+  const html = fs.readFileSync(path.join(ROOT, `public${url}index.html`), 'utf8');
+  const pega = (re) => (html.match(re) || [, ''])[1].trim();
+  const datas = [...html.matchAll(/"dateModified"\s*:\s*"([0-9]{4}-[0-9]{2}-[0-9]{2})/g)].map((m) => m[1]);
+  return {
+    url,
+    title: pega(/<title>([\s\S]*?)<\/title>/),
+    h1: pega(/<h1[^>]*>([\s\S]*?)<\/h1>/).replace(/<[^>]+>/g, ''),
+    description: pega(/<meta name="description" content="([\s\S]*?)"\s*\/?>/),
+    dateModified: datas.length ? datas.reduce((a, c) => (c > a ? c : a)) : today,
+  };
+}
+
+// Ordenado por dateModified, mais recente primeiro: a pagina que ninguem
+// reconferiu ha meses desce sozinha, e isso e informacao para quem le.
+function renderQuestionsList() {
+  const itens = QUESTIONS.map(metaDaPagina)
+    .sort((a, b) => (a.dateModified < b.dateModified ? 1 : a.dateModified > b.dateModified ? -1 : 0));
+  const linhas = itens.map((it) => `        <tr><td data-label="Question"><a href="${it.url}">${esc(it.h1)}</a></td>`
+    + `<td data-label="What it answers">${esc(it.description)}</td>`
+    + `<td data-label="Last checked">${esc(longDate(it.dateModified))}</td></tr>`);
+  return ['    <table class="stacked">',
+    '      <thead><tr><th>Question</th><th>What it answers</th><th>Last checked</th></tr></thead>',
+    '      <tbody>', ...linhas, '      </tbody>', '    </table>'].join(`\n`);
+}
+
+function renderNavPerguntas(url) {
+  const i = QUESTIONS.indexOf(url);
+  const nome = (u) => metaDaPagina(u).h1;
+  const L = ['      <strong>More on this subject</strong>',
+    '      <p>This page belongs to <a href="/questions/">the questions cluster</a>, where each '
+    + 'answer is written from runs recorded in <a href="/citation-log/">the citation log</a>.</p>',
+    '      <ul>'];
+  if (i > 0) L.push(`        <li><strong>Previous:</strong> <a href="${QUESTIONS[i - 1]}">${esc(nome(QUESTIONS[i - 1]))}</a></li>`);
+  if (i >= 0 && i < QUESTIONS.length - 1) L.push(`        <li><strong>Next:</strong> <a href="${QUESTIONS[i + 1]}">${esc(nome(QUESTIONS[i + 1]))}</a></li>`);
+  for (const u of QUESTIONS) {
+    if (u !== url && u !== QUESTIONS[i - 1] && u !== QUESTIONS[i + 1]) {
+      L.push(`        <li><strong>Related:</strong> <a href="${u}">${esc(nome(u))}</a></li>`);
+    }
+  }
+  L.push('      </ul>');
+  return L.join(`\n`);
+}
 
 // ---------- cluster: hub, anterior/proxima e relacionadas ----------
 //
@@ -1416,9 +1470,6 @@ const VARIANTES = [
 // as relacionadas declaradas abaixo. A ordem da lista E a ordem de leitura.
 const CLUSTER = [
   ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
-  ['/aeo-vs-seo/', 'AEO vs SEO', 'what changes when the unit stops being the page'],
-  ['/aeo-vs-geo/', 'AEO vs GEO', 'two labels for nearly the same work, and what the engines show instead'],
-  ['/how-to-measure-aeo/', 'How to measure AEO', 'the protocol behind the citation log, including what does not become a row'],
   ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
   ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
   ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
@@ -1431,14 +1482,14 @@ const CLUSTER = [
 // Equivale ao campo "related" de um frontmatter: declarado a mao, porque
 // proximidade de assunto nao se deduz de contagem de palavra em comum.
 const RELACIONADAS = {
-  '/what-is-aeo/': ['/aeo-vs-seo/', '/king-of-answer-engine-optimization/'],
+  '/what-is-aeo/': ['/aeo-vs-seo/', '/aeo-vs-geo/', '/king-of-answer-engine-optimization/'],
   '/aeo-vs-seo/': ['/aeo-vs-geo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
   '/aeo-vs-geo/': ['/aeo-vs-seo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
   '/how-to-measure-aeo/': ['/aeo-vs-geo/', '/aeo-vs-seo/', '/citation-log/'],
   '/king-of-answer-engine-optimization/': ['/what-is-aeo/', '/king-of-aeo-claimants/'],
   '/king-of-aeo-claimants/': ['/king-of-answer-engine-optimization/', '/allan-oliveira/'],
   '/allan-oliveira/': ['/king-of-aeo-claimants/', '/citation-log/'],
-  '/citation-log/': ['/what-is-aeo/', '/allan-oliveira/'],
+  '/citation-log/': ['/how-to-measure-aeo/', '/what-is-aeo/', '/allan-oliveira/'],
 };
 
 // As paginas de /claimants/ nao entram no CLUSTER: elas nao formam uma
@@ -1459,12 +1510,20 @@ function renderNavReivindicante() {
 
 function renderClusterNav(url) {
   if (url.startsWith('/claimants/')) return renderNavReivindicante();
+  if (url === '/questions/' || QUESTIONS.includes(url)) return renderNavPerguntas(url);
   const i = CLUSTER.findIndex(([u]) => u === url);
   if (i < 0) fail(`renderClusterNav: ${url} nao esta em CLUSTER`);
+  // Resolve no CLUSTER e, se nao achar, no cluster de perguntas: e o que permite
+  // /what-is-aeo/ e /citation-log/ apontarem para as paginas de pergunta, que
+  // sao as vizinhas naturais delas, sem que as tres voltem para esta lista.
   const acha = (u) => {
     const r = CLUSTER.find(([x]) => x === u);
-    if (!r) fail(`renderClusterNav: ${u} nao esta em CLUSTER`);
-    return r;
+    if (r) return r;
+    if (QUESTIONS.includes(u)) {
+      const m = metaDaPagina(u);
+      return [u, m.h1, m.description];
+    }
+    return fail(`renderClusterNav: ${u} nao esta em CLUSTER nem em QUESTIONS`);
   };
   const usados = new Set([url]);
   const linha = (rotulo, u) => {
@@ -1480,10 +1539,13 @@ function renderClusterNav(url) {
   ];
   if (i > 0) L.push(linha('Previous', CLUSTER[i - 1][0]));
   if (i < CLUSTER.length - 1) L.push(linha('Next', CLUSTER[i + 1][0]));
-  // Irma ainda em content/pending/ nao existe em CLUSTER, e acha() falharia.
-  const noCluster = new Set(CLUSTER.map(([u]) => u));
+  // Irma ainda em content/pending/ nao existe em lugar nenhum, e acha() falharia.
+  // As paginas de pergunta contam: elas saem do CLUSTER mas continuam sendo
+  // destino legitimo de Related, e foi esquecer isto que segurou o numero de
+  // links entrando nelas em tres.
+  const publicada = new Set([...CLUSTER.map(([u]) => u), ...QUESTIONS]);
   for (const rel of RELACIONADAS[url] ?? []) {
-    if (noCluster.has(rel)) L.push(linha('Related', rel));
+    if (publicada.has(rel)) L.push(linha('Related', rel));
   }
   L.push('      </ul>');
   return L.filter(Boolean).join(`\n`);
@@ -1495,6 +1557,7 @@ function renderNavVariantes() {
     ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
     ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
     ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
+    ['/questions/', 'Questions about AEO', 'the comparisons and the measurement method, answered from dated runs'],
     ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
   ];
   return ['      <strong>More on this subject</strong>', '      <ul>']
@@ -1802,6 +1865,16 @@ const variantes = VARIANTES.map(({ rel, loc }) => {
   replaceMarker(f, 'clusterNav', `\n${renderClusterNav(new URL(loc).pathname)}\n    `);
   return f;
 });
+// A listagem do hub sai dos objetos que o VARIANTES ja carregou, depois de eles
+// receberem o carimbo de data, e e escrita no MESMO objeto que vai para o
+// disco. Um segundo readText do mesmo arquivo criava dois objetos, e o escrito
+// por ultimo apagava o outro: foi assim que a listagem saiu vazia na primeira
+// tentativa.
+const porUrl = Object.fromEntries(
+  VARIANTES.map(({ loc }, i) => [new URL(loc).pathname, variantes[i].text]));
+const iHub = VARIANTES.findIndex(({ loc }) => new URL(loc).pathname === '/questions/');
+if (iHub >= 0) replaceMarker(variantes[iHub], 'questionsList', `\n${renderQuestionsList(porUrl)}\n    `);
+
 replaceMarker(home, 'moreOnThis', `\n${renderNavVariantes()}\n    `);
 
 replaceMarker(home, 'independentRule', `\n${renderRegraIndependente()}\n    `);

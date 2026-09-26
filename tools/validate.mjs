@@ -204,6 +204,25 @@ for (const d of docs) {
   }
 }
 
+// ---------- 5. cluster /questions/: minimo de links entrando, e isto REPROVA ----------
+//
+// Nao e aviso. O cluster existe para que estas paginas parem de depender de um
+// unico link, e uma regra que so avisa nao garante nada. O hub da um link, a
+// anterior ou a proxima da outro, e a irmã em Related da o terceiro: se o
+// numero cair abaixo de tres, alguma dessas ligacoes se perdeu e o build para.
+const CLUSTER_PERGUNTAS = ['/aeo-vs-geo/', '/aeo-vs-seo/', '/how-to-measure-aeo/'];
+const MIN_ENTRANDO_PERGUNTAS = 3;
+for (const url of CLUSTER_PERGUNTAS) {
+  if (!entrando.has(url)) {
+    falha(url, 'listada no cluster /questions/ mas nao existe em public/');
+    continue;
+  }
+  const n = entrando.get(url).size;
+  if (n < MIN_ENTRANDO_PERGUNTAS) {
+    falha(url, `${n} pagina(s) apontando para ela; o cluster /questions/ exige ${MIN_ENTRANDO_PERGUNTAS}`);
+  }
+}
+
 // ---------- relatorio ----------
 
 docs.sort((a, b) => a.url.localeCompare(b.url));
