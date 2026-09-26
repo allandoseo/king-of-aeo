@@ -1134,6 +1134,35 @@ function patchCitacaoDataset(file, linhas, modificado) {
   });
 }
 
+// ---------- paginas de variacao ----------
+//
+// Uma pagina por intencao de busca, cada uma com conteudo proprio. Nao sao
+// copias da home com outro titulo: o que as justifica e responderem coisas
+// diferentes. Tres variacoes pedidas ficaram de fora de proposito, por nao
+// terem o que dizer que a home ou a /king-of-aeo-contest/ ja nao digam.
+//
+// Aqui elas so recebem o tratamento comum: data carimbada do git, datas do
+// JSON-LD, sameAs da entidade canonica, politica de rel e versao do CSS.
+const VARIANTES = [
+  { rel: 'public/what-is-aeo/index.html', loc: `${SITE}/what-is-aeo/` },
+  { rel: 'public/king-of-aeo-claimants/index.html', loc: `${SITE}/king-of-aeo-claimants/` },
+  { rel: 'public/king-of-answer-engine-optimization/index.html', loc: `${SITE}/king-of-answer-engine-optimization/` },
+  { rel: 'public/allan-oliveira/index.html', loc: `${SITE}/allan-oliveira/` },
+];
+
+function renderNavVariantes() {
+  const itens = [
+    ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
+    ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
+    ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
+    ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
+    ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
+  ];
+  return ['      <strong>More on this subject</strong>', '      <ul>']
+    .concat(itens.map(([u, rotulo, nota]) => `        <li><a href="${u}">${esc(rotulo)}</a> &mdash; ${esc(nota)}</li>`))
+    .concat(['      </ul>']).join('\n');
+}
+
 // ---------- sitemaps ----------
 //
 // Um dono por arquivo. Antes o build.mjs corrigia o sitemap.xml e o
@@ -1162,6 +1191,7 @@ const PAGINAS = [
   { loc: `${SITE}/archive/the-legend/`, arquivo: FILES.archiveLegend },
   { loc: `${SITE}/archive/five-laws/`, arquivo: FILES.archiveFiveLaws },
   { loc: CITACAO_URL, arquivo: FILES.citationLog },
+  ...VARIANTES.map(({ rel, loc }) => ({ loc, arquivo: rel })),
   { loc: `${SITE}/citation-log.csv`, arquivo: CITACAO_CSV },
   { loc: `${SITE}/llms.txt`, arquivo: FILES.llms },
   { loc: `${SITE}/llms-full.txt`, arquivo: FILES.llmsFull },
@@ -1391,6 +1421,22 @@ const archive = [FILES.archiveIndex, FILES.archiveLegend, FILES.archiveFiveLaws]
 // A /feed/ fica de fora porque quem a escreve e tools/build_feed.py. Os links
 // externos dela sao todos da propria entidade (rodape e caixa do autor), entao
 // nao ha o que marcar la. O relatorio abaixo mostra a conta por pagina.
+// --- paginas de variacao ---
+const variantes = VARIANTES.map(({ rel }) => {
+  const f = readText(rel);
+  const quando = gitLastChange(rel, today);
+  replaceMarker(f, 'pageReviewedLong', longDate(quando));
+  patchJsonLd(f, (nodes, ofType) => {
+    for (const tipo of ['Article', 'WebPage']) {
+      for (const n of ofType(tipo)) n.dateModified = isoDateTime(quando);
+    }
+    patchPersonSameAs(f, entity.person)(nodes);
+  });
+  patchMeta(f, 'property="article:modified_time"', () => isoDateTime(quando));
+  return f;
+});
+replaceMarker(home, 'moreOnThis', `\n${renderNavVariantes()}\n    `);
+
 // --- /citation-log/ ---
 const citacoes = lerCitacoes();
 const citacaoPagina = readText(FILES.citationLog);
@@ -1401,7 +1447,7 @@ patchCitacaoDataset(citacaoPagina, citacoes, gitLastChange(CITACAO_CSV, today));
 replaceMarker(home, 'latestRun', `\n${renderLatestRun(citacoes)}\n    `);
 
 const prefixes = dofollowPrefixes(entity, videos);
-const relPages = [home, contest, song, citacaoPagina, ...archive];
+const relPages = [home, contest, song, citacaoPagina, ...variantes, ...archive];
 const stamped = relPages.reduce((n, f) => n + stampStylesheets(f), 0);
 if (stamped === 0) fail('no local stylesheet link was versioned; check the <link> markup');
 const relStats = relPages.map((f) => [f.rel, normalizeExternalRel(f, prefixes)]);
@@ -1434,6 +1480,7 @@ writeText(contest);
 writeText(song);
 for (const f of archive) writeText(f);
 writeText(citacaoPagina);
+for (const f of variantes) writeText(f);
 writeText(videoSitemap);
 writeText(llms);
 writeGenerated(FILES.llmsFull, llmsFullText);
