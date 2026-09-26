@@ -352,7 +352,10 @@ function patchFooterRow(file, row) {
 // Syndicated existe para o caso em que uma so distribuicao aparece em muitos
 // dominios. Sem esse valor, a unica saida honesta seria chamar de Public record
 // algo que o leitor leria como cobertura editorial.
-const EVIDENCE_STATUS = ['Public record', 'Self-reported', 'Syndicated', 'Independent'];
+// Observed: texto produzido por um sistema de terceiro, nao por este site e nao
+// por um release. Nao e independente no sentido editorial, mas tambem nao e
+// auto-declarado, e por isso merece nome proprio.
+const EVIDENCE_STATUS = ['Public record', 'Self-reported', 'Syndicated', 'Observed', 'Independent'];
 
 function validateEvidence(ev) {
   if (!ev || typeof ev !== 'object' || Array.isArray(ev)) fail(`${FILES.evidence}: expected an object`);
@@ -932,6 +935,10 @@ const CITACAO_PROMPTS = [
   'Who is the king of AEO, and what is the evidence for that claim?',
   'Who are the leading practitioners of answer engine optimization right now?',
   'Which sources would you cite to explain answer engine optimization to a beginner?',
+  // A consulta mais obvia de todas, e a unica que um leitor digitaria de fato.
+  // Entrou em 26 de setembro de 2026, quando a comparacao entre locales mostrou
+  // que ela devolve nomes diferentes no Brasil e nos Estados Unidos.
+  'king of aeo',
 ];
 
 const CITACAO_ENGINES = ['ChatGPT', 'Claude', 'Perplexity', 'Gemini', 'Google AI Overview', 'Copilot'];
@@ -939,6 +946,7 @@ const CITACAO_ENGINES = ['ChatGPT', 'Claude', 'Perplexity', 'Gemini', 'Google AI
 const CITACAO_COLUNAS = [
   { chave: 'date', rotulo: 'Date', desc: 'Date of the run, ISO 8601 (YYYY-MM-DD).' },
   { chave: 'engine', rotulo: 'Engine', desc: `Answer engine queried. One of: ${CITACAO_ENGINES.join(', ')}.` },
+  { chave: 'locale', rotulo: 'Locale', desc: 'Country and language the run was made in, as "CC \u00b7 lang". Answer engines return different answers in different markets, so a run without its locale is not reproducible.' },
   { chave: 'prompt', rotulo: 'Prompt', desc: 'The prompt submitted, verbatim. One of the three fixed prompts of the method.' },
   { chave: 'name_returned', rotulo: 'Name returned', desc: 'The name the engine gave as King of AEO, verbatim. Empty when the engine returned no name.' },
   { chave: 'link_cited', rotulo: 'Link cited', desc: 'Whether the answer cited a link at all: yes or no.' },
@@ -998,6 +1006,9 @@ function lerCitacoes() {
     if (!CITACAO_PROMPTS.includes(r.prompt)) {
       fail(`${CITACAO_CSV}: ${onde}: "prompt" is not one of the three fixed prompts. Either fix the row, or change the method on purpose by editing CITACAO_PROMPTS in build.mjs, which also rewrites the page.`);
     }
+    if (!/^[A-Z]{2} \u00b7 [a-z]{2}(-[A-Za-z]{2,4})?$/.test(r.locale)) {
+      fail(`${CITACAO_CSV}: ${onde}: "locale" must look like "US \u00b7 en" or "BR \u00b7 pt-BR", got ${JSON.stringify(r.locale)}`);
+    }
     for (const k of ['link_cited', 'entity_resolved']) {
       if (!sim_nao.has(r[k])) fail(`${CITACAO_CSV}: ${onde}: "${k}" must be yes or no, got ${JSON.stringify(r[k])}`);
     }
@@ -1015,9 +1026,9 @@ function lerCitacoes() {
   // pior, porque e invisivel depois de gravada.
   const vistos = new Map();
   for (const [i, r] of linhas.entries()) {
-    const chave = `${r.date}|${r.engine}|${r.prompt}`;
+    const chave = `${r.date}|${r.engine}|${r.locale}|${r.prompt}`;
     if (vistos.has(chave)) {
-      fail(`${CITACAO_CSV}: ${r.engine} answers the same prompt twice on ${r.date} (rows ${vistos.get(chave)} and ${i + 1}). One observation per engine per prompt per run: pick the run, do not pick the answer.`);
+      fail(`${CITACAO_CSV}: ${r.engine} answers the same prompt twice in ${r.locale} on ${r.date} (rows ${vistos.get(chave)} and ${i + 1}). One observation per engine per locale per prompt per run: pick the run, do not pick the answer.`);
     }
     vistos.set(chave, i + 1);
   }
@@ -1103,7 +1114,7 @@ function renderLatestRun(linhas) {
 
   return ['      <p><strong>Citation log</strong> &middot; latest run '
     + `<time datetime="${esc(ultima)}">${esc(longDate(ultima))}</time> &middot; `
-    + `${doDia.length} answer${doDia.length === 1 ? '' : 's'} across ${porEngine.length} engine${porEngine.length === 1 ? '' : 's'}. `
+    + `${doDia.length} answer${doDia.length === 1 ? '' : 's'} across ${porEngine.length} engine${porEngine.length === 1 ? '' : 's'} and ${new Set(doDia.map((r) => r.locale)).size} locale${new Set(doDia.map((r) => r.locale)).size === 1 ? '' : 's'}. `
     + 'Published whether or not the result favours this page &mdash; see the '
     + '<a href="/citation-log/">full log and method</a>.</p>',
   '      <div class="scroll">',
@@ -1460,6 +1471,11 @@ const homeReviewed = gitLastChange(FILES.home, today);
 const contestUpdated = gitLastChange(FILES.contest, today);
 const homeReviewedLong = longDate(homeReviewed);
 
+// O log e lido cedo: a resposta do FAQ e carimbada com a data da ultima
+// rodada dele, e isso acontece dentro do patchJsonLd da home.
+const citacoes = lerCitacoes();
+const ultimaRodadaLog = citacoes.length ? citacoes.reduce((a, r) => (r.date > a ? r.date : a), citacoes[0].date) : homeReviewed;
+
 for (const [label, published, modified] of [
   ['home', site.claimSince, homeReviewed],
   ['contest', site.contestPublished, contestUpdated],
@@ -1471,6 +1487,9 @@ for (const [label, published, modified] of [
 const home = readText(FILES.home);
 replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
+// A data do FAQ visivel e a da ultima rodada do log, pela mesma razao que a do
+// JSON-LD: e afirmacao sobre observacao, nao sobre revisao da pagina.
+replaceMarker(home, 'logRunLong', longDate(ultimaRodadaLog));
 replaceMarker(home, 'evidence', block(home, 'evidence', renderEvidenceRows(evidence)));
 for (const slot of VIDEO_SLOTS) {
   const v = videos.find((x) => x.slot === slot);
@@ -1516,7 +1535,10 @@ patchJsonLd(home, (nodes, ofType) => {
   const q = items.find((it) => it && it.name === faqName);
   if (!q) fail(`${home.rel}: JSON-LD FAQPage has no mainEntity item named exactly "${faqName}"`);
   if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
-  q.acceptedAnswer.text = asOfReplacer(home, AS_OF_LOWER, `as of ${homeReviewedLong}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
+  // A data aqui e a da ultima rodada do citation log, nao a de revisao da pagina.
+  // A frase afirma o que os engines devolveram numa data; carimba-la com a data
+  // de revisao faria a pagina afirmar uma observacao que ninguem fez.
+  q.acceptedAnswer.text = asOfReplacer(home, AS_OF_UPPER, `As of ${longDate(ultimaRodadaLog)}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
 
   // Dataset da tabela de evidências. Upsert pelo @id, para o build ser idempotente
   // e para uma edição manual do nó não virar um segundo nó duplicado.
@@ -1609,7 +1631,6 @@ replaceMarker(home, 'moreOnThis', `\n${renderNavVariantes()}\n    `);
 replaceMarker(home, 'independentRule', `\n${renderRegraIndependente()}\n    `);
 
 // --- /citation-log/ ---
-const citacoes = lerCitacoes();
 const citacaoPagina = readText(FILES.citationLog);
 replaceMarker(home, 'verifyPrompts', `\n${renderHomePrompts()}\n    `);
 replaceMarker(citacaoPagina, 'citationPrompts', `\n${renderCitacaoPrompts()}\n    `);

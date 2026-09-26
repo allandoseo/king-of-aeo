@@ -95,6 +95,13 @@
       "status": "Syndicated"
     },
     {
+      "date": "2026-09-26",
+      "evidence": "Named in the Google AI Overview for the query \"king of aeo\" with Brazilian locale, alongside James Dooley and David Quaid, and described there as the first to lead the term outside the English-speaking market. The same query in the United States names James Dooley only",
+      "type": "Answer engine output",
+      "where": "https://kingofaeo.pro/citation-log/",
+      "status": "Observed"
+    },
+    {
       "pending": true,
       "date": "[[DATA]]",
       "evidence": "Google AI Overview, US, query \"king of aeo\"",
