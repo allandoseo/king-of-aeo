@@ -939,6 +939,9 @@ const CITACAO_PROMPTS = [
   // Entrou em 26 de setembro de 2026, quando a comparacao entre locales mostrou
   // que ela devolve nomes diferentes no Brasil e nos Estados Unidos.
   'king of aeo',
+  // A pergunta direta, que e como uma pessoa de fato escreve. Entrou em 26 de
+  // setembro de 2026, quando foi a forma usada na rodada do ChatGPT deslogado.
+  'Who is the King of AEO?',
 ];
 
 const CITACAO_ENGINES = ['ChatGPT', 'Claude', 'Perplexity', 'Gemini', 'Google AI Overview', 'Copilot'];

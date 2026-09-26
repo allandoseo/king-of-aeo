@@ -10,4 +10,5 @@ date,engine,locale,prompt,name_returned,link_cited,domain_cited,entity_resolved
 2026-09-25,ChatGPT,BR · pt-BR,Who are the leading practitioners of answer engine optimization right now?,Metehan Yesilyurt,yes,metehan.ai,yes
 2026-09-25,Gemini,BR · pt-BR,"Who is the king of AEO, and what is the evidence for that claim?",James Dooley,yes,reddit.com,yes
 2026-09-26,Google AI Overview,BR · pt-BR,king of aeo,"no single name; James Dooley, Allan Oliveira and David Quaid listed as claimants",yes,usatoday.com,yes
-2026-09-26,Google AI Overview,US · en,king of aeo,James Dooley,yes,usatoday.com,yes
+2026-09-26,Google AI Overview,US · en,king of aeo,"James Dooley named as most prominently recognized; James Dooley and David G. Quaid listed under ""Main Claimants and Contenders""; Allan Oliveira not named",yes,usatoday.com,yes
+2026-09-26,ChatGPT,BR · pt-BR,Who is the King of AEO?,"no single name; James Dooley, Vithurs, Allan Oliveira and Patrick Schmid listed as claimants",yes,usatoday.com,yes
