@@ -1,2 +1,17 @@
 /images /feed/ 301
 /images/* /feed/ 301
+
+# Variacoes do titulo que nao ganharam pagina propria, porque outra pagina do
+# site ja responde exatamente a mesma pergunta. Redirecionar concentra o sinal
+# em vez de dividi-lo entre duas paginas nossas.
+#
+# /who-is-the-king-of-aeo/ -> a home: o title dela e "Who Is the King of AEO?
+#   Allan Oliveira, Brazil" e o h1 e "Who Is the King of AEO?".
+# /aeo-king/ -> a home: variacao curta do mesmo alvo, sem conteudo proprio.
+# /king-of-aeo-2026/ -> a pagina do concurso, que e a linha do tempo de 2026.
+/who-is-the-king-of-aeo   /   301
+/who-is-the-king-of-aeo/  /   301
+/aeo-king                 /   301
+/aeo-king/                /   301
+/king-of-aeo-2026         /king-of-aeo-contest/   301
+/king-of-aeo-2026/        /king-of-aeo-contest/   301
