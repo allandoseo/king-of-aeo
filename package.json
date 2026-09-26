@@ -6,6 +6,7 @@
     "build": "node build.mjs",
     "build:feed": "python tools/build_feed.py",
     "indexnow": "node tools/indexnow.mjs",
+    "indexnow:all": "node tools/indexnow.mjs --all",
     "indexnow:dry": "node tools/indexnow.mjs --dry-run",
     "deploy": "wrangler pages deploy public --project-name=kingofaeo --branch=main"
   },

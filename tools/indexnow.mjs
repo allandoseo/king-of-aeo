@@ -1,14 +1,20 @@
 #!/usr/bin/env node
 // indexnow.mjs — avisa o IndexNow (Bing, Yandex, Seznam, Naver) das URLs que mudaram.
 //
-//   node tools/indexnow.mjs            envia
+//   node tools/indexnow.mjs            envia o que esta na fila
+//   node tools/indexnow.mjs --all      envia TODAS as URLs do sitemap de paginas
 //   node tools/indexnow.mjs --dry-run  mostra o que enviaria, sem enviar
 //
-// A fila e escrita pelo build.mjs: a cada build ele compara o sitemap-pages.xml
-// que vai gravar com o que estava no disco e enfileira toda URL cujo <lastmod>
-// mudou, ou que nasceu agora. A fila acumula entre builds e so e esvaziada aqui,
-// depois de o endpoint aceitar: build rodado duas vezes nao perde o que a
-// primeira rodada achou, e um ping que falha nao some com a lista.
+// Modo normal: a fila e escrita pelo build.mjs, que compara o sitemap-pages.xml
+// novo com o que estava no disco e enfileira as URLs cujo <lastmod> mudou. A
+// fila acumula entre builds e so e esvaziada aqui, depois de o endpoint
+// aceitar: build rodado duas vezes nao perde o que a primeira achou, e ping que
+// falha nao some com a lista.
+//
+// Modo --all: existe porque <lastmod> tem granularidade de DIA. Uma pagina
+// editada de novo no mesmo dia, depois de ja ter sido pingada, mantem a mesma
+// string de data e por isso nao reentra na fila. Depois de uma sessao com
+// varias edicoes seguidas, --all resolve sem depender dessa comparacao.
 //
 // A chave fica na raiz do dominio, como o protocolo exige: public/<chave>.txt,
 // contendo a propria chave. Este script a descobre sozinho, para a chave nao
@@ -20,6 +26,7 @@ import path from 'node:path';
 const ROOT = path.join(import.meta.dirname ?? process.cwd(), '..');
 const HOST = 'kingofaeo.pro';
 const FILA = path.join(ROOT, 'tools/indexnow-queue.json');
+const SITEMAP = path.join(ROOT, 'public/sitemap-pages.xml');
 const ENDPOINT = 'https://api.indexnow.org/indexnow';
 
 function morre(msg) {
@@ -38,22 +45,36 @@ function achaChave() {
   return path.basename(achados[0], '.txt');
 }
 
-const seco = process.argv.includes('--dry-run');
+function leFila() {
+  if (!fs.existsSync(FILA)) return null;
+  const v = JSON.parse(fs.readFileSync(FILA, 'utf8'));
+  return Array.isArray(v) ? v : null;
+}
 
-if (!fs.existsSync(FILA)) {
-  console.log('indexnow: nada na fila; rode node build.mjs primeiro.');
+function leSitemap() {
+  if (!fs.existsSync(SITEMAP)) morre('public/sitemap-pages.xml not found; run node build.mjs first');
+  const locs = [...fs.readFileSync(SITEMAP, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
+  if (!locs.length) morre('public/sitemap-pages.xml has no <loc>');
+  return locs;
+}
+
+const seco = process.argv.includes('--dry-run');
+const tudo = process.argv.includes('--all');
+
+const origem = tudo ? leSitemap() : leFila();
+if (origem === null) {
+  console.log('indexnow: nada na fila; rode node build.mjs primeiro, ou use --all.');
   process.exit(0);
 }
-const fila = JSON.parse(fs.readFileSync(FILA, 'utf8'));
-if (!Array.isArray(fila) || fila.length === 0) {
-  console.log('indexnow: fila vazia, nada a enviar.');
+if (!origem.length) {
+  console.log('indexnow: fila vazia, nada a enviar. Use --all para reenviar o sitemap inteiro.');
   process.exit(0);
 }
 
 // O protocolo so aceita URLs do mesmo host da chave. O subdominio da cobertura
 // e outro host: precisa da propria chave, no proprio dominio.
-const minhas = fila.filter((u) => { try { return new URL(u).host === HOST; } catch { return false; } });
-const alheias = fila.filter((u) => !minhas.includes(u));
+const minhas = origem.filter((u) => { try { return new URL(u).host === HOST; } catch { return false; } });
+const alheias = origem.filter((u) => !minhas.includes(u));
 
 const chave = achaChave();
 const corpo = {
@@ -63,7 +84,7 @@ const corpo = {
   urlList: minhas,
 };
 
-console.log(`indexnow: ${minhas.length} URL(s) para ${HOST}`);
+console.log(`indexnow: ${minhas.length} URL(s) para ${HOST}${tudo ? ' (--all: sitemap inteiro)' : ''}`);
 for (const u of minhas) console.log(`  ${u}`);
 if (alheias.length) {
   console.log(`  (${alheias.length} fora de ${HOST}, ignorada(s): ${alheias.join(', ')})`);
@@ -86,8 +107,10 @@ const r = await fetch(ENDPOINT, {
 const texto = await r.text().catch(() => '');
 console.log(`indexnow: HTTP ${r.status} ${r.statusText}${texto ? ` — ${texto.slice(0, 200)}` : ''}`);
 
-// 200 aceito, 202 aceito e chave em validacao. So ai a fila e esvaziada.
+// 200 aceito; 202 aceito e chave em validacao. So ai a fila e esvaziada — em
+// --all tambem, porque o que ela guardava acabou de ser enviado junto.
 if (r.status === 200 || r.status === 202) {
+  fs.mkdirSync(path.dirname(FILA), { recursive: true });
   fs.writeFileSync(FILA, '[]\n', 'utf8');
   console.log(`indexnow: fila esvaziada (${path.relative(ROOT, FILA)})`);
 } else {
