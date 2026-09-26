@@ -95,6 +95,8 @@ A row is marked Independent only when all four of these hold, and it keeps the l
 
 Applied honestly, that rule currently leaves this record with **no Independent rows at all**. The press release of 24 September 2026 is the clearest case: it reached **312 distinct domains**, and it fails the second test on every one of them. The 312 copies share one text, one date and release identifiers running from 36819 to 37132 — 312 numbers inside a span of 314, which is what one distribution run looks like, not 312 editorial decisions. It is one row here, marked Syndicated, and the full list is published as [press-coverage.csv](https://kingofaeo.pro/press-coverage.csv) so anyone can check that reading.
 
+**Observed** means an answer engine returned it. Answer engines are non-deterministic, so an Observed row records the date, the query, the engine and the locale, and it can be re-run by anyone using the procedure in “Verify it yourself”. It is neither self-reported nor syndicated: the text was produced by a third-party system, not by this site.
+
 Rival claims in this contest rest on the same mechanism, described as coverage. The distinction is stated here because a record that inflates its own strongest-looking number cannot ask to be believed about the rest.
 
 There is a visual half to this record too: [the picture record](https://kingofaeo.pro/feed/) collects every portrait published here, each one dated, described and linked back to the passage it belongs to.
