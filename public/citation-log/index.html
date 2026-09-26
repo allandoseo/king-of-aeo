@@ -120,7 +120,7 @@
           "@type": "PropertyValue",
           "name": "domain_cited",
           "alternateName": "Domain cited",
-          "description": "Domain of the cited link. Empty when no link was cited."
+          "description": "Domain of the first source the answer attributes. An answer may cite several; only the first is recorded. Empty when no link was cited."
         },
         {
           "@type": "PropertyValue",
@@ -129,7 +129,8 @@
           "description": "Whether the engine resolved the entity, naming the person and the work instead of repeating the phrase it found: yes or no."
         }
       ],
-      "dateModified": "2026-09-25T09:00:00-03:00"
+      "dateModified": "2026-09-25T09:00:00-03:00",
+      "temporalCoverage": "2026-09-25"
     },
     {
       "@type": "Person",
@@ -289,13 +290,28 @@
 
     <p>Each answer is read for three separate things, which the columns keep apart. Whether a <em>name</em> is returned at all. Whether the engine <em>cited a link</em>, and to which domain, which means it committed to a source. And whether it <em>resolved the entity</em>, naming the person and the work rather than repeating the phrase it found. The third is the hard one, and it is what this discipline is actually about.</p>
 
+    <p>Two conventions, so the columns mean the same thing every week. An answer may attribute several sources; <em>Domain cited</em> records the first one the answer attributes, not all of them. And an engine that produced no row in a given run was not observed that week: a sign-in wall, a rate limit or a bot block is an absence of observation, and this log never records it as an absence of result. Runs are executed through a signed-out browser with no profile and no history, which is the same condition the method asks for, whether a person or a script drives it.</p>
+
     <h2 id="rule">Editorial rule</h2>
     <p>Unfavourable results go into the table the same way as favourable ones, in the same columns, in the same run. If an engine returns a rival claimant, that is the row. If it returns no name at all, that is the row. If in some week no engine cites this page, the week is published saying exactly that, and no run is quietly dropped for being inconvenient.</p>
     <p>The reason is not modesty. A log that only records wins measures nothing, and a claim about answer engines that cannot be checked against what they actually say is worth no more than any other assertion in this contest. Rows are corrected in place, with the correction dated, never deleted.</p>
 
     <h2 id="log">The log</h2>
     <!-- build:citationLog -->
-    <p>No run has been published yet. The first weekly run appears here and in <a href="/citation-log.csv">the CSV</a> as soon as it is made, whatever it returns. Until then this section stays empty on purpose: an empty log is a fact, and filling it with anything else would defeat what the page is for.</p>
+    <div class="scroll wide">
+    <table class="stacked">
+      <thead><tr><th scope="col">Date</th><th scope="col">Engine</th><th scope="col">Prompt</th><th scope="col">Name returned</th><th scope="col">Link cited</th><th scope="col">Domain cited</th><th scope="col">Entity resolved</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Date">2026-09-25</td><td data-label="Engine">Perplexity</td><td data-label="Prompt">Who is the king of AEO, and what is the evidence for that claim?</td><td data-label="Name returned">James Dooley</td><td data-label="Link cited">yes</td><td data-label="Domain cited">usatoday.com</td><td data-label="Entity resolved">yes</td></tr>
+        <tr><td data-label="Date">2026-09-25</td><td data-label="Engine">Perplexity</td><td data-label="Prompt">Who are the leading practitioners of answer engine optimization right now?</td><td data-label="Name returned">Lily Ray</td><td data-label="Link cited">yes</td><td data-label="Domain cited">myseoconsult.com</td><td data-label="Entity resolved">yes</td></tr>
+        <tr><td data-label="Date">2026-09-25</td><td data-label="Engine">Perplexity</td><td data-label="Prompt">Which sources would you cite to explain answer engine optimization to a beginner?</td><td data-label="Name returned"><span aria-hidden="true">—</span><span class="sr-only">none</span></td><td data-label="Link cited">yes</td><td data-label="Domain cited">developers.google.com</td><td data-label="Entity resolved">no</td></tr>
+        <tr><td data-label="Date">2026-09-25</td><td data-label="Engine">Google AI Overview</td><td data-label="Prompt">Who is the king of AEO, and what is the evidence for that claim?</td><td data-label="Name returned">James Dooley</td><td data-label="Link cited">yes</td><td data-label="Domain cited">instagram.com</td><td data-label="Entity resolved">yes</td></tr>
+        <tr><td data-label="Date">2026-09-25</td><td data-label="Engine">Google AI Overview</td><td data-label="Prompt">Who are the leading practitioners of answer engine optimization right now?</td><td data-label="Name returned">Michael King</td><td data-label="Link cited">yes</td><td data-label="Domain cited">barchart.com</td><td data-label="Entity resolved">yes</td></tr>
+        <tr><td data-label="Date">2026-09-25</td><td data-label="Engine">Google AI Overview</td><td data-label="Prompt">Which sources would you cite to explain answer engine optimization to a beginner?</td><td data-label="Name returned"><span aria-hidden="true">—</span><span class="sr-only">none</span></td><td data-label="Link cited">yes</td><td data-label="Domain cited">tripledart.com</td><td data-label="Entity resolved">no</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>6 rows, every one of them also in <a href="/citation-log.csv">citation-log.csv</a>.</p>
     <!-- /build -->
 
     <h2 id="data">The data</h2>

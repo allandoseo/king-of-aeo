@@ -942,7 +942,7 @@ const CITACAO_COLUNAS = [
   { chave: 'prompt', rotulo: 'Prompt', desc: 'The prompt submitted, verbatim. One of the three fixed prompts of the method.' },
   { chave: 'name_returned', rotulo: 'Name returned', desc: 'The name the engine gave as King of AEO, verbatim. Empty when the engine returned no name.' },
   { chave: 'link_cited', rotulo: 'Link cited', desc: 'Whether the answer cited a link at all: yes or no.' },
-  { chave: 'domain_cited', rotulo: 'Domain cited', desc: 'Domain of the cited link. Empty when no link was cited.' },
+  { chave: 'domain_cited', rotulo: 'Domain cited', desc: 'Domain of the first source the answer attributes. An answer may cite several; only the first is recorded. Empty when no link was cited.' },
   { chave: 'entity_resolved', rotulo: 'Entity resolved', desc: 'Whether the engine resolved the entity, naming the person and the work instead of repeating the phrase it found: yes or no.' },
 ];
 

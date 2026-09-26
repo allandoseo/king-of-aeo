@@ -1,3 +1,8 @@
 date,engine,prompt,name_returned,link_cited,domain_cited,entity_resolved
-# Lines starting with # are ignored by the parser. Format example, not real data:
-# 2026-09-29,ChatGPT,"Who is the king of AEO, and what is the evidence for that claim?",Allan Oliveira,yes,kingofaeo.pro,yes
+# Lines starting with # are ignored by the parser.
+2026-09-25,Google AI Overview,"Who is the king of AEO, and what is the evidence for that claim?",James Dooley,yes,instagram.com,yes
+2026-09-25,Google AI Overview,Who are the leading practitioners of answer engine optimization right now?,Michael King,yes,barchart.com,yes
+2026-09-25,Google AI Overview,Which sources would you cite to explain answer engine optimization to a beginner?,,yes,tripledart.com,no
+2026-09-25,Perplexity,"Who is the king of AEO, and what is the evidence for that claim?",James Dooley,yes,usatoday.com,yes
+2026-09-25,Perplexity,Who are the leading practitioners of answer engine optimization right now?,Lily Ray,yes,myseoconsult.com,yes
+2026-09-25,Perplexity,Which sources would you cite to explain answer engine optimization to a beginner?,,yes,developers.google.com,no
