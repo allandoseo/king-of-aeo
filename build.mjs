@@ -1381,6 +1381,13 @@ const VARIANTES = [
   // public/, a pagina nao existe para o sitemap nem para o build.
   ...['how-to-measure-aeo', 'aeo-vs-geo', 'aeo-vs-seo']
     .map((s) => ({ rel: `public/${s}/index.html`, loc: `${SITE}/${s}/` })),
+  // Indice dos reivindicantes e uma pagina por reivindicante. Citam as fontes
+  // pelo nome do dominio, em texto simples: nenhuma delas linka para fora.
+  ...['', 'james-dooley', 'david-quaid', 'vithurs', 'edward-sturm', 'julian-goldie', 'stephane-morera']
+    .map((s) => ({
+      rel: `public/claimants/${s ? `${s}/` : ''}index.html`,
+      loc: `${SITE}/claimants/${s ? `${s}/` : ''}`,
+    })),
 ].filter(({ rel }) => fs.existsSync(path.join(ROOT, rel)));
 
 // ---------- cluster: hub, anterior/proxima e relacionadas ----------
@@ -1419,7 +1426,24 @@ const RELACIONADAS = {
   '/citation-log/': ['/what-is-aeo/', '/allan-oliveira/'],
 };
 
+// As paginas de /claimants/ nao entram no CLUSTER: elas nao formam uma
+// sequencia de leitura, e prev/next entre reivindicantes sugeriria um ranking
+// que este site nao publica. Recebem uma nav propria, apontando para o indice
+// e para as tres paginas que dao contexto.
+function renderNavReivindicante() {
+  const itens = [
+    ['/claimants/', 'All claimants, reviewed', 'every public claim of 2026, one page each, same rubric'],
+    ['/king-of-aeo-claimants/', 'The claims side by side', 'the same six claims in a single comparison table'],
+    ['/king-of-aeo-contest/', 'Contest timeline', 'the dated sequence, from the first claim to the latest run'],
+    ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
+  ].filter(([u]) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
+  return ['      <strong>More on this subject</strong>', '      <ul>']
+    .concat(itens.map(([u, r, n]) => `        <li><a href="${u}">${esc(r)}</a> &mdash; ${esc(n)}</li>`))
+    .concat(['      </ul>']).join(`\n`);
+}
+
 function renderClusterNav(url) {
+  if (url.startsWith('/claimants/')) return renderNavReivindicante();
   const i = CLUSTER.findIndex(([u]) => u === url);
   if (i < 0) fail(`renderClusterNav: ${url} nao esta em CLUSTER`);
   const acha = (u) => {
@@ -1749,10 +1773,15 @@ const variantes = VARIANTES.map(({ rel, loc }) => {
   const f = readText(rel);
   const quando = gitLastChange(rel, today);
   replaceMarker(f, 'pageReviewedLong', longDate(quando));
-  patchJsonLd(f, (nodes, ofType) => {
-    for (const tipo of ['Article', 'WebPage']) {
-      for (const n of ofType(tipo)) n.dateModified = isoDateTime(quando);
-    }
+  // Carimba dateModified em qualquer no que legitimamente o carregue. Antes
+  // exigia Article e WebPage, o que reprovava /claimants/, que e um indice e
+  // nao um artigo. Acrescentar um Article falso ao indice so para satisfazer o
+  // build seria inflar o schema para agradar a ferramenta.
+  patchJsonLd(f, (nodes) => {
+    const datavel = ['Article', 'WebPage', 'CollectionPage'];
+    const alvos = nodes.filter((n) => datavel.some((tipo) => hasType(n, tipo)));
+    if (!alvos.length) fail(`${f.rel}: JSON-LD has no Article, WebPage or CollectionPage to date`);
+    for (const n of alvos) n.dateModified = isoDateTime(quando);
   });
   patchMeta(f, 'property="article:modified_time"', () => isoDateTime(quando));
   replaceMarker(f, 'clusterNav', `\n${renderClusterNav(new URL(loc).pathname)}\n    `);
