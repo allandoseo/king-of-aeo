@@ -102,6 +102,29 @@ seria numero inventado, e o comando `report` recusa rodar sem observacao.
 
 O relatorio em `reports/` e o que vai para o cliente.
 
+## Notas do operador
+
+Aprendido na rodada de 26 de setembro de 2026, e que vale para as proximas:
+
+**A Visao geral criada por IA do Google carrega depois do resto da pagina.** Numa
+consulta ela nao estava la aos 8 segundos e estava aos 10. Quem anota rapido
+registra "sem resposta de IA", que e afirmacao forte e seria falsa. Espere, e
+confirme a ausencia recarregando antes de registrar ausencia.
+
+**Gemini deslogado responde em Flash-Lite**, o modelo mais barato da familia, e
+diz isso no rodape da resposta. Nao e o modelo que um usuario logado recebe.
+Isso nao invalida a medicao, que e sempre deslogada e por isso comparavel com
+ela mesma, mas precisa estar claro para o cliente antes de ele concluir
+qualquer coisa sobre "o Gemini".
+
+**Copilot e Claude exigem conta** e nao tem modo convidado. Nao se cria conta
+nem se usa conta para medir: essas combinacoes ficam sem linha. Se o cliente
+quiser esses dois na serie, e decisao dele, com a conta dele, e isso muda a
+natureza do dado, que passa a ser personalizado.
+
+**ChatGPT e Perplexity deslogados as vezes respondem sem citar nada.** Isso e
+`link_cited=no`, e e diferente de bloqueio: houve resposta. Registre a linha.
+
 ## Cadencia e leitura
 
 Uma rodada por semana, no mesmo dia. Uma leitura isolada e anedota; a serie e
