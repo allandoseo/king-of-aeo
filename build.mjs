@@ -985,7 +985,7 @@ function lerCitacoes() {
   }
 
   const sim_nao = new Set(['yes', 'no']);
-  return uteis.slice(1).map(({ texto, n }) => {
+  const linhas = uteis.slice(1).map(({ texto, n }) => {
     const onde = `line ${n}`;
     const v = parseCsvLinha(texto, onde);
     if (v.length !== esperado.length) fail(`${CITACAO_CSV}: ${onde}: expected ${esperado.length} fields, got ${v.length}`);
@@ -1007,6 +1007,21 @@ function lerCitacoes() {
     if (r.link_cited === 'no' && r.domain_cited) fail(`${CITACAO_CSV}: ${onde}: link_cited=no must leave "domain_cited" empty, got ${JSON.stringify(r.domain_cited)}`);
     return r;
   });
+
+  // Uma observacao por engine, por prompt, por rodada. O metodo declara rodada
+  // semanal; duas linhas com a mesma data, engine e prompt significam ou uma
+  // rodada repetida no mesmo dia, ou alguem escolhendo entre duas respostas do
+  // mesmo prompt. As duas coisas destroem o valor do registro, e a segunda e
+  // pior, porque e invisivel depois de gravada.
+  const vistos = new Map();
+  for (const [i, r] of linhas.entries()) {
+    const chave = `${r.date}|${r.engine}|${r.prompt}`;
+    if (vistos.has(chave)) {
+      fail(`${CITACAO_CSV}: ${r.engine} answers the same prompt twice on ${r.date} (rows ${vistos.get(chave)} and ${i + 1}). One observation per engine per prompt per run: pick the run, do not pick the answer.`);
+    }
+    vistos.set(chave, i + 1);
+  }
+  return linhas;
 }
 
 // Os mesmos tres prompts na secao "Verify it yourself" da home. Estavam
