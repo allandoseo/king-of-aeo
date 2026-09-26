@@ -25,7 +25,19 @@ header.site{border-bottom:1px solid var(--blue-line)}
 .brand{display:flex;align-items:center;gap:.6rem;padding:1rem 0;font-weight:800;color:var(--blue);text-decoration:none;font-size:1rem}
 .brand svg{width:22px;height:22px}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-.nav{display:flex;gap:1.1rem;font-size:.9rem;font-weight:700}
+/* flex-wrap era nowrap e o menu nao cabia: com seis itens ele media 419px
+   dentro de uma tela de 375, e a pagina inteira ganhava rolagem horizontal.
+   Acontecia nas 22 paginas, porque o cabecalho e o mesmo em todas. */
+.nav{display:flex;flex-wrap:wrap;gap:.45rem 1.1rem;font-size:.9rem;font-weight:700}
+@media (max-width:560px){
+  /* No celular o menu ocupa a largura toda e quebra em duas linhas alinhadas
+     a esquerda, em vez de brigar por espaco com a marca na mesma linha. */
+  .bar{gap:.35rem}
+  .nav{width:100%;gap:.35rem 1rem;font-size:.85rem}
+  /* inline-block para o padding contar na caixa: como <a> inline, o alvo
+     media 34px de altura, abaixo dos 44 que um dedo pede. */
+  .nav a{display:inline-block;padding:.5rem 0}
+}
 /* O card voltou a miniatura: a mesma faixa ja toca no player do slot video-1,
    logo acima, e embedar de novo aqui repetiria a musica na mesma pagina. */
 .songcard{display:grid;grid-template-columns:200px 1fr;gap:1.1rem;align-items:center;border:1px solid var(--blue-line);border-radius:10px;padding:1rem;margin:2rem 0}
