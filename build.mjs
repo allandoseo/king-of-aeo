@@ -1258,11 +1258,45 @@ function personCanonico(ent) {
   // Antes era um objeto solto, sem @id: um no que nenhum outro podia referenciar
   // e que, por isso, nao se funde com nada no grafo.
   no.worksFor = { '@id': ent.organization.id };
+  // affiliation, e nao um segundo worksFor. worksFor ja diz a verdade: ele
+  // trabalha na SEOMais, a agencia que fundou. Declarar dois empregadores,
+  // sendo o segundo o proprio site que ele publica, seria inflar o grafo
+  // justamente na pagina cujo argumento e nao inflar nada. affiliation diz
+  // o vinculo sem afirmar emprego, e fecha o circuito com o founder do no
+  // da marca, que e o que um resolvedor de entidade percorre.
+  no.affiliation = { '@id': ent.brand.id };
   no.knowsAbout = [...p.knowsAbout];
   no.address = JSON.parse(JSON.stringify(p.address));
   no.homeLocation = JSON.parse(JSON.stringify(p.homeLocation));
   no.sameAs = [...p.sameAs];
   if ((p.subjectOf || []).length) no.subjectOf = JSON.parse(JSON.stringify(p.subjectOf));
+  return no;
+}
+
+// A entidade do projeto, distinta da pessoa e da agencia. Existe porque
+// "king of aeo" tambem e lido como nome de marca, e ate aqui o grafo so
+// declarava uma pessoa. Sem isto, quem consulta a expressao como marca nao
+// encontra entidade nenhuma deste lado.
+//
+// founder aponta para a pessoa e worksFor aponta de volta: o par fecha o
+// circuito para quem resolve entidade, e nenhum dos dois inventa relacao.
+function marcaCanonica(ent) {
+  const b = ent.brand;
+  const no = {
+    '@type': 'Organization',
+    '@id': b.id,
+    name: b.name,
+    alternateName: b.alternateName,
+    url: b.url,
+    description: b.description,
+    foundingDate: b.foundingDate,
+    knowsAbout: b.knowsAbout,
+    founder: { '@id': ent.person.id },
+    sameAs: b.sameAs,
+  };
+  // logo so entra quando houver arquivo de marca. Vide o _comment em
+  // data/entity.json: nao se aponta o retrato de uma pessoa como logo.
+  if (b.logo) no.logo = { '@type': 'ImageObject', url: b.logo };
   return no;
 }
 
@@ -1312,7 +1346,7 @@ function patchStubArtigoHome(file, ent) {
 function patchEntidadeCanonica(file, ent) {
   return (nodes) => {
     if (!Array.isArray(nodes)) fail(`${file.rel}: JSON-LD is not a @graph array`);
-    for (const no of [personCanonico(ent), orgCanonica(ent), siteCanonico(ent)]) {
+    for (const no of [personCanonico(ent), orgCanonica(ent), marcaCanonica(ent), siteCanonico(ent)]) {
       const id = no['@id'];
       const reais = nodes.filter((n) => n && typeof n === 'object'
         && n['@id'] === id && Object.keys(n).length > 1);

@@ -107,6 +107,39 @@
     "description": "SEO, GEO and AEO agency founded by Allan Oliveira, in Rio de Janeiro, Brazil.",
     "areaServed": "BR"
   },
+  "brand": {
+    "_comment": [
+      "A entidade do projeto, separada da pessoa e separada da SEOMais.",
+      "",
+      "sameAs traz SO perfil que e do projeto. O YouTube, o X e o Quora que",
+      "aparecem em person.sameAs sao pessoais (@allandoseo) e ja pertencem ao",
+      "no Person: repeti-los aqui diria ao buscador que duas entidades",
+      "diferentes controlam a mesma conta, que e o oposto de desambiguar.",
+      "Reddit nao entra porque o projeto nao tem perfil no Reddit.",
+      "",
+      "logo esta ausente de proposito: nao existe arquivo de marca em",
+      "public/img/. Apontar a foto do Allan como logo da organizacao diria que",
+      "o rosto de uma pessoa e a marca de uma organizacao."
+    ],
+    "id": "https://kingofaeo.pro/#organization",
+    "name": "King of AEO",
+    "alternateName": [
+      "The King of AEO",
+      "King of Answer Engine Optimization"
+    ],
+    "url": "https://kingofaeo.pro/",
+    "description": "The King of AEO record: a dated, checkable account of the 2026 contest over the title, published by Allan Oliveira.",
+    "foundingDate": "2026-09-17",
+    "knowsAbout": [
+      "Answer Engine Optimization",
+      "Generative Engine Optimization",
+      "Search Engine Optimization"
+    ],
+    "sameAs": [
+      "https://www.pinterest.com/kingofaeo",
+      "https://github.com/allandoseo/king-of-aeo"
+    ]
+  },
   "website": {
     "id": "https://kingofaeo.pro/#website",
     "url": "https://kingofaeo.pro/",
