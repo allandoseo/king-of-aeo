@@ -3,15 +3,16 @@
   "exclude": [
     "*.jpeg",
     "*.jpg",
-    "king-of-aeo-vs-search-robot.webp"
+    "king-of-aeo-vs-search-robot.webp",
+    "king-of-aeo-coronation.webp"
   ],
   "home_images": [
     "king-of-aeo-allan-oliveira.webp",
     "king-of-aeo-method-infographic.svg",
-    "king-of-aeo-coronation.webp",
     "allan-oliveira-king-of-aeo-portrait.webp",
     "king-of-aeo-google-ai-overview-brazil-2026-09-26.webp",
-    "king-of-aeo-google-ai-overview-us-vs-brazil-2026-09-26.webp"
+    "king-of-aeo-google-ai-overview-us-vs-brazil-2026-09-26.webp",
+    "king-of-aeo-chatgpt-claimants-2026-09.webp"
   ],
   "items": [
     {
