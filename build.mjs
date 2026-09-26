@@ -217,7 +217,13 @@ function validateTimeline(items) {
     }
     if (!Array.isArray(it.sources)) fail(`${FILES.timeline}: item ${i} "sources" must be an array`);
     it.sources.forEach((s, j) => {
-      if (!s || typeof s.label !== 'string' || typeof s.url !== 'string') fail(`${FILES.timeline}: item ${i} source ${j} needs string "label" and "url"`);
+      // Fonte sem "url" e deliberada: o dominio e citado pelo nome e o leitor e
+      // mandado para a review interna daquele reivindicante, em "claimant".
+      // Citar sem hiperlink continua sendo citar, e a URL segue publicada em
+      // evidence.csv para quem quiser conferir.
+      if (!s || typeof s.label !== 'string') fail(`${FILES.timeline}: item ${i} source ${j} needs a string "label"`);
+      if (s.url !== undefined && typeof s.url !== 'string') fail(`${FILES.timeline}: item ${i} source ${j} "url" must be a string when present`);
+      if (s.url === undefined && typeof s.claimant !== 'string') fail(`${FILES.timeline}: item ${i} source ${j} has no "url", so it needs "claimant" naming the review it points to`);
     });
   });
   return items;
@@ -713,11 +719,20 @@ function renderTimelineRows(items) {
     // Sem nofollow aqui de proposito: quem decide rel de link externo e o passe
     // normalizeExternalRel, que roda depois sobre o HTML pronto. Duplicar a regra
     // nos dois lugares fazia uma desfazer a outra a cada build.
-    const sources = it.sources.map((s) => (
-      isInternal(s.url)
+    const vistos = new Set();
+    const sources = it.sources.map((s) => {
+      if (s.url === undefined) {
+        // Nome do dominio em texto simples. O link para a review entra uma vez
+        // por reivindicante nesta pagina, nao a cada mencao.
+        const rotulo = esc(s.label);
+        if (vistos.has(s.claimant)) return rotulo;
+        vistos.add(s.claimant);
+        return `${rotulo} (<a href="/claimants/${s.claimant}/">the claim reviewed</a>)`;
+      }
+      return isInternal(s.url)
         ? `<a href="${esc(s.url)}">${esc(s.label)}</a>`
-        : `<a href="${esc(s.url)}" rel="noopener">${esc(s.label)}</a>`
-    )).join(', ');
+        : `<a href="${esc(s.url)}" rel="noopener">${esc(s.label)}</a>`;
+    }).join(', ');
     // O link do eventLink entra depois do escape, sobre o trecho ja escapado, para
     // o texto do evento continuar sendo dado e nao marcacao.
     let evento = esc(it.event);
