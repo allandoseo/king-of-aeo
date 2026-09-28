@@ -119,7 +119,18 @@
       "",
       "logo esta ausente de proposito: nao existe arquivo de marca em",
       "public/img/. Apontar a foto do Allan como logo da organizacao diria que",
-      "o rosto de uma pessoa e a marca de uma organizacao."
+      "o rosto de uma pessoa e a marca de uma organizacao.",
+      "",
+      "NewsMediaOrganization entra junto com os quatro campos de politica",
+      "abaixo, e nao antes deles. O tipo afirma que isto e um veiculo que",
+      "publica registro; os quatro campos sao o que torna a afirmacao",
+      "verificavel. Declarar o tipo sem as paginas seria a mesma alegacao sem",
+      "criterio que este site existe para avaliar nos outros.",
+      "",
+      "As quatro URLs sao conferidas pelo build contra o disco: se a pagina",
+      "nao existir em public/, o build para. Campo de schema apontando para",
+      "404 e pior que campo ausente, e a unica forma de garantir isso e a",
+      "ferramenta recusar o commit, nao a lembranca de quem edita."
     ],
     "id": "https://kingofaeo.pro/#organization",
     "name": "King of AEO",
@@ -135,10 +146,73 @@
       "Generative Engine Optimization",
       "Search Engine Optimization"
     ],
+    "publishingPrinciples": "https://kingofaeo.pro/metodologia/",
+    "correctionsPolicy": "https://kingofaeo.pro/politica-de-correcao/",
+    "actionableFeedbackPolicy": "https://kingofaeo.pro/contato/",
+    "ownershipFundingInfo": "https://kingofaeo.pro/sobre/",
     "sameAs": [
       "https://www.pinterest.com/kingofaeo",
       "https://github.com/allandoseo/king-of-aeo"
     ]
+  },
+  "claimants": {
+    "_comment": [
+      "Os nos de pessoa avaliada, com @id canonico DE SITE e nao de pagina.",
+      "",
+      "Antes cada pagina de reivindicante declarava a pessoa como",
+      "'.../claimants/<slug>/#claimant'. Sete paginas, sete @id diferentes: o",
+      "Edward Sturm citado na pagina do Dooley e o Edward Sturm avaliado na",
+      "pagina dele eram, para um resolvedor de entidade, duas pessoas. Com o",
+      "@id de site, a mencao numa pagina e a avaliacao na outra caem na mesma",
+      "entidade, e e isso que faz o grafo acumular peso em vez de se dividir.",
+      "",
+      "description e neutra e sai do que a pagina mostra. Nenhum campo destes",
+      "nos pode conter juizo: sao pessoas reais, e o juizo desta casa vive no",
+      "ClaimReview, que e onde ele fica declarado como avaliacao e nao como",
+      "fato sobre a pessoa.",
+      "",
+      "sameAs esta ausente em todos de proposito. Nenhuma das paginas linka",
+      "para os reivindicantes, e perfil nao conferido por fetch nao entra:",
+      "sameAs adivinhado afirma identidade que ninguem verificou.",
+      "",
+      "slug e a pasta em public/claimants/. Quando ela nao existe, o build nao",
+      "emite o no nem o link: o registro nao inventa pagina."
+    ],
+    "james-dooley": {
+      "id": "https://kingofaeo.pro/#james-dooley",
+      "name": "James Dooley",
+      "description": "Claimant to the King of AEO title, 31 August 2026."
+    },
+    "david-quaid": {
+      "id": "https://kingofaeo.pro/#david-g-quaid",
+      "name": "David G. Quaid",
+      "description": "Claimant to the King of AEO title, 4 September 2026."
+    },
+    "vithurs": {
+      "id": "https://kingofaeo.pro/#vithurs",
+      "name": "Vithurs",
+      "description": "Claimant to the King of AEO title, 7 September 2026."
+    },
+    "edward-sturm": {
+      "id": "https://kingofaeo.pro/#edward-sturm",
+      "name": "Edward Sturm",
+      "description": "Writer who documented the 2026 King of AEO contest and disputes the coronation of 31 August 2026."
+    },
+    "julian-goldie": {
+      "id": "https://kingofaeo.pro/#julian-goldie",
+      "name": "Julian Goldie",
+      "description": "Claimant to the King of AEO title, undated claim published in 2026."
+    },
+    "stephane-morera": {
+      "id": "https://kingofaeo.pro/#stephane-morera",
+      "name": "Stephane Morera",
+      "description": "Claimant to the King of AEO title, 13 September 2026."
+    },
+    "jesper-nissen": {
+      "id": "https://kingofaeo.pro/#jesper-nissen",
+      "name": "Jesper Nissen",
+      "description": "Organiser of the ceremony of 31 August 2026 at which James Dooley was announced as King of AEO. Makes no claim to the title himself."
+    }
   },
   "website": {
     "id": "https://kingofaeo.pro/#website",

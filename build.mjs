@@ -265,6 +265,54 @@ function validateEntity(ent) {
   for (const k of ['id', 'name', 'url']) {
     if (typeof org[k] !== 'string' || org[k] === '') fail(`${FILES.entity}: "organization.${k}" must be a non-empty string`);
   }
+  // A marca e os quatro campos de politica. Cada um aponta para uma pagina
+  // deste site, e cada pagina e conferida contra o disco: e esta checagem que
+  // torna impossivel o campo sobreviver a remocao da pagina. Sem ela, o dia em
+  // que alguem apagar /politica-de-correcao/ o schema continua prometendo uma
+  // politica que devolve 404, que e pior que nao prometer nada.
+  const brand = ent.brand;
+  if (!brand || typeof brand !== 'object' || Array.isArray(brand)) fail(`${FILES.entity}: "brand" must be an object`);
+  for (const k of ['id', 'name', 'url', 'description', 'foundingDate']) {
+    if (typeof brand[k] !== 'string' || brand[k] === '') fail(`${FILES.entity}: "brand.${k}" must be a non-empty string`);
+  }
+  const POLITICAS = ['publishingPrinciples', 'correctionsPolicy', 'actionableFeedbackPolicy', 'ownershipFundingInfo'];
+  for (const k of POLITICAS) {
+    const u = brand[k];
+    if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: "brand.${k}" must be an absolute http(s) URL`);
+    if (!u.startsWith(`${SITE}/`)) fail(`${FILES.entity}: "brand.${k}" must be a page of ${SITE}, got ${u}`);
+    const rel = `public${new URL(u).pathname}index.html`;
+    if (!fs.existsSync(path.join(ROOT, rel))) {
+      fail(`${FILES.entity}: "brand.${k}" points at ${u} but ${rel} does not exist; a schema field pointing at a 404 is worse than no field`);
+    }
+  }
+
+  // Registro dos reivindicantes: @id canonico de site, um por pessoa.
+  const cl = ent.claimants;
+  if (!cl || typeof cl !== 'object' || Array.isArray(cl)) fail(`${FILES.entity}: "claimants" must be an object`);
+  const slugs = Object.keys(cl).filter((k) => k !== '_comment');
+  if (!slugs.length) fail(`${FILES.entity}: "claimants" has no entries`);
+  const idsVistos = new Set();
+  for (const slug of slugs) {
+    const c = cl[slug];
+    if (!c || typeof c !== 'object' || Array.isArray(c)) fail(`${FILES.entity}: "claimants.${slug}" must be an object`);
+    for (const k of ['id', 'name', 'description']) {
+      if (typeof c[k] !== 'string' || c[k] === '') fail(`${FILES.entity}: "claimants.${slug}.${k}" must be a non-empty string`);
+    }
+    // @id de site, nunca de pagina: e a diferenca entre uma entidade com sete
+    // arestas e sete entidades com uma aresta cada.
+    if (!/^https:\/\/kingofaeo\.pro\/#[a-z0-9-]+$/.test(c.id)) {
+      fail(`${FILES.entity}: "claimants.${slug}.id" must be a site-level id like ${SITE}/#slug, got ${c.id}`);
+    }
+    if (idsVistos.has(c.id)) fail(`${FILES.entity}: "claimants.${slug}.id" duplicates ${c.id}`);
+    idsVistos.add(c.id);
+    if (c.sameAs !== undefined) {
+      if (!Array.isArray(c.sameAs)) fail(`${FILES.entity}: "claimants.${slug}.sameAs" must be an array`);
+      c.sameAs.forEach((u, i) => {
+        if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: claimants.${slug}.sameAs[${i}] must be an absolute http(s) URL`);
+      });
+    }
+  }
+
   const web = ent.website;
   if (!web || typeof web !== 'object' || Array.isArray(web)) fail(`${FILES.entity}: "website" must be an object`);
   for (const k of ['id', 'name', 'url']) {
@@ -1303,10 +1351,16 @@ function personCanonico(ent) {
 //
 // founder aponta para a pessoa e worksFor aponta de volta: o par fecha o
 // circuito para quem resolve entidade, e nenhum dos dois inventa relacao.
+// NewsMediaOrganization alem de Organization: o segundo tipo e o que diz que
+// isto e um veiculo que publica registro, e e ele que da sentido aos quatro
+// campos de politica. Os quatro sao exatamente os sinais que o Google usa para
+// avaliar publisher de fact-check, e nenhum concorrente nesta disputa os tem.
+// POLITICAS abaixo conferiu que as quatro paginas existem em disco antes de o
+// build chegar aqui: campo apontando para 404 e pior que campo ausente.
 function marcaCanonica(ent) {
   const b = ent.brand;
   const no = {
-    '@type': 'Organization',
+    '@type': ['Organization', 'NewsMediaOrganization'],
     '@id': b.id,
     name: b.name,
     alternateName: b.alternateName,
@@ -1315,12 +1369,61 @@ function marcaCanonica(ent) {
     foundingDate: b.foundingDate,
     knowsAbout: b.knowsAbout,
     founder: { '@id': ent.person.id },
+    publishingPrinciples: b.publishingPrinciples,
+    correctionsPolicy: b.correctionsPolicy,
+    actionableFeedbackPolicy: b.actionableFeedbackPolicy,
+    ownershipFundingInfo: b.ownershipFundingInfo,
     sameAs: b.sameAs,
   };
   // logo so entra quando houver arquivo de marca. Vide o _comment em
   // data/entity.json: nao se aponta o retrato de uma pessoa como logo.
   if (b.logo) no.logo = { '@type': 'ImageObject', url: b.logo };
   return no;
+}
+
+// Os nos de pessoa avaliada, com @id canonico de site. Quem e o assunto da
+// pagina recebe o no cheio; quem e apenas mencionado recebe @id, @type e name,
+// que e o bastante para a referencia resolver sem afirmar nada a mais.
+function reivindicanteCanonico(c, cheio) {
+  const no = { '@type': 'Person', '@id': c.id, name: c.name };
+  if (cheio) no.description = c.description;
+  return no;
+}
+
+const CLAIMANT_SLUGS = (ent) => Object.keys(ent.claimants).filter((k) => k !== '_comment');
+
+// Reescreve o @id de pagina para o @id de site e injeta os nos canonicos dos
+// reivindicantes que a pagina de fato referencia. Nada de emitir os sete em
+// toda pagina: no que a pagina nao menciona e peso morto no grafo.
+function patchReivindicantes(file, ent, slugDoAssunto) {
+  const antigo = `${SITE}/claimants/${slugDoAssunto}/#claimant`;
+  const assunto = slugDoAssunto ? ent.claimants[slugDoAssunto] : null;
+  if (assunto) file.text = file.text.split(`"${antigo}"`).join(`"${assunto.id}"`);
+  return (nodes) => {
+    const porId = new Map();
+    for (const slug of CLAIMANT_SLUGS(ent)) porId.set(ent.claimants[slug].id, ent.claimants[slug]);
+    // Quais @id canonicos de pessoa o grafo ja cita, seja como no, seja como
+    // referencia. Serializar e procurar e mais honesto que percorrer campo por
+    // campo: pega mentions, about, author e o que vier depois sem lista fixa.
+    const citados = new Set();
+    const texto = JSON.stringify(nodes);
+    for (const [id] of porId) if (texto.includes(`"${id}"`)) citados.add(id);
+    for (const id of citados) {
+      const c = porId.get(id);
+      const cheio = assunto && assunto.id === id;
+      const existentes = nodes.filter((n) => n && typeof n === 'object'
+        && n['@id'] === id && Object.keys(n).length > 1);
+      if (existentes.length > 1) fail(`${file.rel}: ${existentes.length} nodes carry "@id":"${id}"; only one may`);
+      const no = reivindicanteCanonico(c, cheio);
+      if (existentes.length === 1) {
+        const alvo = existentes[0];
+        for (const k of Object.keys(alvo)) delete alvo[k];
+        Object.assign(alvo, no);
+      } else {
+        nodes.push(no);
+      }
+    }
+  };
 }
 
 function orgCanonica(ent) {
@@ -1339,6 +1442,12 @@ function orgCanonica(ent) {
 // Substitui o no existente no lugar em que ele esta, ou acrescenta ao @graph se
 // a pagina ainda nao o tinha. Mais de um no com o mesmo @id para o build: dois
 // nos com a mesma identidade e justamente o defeito que isto veio corrigir.
+// publisher aponta para a marca, e nao mais para a pessoa. Quem publica o
+// registro e a organizacao que declara metodologia, politica de correcao,
+// canal de contestacao e financiamento; a pessoa continua ligada a ela por
+// founder e affiliation. Com publisher na pessoa, os quatro campos de politica
+// ficavam num no que o WebSite nao apontava, e o sinal de publisher se perdia
+// justamente onde ele e lido.
 function siteCanonico(ent) {
   const w = ent.website;
   return {
@@ -1347,7 +1456,7 @@ function siteCanonico(ent) {
     url: w.url,
     name: w.name,
     inLanguage: w.inLanguage,
-    publisher: { '@id': ent.person.id },
+    publisher: { '@id': ent.brand.id },
     hasPart: JSON.parse(JSON.stringify(w.hasPart)),
   };
 }
@@ -1553,6 +1662,16 @@ const RELACIONADAS = {
   '/citation-log/': ['/how-to-measure-aeo/', '/what-is-aeo/', '/allan-oliveira/'],
 };
 
+function renderNavPoliticas(url) {
+  const L = ['      <strong>More on this subject</strong>', '      <ul>'];
+  for (const [href, titulo, nota] of POLITICAS) {
+    if (href === url) continue;
+    L.push(`        <li><a href="${href}">${esc(titulo)}</a> &mdash; ${esc(nota)}</li>`);
+  }
+  L.push('      </ul>');
+  return L.join('\n');
+}
+
 // As paginas de /claimants/ nao entram no CLUSTER: elas nao formam uma
 // sequencia de leitura, e prev/next entre reivindicantes sugeriria um ranking
 // que este site nao publica. Recebem uma nav propria, apontando para o indice
@@ -1567,16 +1686,6 @@ function renderNavReivindicante() {
   return ['      <strong>More on this subject</strong>', '      <ul>']
     .concat(itens.map(([u, r, n]) => `        <li><a href="${u}">${esc(r)}</a> &mdash; ${esc(n)}</li>`))
     .concat(['      </ul>']).join(`\n`);
-}
-
-function renderNavPoliticas(url) {
-  const L = ['      <strong>More on this subject</strong>', '      <ul>'];
-  for (const [href, titulo, nota] of POLITICAS) {
-    if (href === url) continue;
-    L.push(`        <li><a href="${href}">${esc(titulo)}</a> &mdash; ${esc(nota)}</li>`);
-  }
-  L.push('      </ul>');
-  return L.join('\n');
 }
 
 function renderClusterNav(url) {
