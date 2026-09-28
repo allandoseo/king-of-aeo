@@ -1676,7 +1676,13 @@ const QUESTIONS = [
 // e lista de navegacao, nao recomendacao. No maximo tres, e so as publicadas.
 const IRMAS_PERGUNTAS = {
   '/aeo-vs-geo/': ['/aeo-vs-seo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
-  '/aeo-vs-seo/': ['/aeo-vs-geo/', '/how-to-measure-aeo/', '/why-is-aeo-important/'],
+  // /how-much-does-aeo-cost/ entra aqui porque /aeo-vs-seo/ nao rendia nenhuma
+  // Related: as duas primeiras da lista sao justamente a anterior e a proxima do
+  // cluster, que renderNavPerguntas ja gastou, e a terceira ainda nao saiu de
+  // content/pending/. A pagina de custo era a unica do cluster com dois links
+  // entrando em vez de tres, e quem acabou de comparar AEO com SEO esta a uma
+  // pergunta de querer saber o preco. As duas coisas se resolvem no mesmo lugar.
+  '/aeo-vs-seo/': ['/aeo-vs-geo/', '/how-to-measure-aeo/', '/why-is-aeo-important/', '/how-much-does-aeo-cost/'],
   '/how-to-measure-aeo/': ['/aeo-vs-geo/', '/how-to-rank-in-ai-overviews/', '/citation-log/'],
   '/how-to-do-aeo/': ['/how-to-optimize-a-page-for-aeo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
   '/how-to-optimize-a-page-for-aeo/': ['/how-to-do-aeo/', '/how-to-rank-in-ai-overviews/', '/how-to-measure-aeo/'],
