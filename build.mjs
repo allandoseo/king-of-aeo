@@ -1394,6 +1394,21 @@ function patchEntidadeCanonica(file, ent) {
 //
 // Aqui elas so recebem o tratamento comum: data carimbada do git, datas do
 // JSON-LD, sameAs da entidade canonica, politica de rel e versao do CSS.
+// As quatro paginas de politica do publisher. Ficam fora do CLUSTER de proposito:
+// elas nao competem por termo de busca e nao sao etapa de leitura de ninguem. Sao
+// o que sustenta os quatro campos do no Organization, e por isso validateEntity
+// confere a existencia de cada uma antes de o build emitir o campo que a cita.
+//
+// Cada uma linka para as outras tres. E o que lhes da os dois links entrando que
+// tools/validate.mjs exige, sem tocar no rodape de todas as paginas do site, que
+// seria alteracao de conteudo editorial fora do escopo deste commit.
+const POLITICAS = [
+  ['/metodologia/', 'Methodology', 'the four criteria, the one to five scale, and what counts as corroboration'],
+  ['/politica-de-correcao/', 'Corrections policy', 'how an error is fixed, in what time, and where it is recorded'],
+  ['/contato/', 'Contact', 'the channel for contesting anything published here, claimants included'],
+  ['/sobre/', 'About', 'who publishes this record, how it is funded, and the conflicts declared'],
+].filter(([u]) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
+
 const VARIANTES = [
   { rel: 'public/what-is-aeo/index.html', loc: `${SITE}/what-is-aeo/` },
   { rel: 'public/king-of-aeo-claimants/index.html', loc: `${SITE}/king-of-aeo-claimants/` },
@@ -1413,6 +1428,12 @@ const VARIANTES = [
       rel: `public/claimants/${s ? `${s}/` : ''}index.html`,
       loc: `${SITE}/claimants/${s ? `${s}/` : ''}`,
     })),
+  // As quatro paginas de politica do publisher, que o no Organization cita em
+  // publishingPrinciples, correctionsPolicy, actionableFeedbackPolicy e
+  // ownershipFundingInfo. Entram aqui para receberem o mesmo tratamento das
+  // outras: data carimbada do git, entidade canonica, politica de rel e versao
+  // do CSS, mais a entrada no sitemap.
+  ...POLITICAS.map(([u]) => ({ rel: `public${u}index.html`, loc: `${SITE}${u}` })),
 ].filter(({ rel }) => fs.existsSync(path.join(ROOT, rel)));
 
 // ---------- cluster /questions/ ----------
@@ -1548,8 +1569,19 @@ function renderNavReivindicante() {
     .concat(['      </ul>']).join(`\n`);
 }
 
+function renderNavPoliticas(url) {
+  const L = ['      <strong>More on this subject</strong>', '      <ul>'];
+  for (const [href, titulo, nota] of POLITICAS) {
+    if (href === url) continue;
+    L.push(`        <li><a href="${href}">${esc(titulo)}</a> &mdash; ${esc(nota)}</li>`);
+  }
+  L.push('      </ul>');
+  return L.join('\n');
+}
+
 function renderClusterNav(url) {
   if (url.startsWith('/claimants/')) return renderNavReivindicante();
+  if (POLITICAS.some(([u]) => u === url)) return renderNavPoliticas(url);
   if (url === '/questions/' || QUESTIONS.includes(url)) return renderNavPerguntas(url);
   const i = CLUSTER.findIndex(([u]) => u === url);
   if (i < 0) fail(`renderClusterNav: ${url} nao esta em CLUSTER`);
@@ -2153,7 +2185,12 @@ const variantes = VARIANTES.map(({ rel, loc }) => {
   // nao um artigo. Acrescentar um Article falso ao indice so para satisfazer o
   // build seria inflar o schema para agradar a ferramenta.
   patchJsonLd(f, (nodes) => {
-    const datavel = ['Article', 'WebPage', 'CollectionPage'];
+    // ContactPage e AboutPage sao subtipos de WebPage no schema.org, mas hasType
+    // compara o nome do tipo literalmente. Sem declara-los aqui, /contato/ e
+    // /sobre/ reprovariam por "nao ter WebPage" tendo exatamente isso. A
+    // alternativa seria tipar as duas como WebPage generico, o que perderia a
+    // unica informacao que o tipo especifico carrega.
+    const datavel = ['Article', 'WebPage', 'CollectionPage', 'ContactPage', 'AboutPage'];
     const alvos = nodes.filter((n) => datavel.some((tipo) => hasType(n, tipo)));
     if (!alvos.length) fail(`${f.rel}: JSON-LD has no Article, WebPage or CollectionPage to date`);
     for (const n of alvos) n.dateModified = isoDateTime(quando);
