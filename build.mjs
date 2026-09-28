@@ -1579,6 +1579,19 @@ function validateFaq(doc) {
       }
     });
   }
+  // Unicidade ENTRE rotas, conferida ja na origem. Uma pergunta pertence a uma
+  // rota so: repetida em duas, as duas paginas respondem a mesma coisa e passam
+  // a disputar a mesma intencao de busca, que e a canibalizacao que o desenho
+  // hub-e-spoke deste site existe para evitar. Tambem duplica a mesma Question
+  // em dois FAQPage, e ai o buscador escolhe qual mostrar, nao nos.
+  const dona = new Map();
+  for (const rota of rotas) {
+    for (const it of doc[rota]) {
+      const antes = dona.get(it.q);
+      if (antes) fail(`${FILES.faq}: the question ${JSON.stringify(it.q)} appears in both ${antes} and ${rota}; a question belongs to one route`);
+      dona.set(it.q, rota);
+    }
+  }
   return doc;
 }
 

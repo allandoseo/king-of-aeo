@@ -127,6 +127,12 @@ const docs = paginas().map((abs) => {
   };
 });
 
+// Dona de cada pergunta, para a checagem de unicidade entre rotas. O build ja
+// recusa duplicata na origem, em data/faq.json; aqui a mesma regra e conferida
+// no HTML publicado, que e o que os buscadores leem. As duas existem porque uma
+// pagina pode ganhar FAQPage escrito a mao sem passar pelo registro.
+const donaDaPergunta = new Map();
+
 let comGrafo = 0;
 let comClaimReview = 0;
 let comFaq = 0;
@@ -181,6 +187,14 @@ for (const d of docs) {
     if (!perguntas.length) falha(d.url, 'FAQPage sem mainEntity');
     for (const q of perguntas) {
       if (!q || typeof q !== 'object') continue;
+      if (q.name) {
+        const antes = donaDaPergunta.get(q.name);
+        if (antes && antes !== d.url) {
+          falha(d.url, `FAQPage: a pergunta "${recorta(q.name)}" tambem esta em ${antes}; uma pergunta pertence a uma rota so`);
+        } else if (!antes) {
+          donaDaPergunta.set(q.name, d.url);
+        }
+      }
       if (q.name && !d.visivel.includes(normaliza(q.name))) {
         falha(d.url, `FAQPage: a pergunta nao aparece em texto visivel: "${recorta(q.name)}"`);
       }
