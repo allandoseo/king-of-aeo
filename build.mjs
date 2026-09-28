@@ -2305,6 +2305,13 @@ const variantes = VARIANTES.map(({ rel, loc }) => {
     for (const n of alvos) n.dateModified = isoDateTime(quando);
   });
   patchMeta(f, 'property="article:modified_time"', () => isoDateTime(quando));
+  // Reivindicante com @id canonico de site. A pagina de cada um declarava a
+  // pessoa como .../claimants/<slug>/#claimant, um @id por pagina, e o mesmo
+  // Edward Sturm citado aqui e avaliado na pagina dele saia como duas
+  // entidades. A troca vale para as sete paginas de uma vez, porque e o
+  // registro de data/entity.json que manda, e nao cada arquivo.
+  const slug = (new URL(loc).pathname.match(/^\/claimants\/([^/]+)\/$/) || [])[1];
+  if (slug && entity.claimants[slug]) patchJsonLd(f, patchReivindicantes(f, entity, slug));
   replaceMarker(f, 'clusterNav', `\n${renderClusterNav(new URL(loc).pathname)}\n    `);
   return f;
 });
