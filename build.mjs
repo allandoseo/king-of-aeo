@@ -1475,6 +1475,50 @@ function patchStubArtigoHome(file, ent) {
   };
 }
 
+// O ItemList do indice /claimants/. A ordem e os itens saem dos links que a
+// propria pagina ja tem, na ordem em que ela os tem, e nao de uma lista escrita
+// a mao aqui: lista paralela envelhece na primeira vez que alguem reordena a
+// tabela, e o schema passa a afirmar uma ordem que a pagina nao mostra. Spoke
+// sem arquivo em disco nao entra, entao o indice nunca lista pagina inexistente.
+function patchItemListReivindicantes(file, ent) {
+  const id = `${SITE}/claimants/#itemlist`;
+  const slugs = [];
+  for (const m of file.text.matchAll(/href="\/claimants\/([a-z0-9-]+)\/"/g)) {
+    const slug = m[1];
+    if (slugs.includes(slug)) continue;
+    if (!ent.claimants[slug]) continue;
+    if (!fs.existsSync(path.join(ROOT, `public/claimants/${slug}/index.html`))) continue;
+    slugs.push(slug);
+  }
+  if (!slugs.length) fail(`${file.rel}: no claimant link found to build ${id} from`);
+  return (nodes) => {
+    const lista = {
+      '@type': 'ItemList',
+      '@id': id,
+      name: 'King of AEO claimants, reviewed one by one',
+      numberOfItems: slugs.length,
+      itemListOrder: 'https://schema.org/ItemListUnordered',
+      itemListElement: slugs.map((slug, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: ent.claimants[slug].name,
+        url: `${SITE}/claimants/${slug}/`,
+      })),
+    };
+    const existente = nodes.find((n) => n && typeof n === 'object' && n['@id'] === id);
+    if (existente) {
+      for (const k of Object.keys(existente)) delete existente[k];
+      Object.assign(existente, lista);
+    } else {
+      nodes.push(lista);
+    }
+    // A CollectionPage aponta para a lista. Sem isso o ItemList fica no grafo
+    // sem ninguem o alcancar, que e um no solto e nao uma parte da pagina.
+    const col = nodes.find((n) => n && typeof n === 'object' && hasType(n, 'CollectionPage'));
+    if (col) col.mainEntity = { '@id': id };
+  };
+}
+
 function patchEntidadeCanonica(file, ent) {
   return (nodes) => {
     if (!Array.isArray(nodes)) fail(`${file.rel}: JSON-LD is not a @graph array`);
@@ -2312,6 +2356,7 @@ const variantes = VARIANTES.map(({ rel, loc }) => {
   // registro de data/entity.json que manda, e nao cada arquivo.
   const slug = (new URL(loc).pathname.match(/^\/claimants\/([^/]+)\/$/) || [])[1];
   if (slug && entity.claimants[slug]) patchJsonLd(f, patchReivindicantes(f, entity, slug));
+  if (new URL(loc).pathname === '/claimants/') patchJsonLd(f, patchItemListReivindicantes(f, entity));
   replaceMarker(f, 'clusterNav', `\n${renderClusterNav(new URL(loc).pathname)}\n    `);
   return f;
 });
