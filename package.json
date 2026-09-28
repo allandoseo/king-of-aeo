@@ -9,8 +9,8 @@
     "indexnow:all": "node tools/indexnow.mjs --all",
     "indexnow:dry": "node tools/indexnow.mjs --dry-run",
     "deploy": "npm run build && npm run build:feed && npm run validate && npm run publish:only && npm run indexnow",
-    "validate": "node tools/validate.mjs",
-    "validate:strict": "node tools/validate.mjs --strict",
+    "validate": "node tools/validate.mjs && node tools/validate-schema.mjs",
+    "validate:strict": "node tools/validate.mjs --strict && node tools/validate-schema.mjs",
     "publish:only": "wrangler pages deploy public --project-name=kingofaeo --branch=main"
   },
   "engines": {
