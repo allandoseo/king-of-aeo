@@ -104,6 +104,10 @@ const docs = paginas().map((abs) => {
     canonical: pega(html, /<link rel="canonical" href="([^"]+)"/),
     h1: semMarcacao(pega(html, /<h1[^>]*>([\s\S]*?)<\/h1>/)),
     palavras: semMarcacao(html).split(' ').filter(Boolean).length,
+    // So o <body>. A checagem 1b compara o texto do JSON-LD com o que a pagina
+    // mostra, e o bloco JSON-LD vive no <head>: comparar contra o documento
+    // inteiro faria a string casar consigo mesma e a checagem passaria sempre.
+    corpo,
     blocos,
     hrefs: [...corpo.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]),
   };
@@ -149,6 +153,70 @@ for (const d of docs) {
       Object.values(n).forEach(visita);
     };
     visita(grafo);
+  }
+}
+
+// ---------- 1b. a nota tem que estar na pagina, e nao so no grafo ----------
+//
+// ClaimReview cuja nota nao aparece no conteudo visivel e marcacao invalida:
+// afirma para a maquina uma avaliacao que o leitor humano nao encontra. Esta
+// checagem compara reviewRating.alternateName e reviewRating.ratingExplanation,
+// palavra por palavra, com o texto renderizado da MESMA pagina.
+//
+// Ela e erro e nao aviso de proposito. O argumento inteiro deste site e que
+// alegacao sem lastro conferivel nao vale; publicar uma nota que so existe no
+// JSON-LD seria cometer, na propria marcacao, o defeito que as paginas cobram
+// dos outros. Entao o build cai.
+//
+// A decodificacao de entidade existe porque o texto do JSON-LD traz caracteres
+// que o HTML pode carregar escapados. Sem ela, "criteria — self-reported" e
+// "criteria &mdash; self-reported" pareceriam textos diferentes sendo o mesmo.
+
+function decodifica(s) {
+  return s
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
+    .replace(/&lsquo;/g, '‘').replace(/&rsquo;/g, '’')
+    .replace(/&ldquo;/g, '“').replace(/&rdquo;/g, '”')
+    .replace(/&nbsp;/g, ' ').replace(/&hellip;/g, '…')
+    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+const normalizaTexto = (s) => decodifica(s).replace(/\s+/g, ' ').trim();
+
+function colheClaimReviews(no, saida = []) {
+  if (Array.isArray(no)) { no.forEach((n) => colheClaimReviews(n, saida)); return saida; }
+  if (!no || typeof no !== 'object') return saida;
+  const t = no['@type'];
+  if (t === 'ClaimReview' || (Array.isArray(t) && t.includes('ClaimReview'))) saida.push(no);
+  Object.values(no).forEach((v) => colheClaimReviews(v, saida));
+  return saida;
+}
+
+for (const d of docs) {
+  const visivel = normalizaTexto(semMarcacao(d.corpo ?? ''));
+  for (const cru of d.blocos) {
+    let dado;
+    try { dado = JSON.parse(cru); } catch { continue; }
+    for (const cr of colheClaimReviews(dado['@graph'] ?? dado)) {
+      const r = cr.reviewRating;
+      if (!r || typeof r !== 'object') {
+        falha(d.url, 'ClaimReview sem reviewRating');
+        continue;
+      }
+      for (const campo of ['alternateName', 'ratingExplanation']) {
+        const valor = r[campo];
+        if (typeof valor !== 'string' || valor.trim() === '') {
+          falha(d.url, `ClaimReview: reviewRating.${campo} ausente ou vazio`);
+          continue;
+        }
+        if (!visivel.includes(normalizaTexto(valor))) {
+          const trecho = valor.length > 60 ? `${valor.slice(0, 57)}...` : valor;
+          falha(d.url, `ClaimReview: reviewRating.${campo} nao aparece no texto visivel da pagina: "${trecho}"`);
+        }
+      }
+    }
   }
 }
 

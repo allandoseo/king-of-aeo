@@ -311,6 +311,23 @@ function validateEntity(ent) {
         if (typeof u !== 'string' || !/^https?:\/\/\S+$/.test(u)) fail(`${FILES.entity}: claimants.${slug}.sameAs[${i}] must be an absolute http(s) URL`);
       });
     }
+    // A nota, quando existe. As duas strings daqui vao para o reviewRating do
+    // JSON-LD e para o texto visivel da pagina, injetadas nos dois lugares pelo
+    // mesmo valor: e o que impede as duas copias de divergirem.
+    if (c.verdict !== undefined) {
+      const v = c.verdict;
+      if (!v || typeof v !== 'object' || Array.isArray(v)) fail(`${FILES.entity}: "claimants.${slug}.verdict" must be an object`);
+      for (const k of ['ratingValue', 'bestRating', 'worstRating']) {
+        if (!Number.isInteger(v[k])) fail(`${FILES.entity}: "claimants.${slug}.verdict.${k}" must be an integer`);
+      }
+      if (v.worstRating >= v.bestRating) fail(`${FILES.entity}: "claimants.${slug}.verdict" needs worstRating < bestRating`);
+      if (v.ratingValue < v.worstRating || v.ratingValue > v.bestRating) {
+        fail(`${FILES.entity}: "claimants.${slug}.verdict.ratingValue" ${v.ratingValue} is outside ${v.worstRating}-${v.bestRating}`);
+      }
+      for (const k of ['alternateName', 'ratingExplanation']) {
+        if (typeof v[k] !== 'string' || v[k].trim() === '') fail(`${FILES.entity}: "claimants.${slug}.verdict.${k}" must be a non-empty string`);
+      }
+    }
   }
 
   const web = ent.website;
@@ -1519,6 +1536,51 @@ function patchItemListReivindicantes(file, ent) {
   };
 }
 
+// ---------- a nota, em um lugar so ----------
+//
+// As mesmas duas strings de data/entity.json alimentam o reviewRating do
+// JSON-LD e o texto visivel da pagina. Antes o texto vivia escrito a mao no
+// HTML e repetido no JSON-LD, e as duas copias so continuavam iguais enquanto
+// alguem lembrasse de editar as duas. O item 17.6 da spec exigia conferir isso
+// a mao; agora o build injeta dos dois lados e o tools/validate.mjs reprova se
+// divergirem, o que vale sozinho para o proximo reivindicante que ganhar nota.
+//
+// O travessao entra como caractere e nao como &mdash; de proposito: o validador
+// compara a string do JSON-LD com o texto renderizado, e entidade nao decodificada
+// e a forma mais facil de os dois textos parecerem diferentes sendo iguais.
+
+function renderVereditoNota(v) {
+  return `<strong>${v.ratingValue} of ${v.bestRating}</strong>`;
+}
+
+function renderVereditoResumo(v) {
+  return `${renderVereditoNota(v)} — ${esc(v.alternateName)}`;
+}
+
+function renderVereditoExplicacao(v) {
+  return esc(v.ratingExplanation);
+}
+
+// Escreve o reviewRating no no ClaimReview a partir do registro. A pagina que
+// declara um ClaimReview sem nota no registro derruba o build: nota sem origem
+// declarada e exatamente o que este site cobra dos concorrentes.
+function patchClaimReview(file, ent, slug) {
+  return (nodes) => {
+    const cr = nodes.find((n) => n && typeof n === 'object' && hasType(n, 'ClaimReview'));
+    const v = ent.claimants[slug] && ent.claimants[slug].verdict;
+    if (!cr) return;
+    if (!v) fail(`${file.rel}: page carries a ClaimReview but claimants.${slug}.verdict is missing in ${FILES.entity}`);
+    cr.reviewRating = {
+      '@type': 'Rating',
+      ratingValue: v.ratingValue,
+      bestRating: v.bestRating,
+      worstRating: v.worstRating,
+      alternateName: v.alternateName,
+      ratingExplanation: v.ratingExplanation,
+    };
+  };
+}
+
 function patchEntidadeCanonica(file, ent) {
   return (nodes) => {
     if (!Array.isArray(nodes)) fail(`${file.rel}: JSON-LD is not a @graph array`);
@@ -2355,7 +2417,17 @@ const variantes = VARIANTES.map(({ rel, loc }) => {
   // entidades. A troca vale para as sete paginas de uma vez, porque e o
   // registro de data/entity.json que manda, e nao cada arquivo.
   const slug = (new URL(loc).pathname.match(/^\/claimants\/([^/]+)\/$/) || [])[1];
-  if (slug && entity.claimants[slug]) patchJsonLd(f, patchReivindicantes(f, entity, slug));
+  if (slug && entity.claimants[slug]) {
+    patchJsonLd(f, patchReivindicantes(f, entity, slug));
+    // A nota vai para o JSON-LD e para o texto visivel a partir do mesmo valor.
+    patchJsonLd(f, patchClaimReview(f, entity, slug));
+    const v = entity.claimants[slug].verdict;
+    if (v) {
+      replaceMarker(f, 'verdictSummary', renderVereditoResumo(v));
+      replaceMarker(f, 'verdictScore', renderVereditoNota(v));
+      replaceMarker(f, 'verdictExplanation', renderVereditoExplicacao(v));
+    }
+  }
   if (new URL(loc).pathname === '/claimants/') patchJsonLd(f, patchItemListReivindicantes(f, entity));
   replaceMarker(f, 'clusterNav', `\n${renderClusterNav(new URL(loc).pathname)}\n    `);
   return f;

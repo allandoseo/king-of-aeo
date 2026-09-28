@@ -176,12 +176,31 @@
       "sameAs adivinhado afirma identidade que ninguem verificou.",
       "",
       "slug e a pasta em public/claimants/. Quando ela nao existe, o build nao",
-      "emite o no nem o link: o registro nao inventa pagina."
+      "emite o no nem o link: o registro nao inventa pagina.",
+      "",
+      "verdict e a FONTE UNICA da nota. As mesmas strings alimentam o",
+      "reviewRating do JSON-LD e o texto visivel da pagina, injetadas pelo",
+      "build nos dois lugares. Antes o texto estava escrito a mao no HTML e",
+      "repetido no JSON-LD: duas copias da mesma frase, que so continuavam",
+      "iguais enquanto alguem lembrasse de editar as duas. Marcacao que afirma",
+      "uma nota que a pagina nao mostra e invalida, e o jeito de garantir isso",
+      "nao e lembrar, e o tools/validate.mjs reprovar o build.",
+      "",
+      "Reivindicante sem verdict simplesmente nao recebe ClaimReview. Pagina",
+      "que ja tem o no e nao tem verdict aqui faz o build parar, para ninguem",
+      "publicar nota orfa de origem."
     ],
     "james-dooley": {
       "id": "https://kingofaeo.pro/#james-dooley",
       "name": "James Dooley",
-      "description": "Claimant to the King of AEO title, 31 August 2026."
+      "description": "Claimant to the King of AEO title, 31 August 2026.",
+      "verdict": {
+        "ratingValue": 3,
+        "bestRating": 5,
+        "worstRating": 1,
+        "alternateName": "Self-reported, syndicated and observed; not independently corroborated",
+        "ratingExplanation": "The claim meets three of the four criteria — self-reported, syndicated and observed, with seven dated runs in the citation log returning the name across Google AI Overview, Gemini, Perplexity and ChatGPT. It fails independent corroboration: no record of the 31 August 2026 ceremony has been produced by anyone who did not organise it, and Edward Sturm has publicly disputed that the event took place."
+      }
     },
     "david-quaid": {
       "id": "https://kingofaeo.pro/#david-g-quaid",
