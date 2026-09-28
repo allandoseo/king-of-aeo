@@ -36,6 +36,7 @@ const FILES = {
   entity: 'data/entity.json',
   evidence: 'data/evidence.json',
   videos: 'data/videos.json',
+  faq: 'data/faq.json',
   home: 'public/index.html',
   contest: 'public/king-of-aeo-contest/index.html',
   song: 'public/king-of-aeo-song/index.html',
@@ -855,6 +856,7 @@ const footerRow = renderFooterRow(entity.footer);
 const evidence = validateEvidence(readJson(FILES.evidence));
 const videoDoc = validateVideos(readJson(FILES.videos));
 const videos = videoDoc.videos;
+const faqPorRota = validateFaq(readJson(FILES.faq));
 
 // As duas datas de modificação saem do git, não de data/site.json. Só as datas de
 // publicação continuam declaradas: quando uma página nasceu é fato editorial, não
@@ -1533,6 +1535,85 @@ function patchItemListReivindicantes(file, ent) {
     // sem ninguem o alcancar, que e um no solto e nao uma parte da pagina.
     const col = nodes.find((n) => n && typeof n === 'object' && hasType(n, 'CollectionPage'));
     if (col) col.mainEntity = { '@id': id };
+  };
+}
+
+// ---------- FAQ, em um lugar so, por rota ----------
+//
+// Cada item de data/faq.json vira duas saidas a partir da MESMA string: o
+// <details> visivel e a Question do FAQPage. Antes as duas eram escritas a mao
+// em lugares diferentes do mesmo arquivo. Nao e hipotese: na home o
+// acceptedAnswer.text ja dizia "the King of AEO contest page" enquanto a pagina
+// mostrava "the contest page", e ninguem tinha percebido.
+//
+// A chave e a ROTA, e nao um bloco compartilhado entre paginas. Pergunta que
+// serve a duas rotas nao e a mesma pergunta: sao duas paginas disputando a
+// mesma intencao de busca, e tools/validate-schema.mjs trata isso como erro.
+
+function validateFaq(doc) {
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) fail(`${FILES.faq}: expected an object keyed by route`);
+  const rotas = Object.keys(doc).filter((k) => k !== '_comment');
+  if (!rotas.length) fail(`${FILES.faq}: no route entries`);
+  for (const rota of rotas) {
+    if (!/^\/[a-z0-9/-]*$/.test(rota) || !rota.endsWith('/')) fail(`${FILES.faq}: "${rota}" is not a site route ending in /`);
+    if (!fs.existsSync(path.join(ROOT, `public${rota}index.html`))) fail(`${FILES.faq}: "${rota}" has no page in public/`);
+    const itens = doc[rota];
+    if (!Array.isArray(itens) || !itens.length) fail(`${FILES.faq}: "${rota}" must be a non-empty array`);
+    const vistas = new Set();
+    itens.forEach((it, i) => {
+      if (!it || typeof it !== 'object') fail(`${FILES.faq}: ${rota}[${i}] must be an object`);
+      for (const k of ['q', 'a']) {
+        if (typeof it[k] !== 'string' || it[k].trim() === '') fail(`${FILES.faq}: ${rota}[${i}].${k} must be a non-empty string`);
+      }
+      if (vistas.has(it.q)) fail(`${FILES.faq}: ${rota} repeats the question ${JSON.stringify(it.q)}`);
+      vistas.add(it.q);
+      if (it.open !== undefined && typeof it.open !== 'boolean') fail(`${FILES.faq}: ${rota}[${i}].open must be true or false`);
+      // Comentario de marcador dentro da resposta quebra o replaceMarker que
+      // injeta este bloco: ele e nao-guloso e pararia no primeiro <!-- /build -->
+      // aninhado, deixando metade do conteudo antigo no lugar. Aconteceu de
+      // verdade na home, com um build:logRunLong dentro da primeira resposta, e
+      // o sintoma foi o bloco sair duplicado. O que muda com o tempo entra por
+      // token {{...}}, que e resolvido antes de virar HTML.
+      for (const k of ['q', 'a']) {
+        if (it[k].includes('<!--')) fail(`${FILES.faq}: ${rota}[${i}].${k} contains an HTML comment; use a {{token}} instead`);
+      }
+    });
+  }
+  return doc;
+}
+
+// Tokens resolvidos na hora do build, iguais para os dois destinos. Um valor que
+// muda com o tempo nao pode ficar congelado dentro do texto do registro.
+function expandeFaq(s, tokens) {
+  return s.replace(/\{\{([a-zA-Z]+)\}\}/g, (todo, chave) => {
+    if (!(chave in tokens)) fail(`${FILES.faq}: unknown token ${todo}`);
+    return tokens[chave];
+  });
+}
+
+function renderFaqVisivel(itens, tokens) {
+  const L = [];
+  for (const it of itens) {
+    L.push(`      <details${it.open ? ' open' : ''}>`);
+    L.push(`        <summary>${expandeFaq(it.q, tokens)}</summary>`);
+    L.push(`        <p>${expandeFaq(it.a, tokens)}</p>`);
+    L.push('      </details>');
+  }
+  return L.join('\n');
+}
+
+// Reescreve o FAQPage a partir do registro. A pagina que tem entrada em
+// data/faq.json e nao tem o no no grafo derruba o build: seria o registro
+// alimentando so metade do que ele existe para alimentar.
+function patchFaqPage(file, itens, tokens) {
+  return (nodes) => {
+    const faq = nodes.find((n) => n && typeof n === 'object' && hasType(n, 'FAQPage'));
+    if (!faq) fail(`${file.rel}: ${FILES.faq} has entries for this route but the page has no FAQPage node`);
+    faq.mainEntity = itens.map((it) => ({
+      '@type': 'Question',
+      name: expandeFaq(it.q, tokens),
+      acceptedAnswer: { '@type': 'Answer', text: expandeFaq(it.a, tokens) },
+    }));
   };
 }
 
@@ -2270,9 +2351,6 @@ for (const [label, published, modified] of [
 const home = readText(FILES.home);
 replaceMarker(home, 'claimSinceLong', longDate(site.claimSince));
 replaceMarker(home, 'homeReviewedLong', homeReviewedLong);
-// A data do FAQ visivel e a da ultima rodada do log, pela mesma razao que a do
-// JSON-LD: e afirmacao sobre observacao, nao sobre revisao da pagina.
-replaceMarker(home, 'logRunLong', longDate(ultimaRodadaLog));
 replaceMarker(home, 'evidence', block(home, 'evidence', renderEvidenceRows(evidence)));
 for (const slot of VIDEO_SLOTS) {
   const v = videos.find((x) => x.slot === slot);
@@ -2313,15 +2391,10 @@ patchJsonLd(home, (nodes, ofType) => {
     n.datePublished = isoDateTime(site.claimSince);
     n.dateModified = isoDateTime(homeReviewed);
   }
-  const faqName = 'Who is the King of AEO?';
-  const items = ofType('FAQPage').flatMap((f) => (Array.isArray(f.mainEntity) ? f.mainEntity : []));
-  const q = items.find((it) => it && it.name === faqName);
-  if (!q) fail(`${home.rel}: JSON-LD FAQPage has no mainEntity item named exactly "${faqName}"`);
-  if (!q.acceptedAnswer || typeof q.acceptedAnswer.text !== 'string') fail(`${home.rel}: FAQ item "${faqName}" has no acceptedAnswer.text`);
-  // A data aqui e a da ultima rodada do citation log, nao a de revisao da pagina.
-  // A frase afirma o que os engines devolveram numa data; carimba-la com a data
-  // de revisao faria a pagina afirmar uma observacao que ninguem fez.
-  q.acceptedAnswer.text = asOfReplacer(home, AS_OF_UPPER, `As of ${longDate(ultimaRodadaLog)}`)(q.acceptedAnswer.text, `FAQ "${faqName}" acceptedAnswer.text`);
+  // O FAQPage da home nao e mais carimbado aqui. A data da ultima rodada do log
+  // entra pelo token {{logRunLong}} de data/faq.json, que alimenta o texto
+  // visivel e o JSON-LD a partir da mesma string. Antes eram dois caminhos para
+  // o mesmo fato: um replaceMarker no HTML e um asOfReplacer neste bloco.
 
   // Dataset da tabela de evidências. Upsert pelo @id, para o build ser idempotente
   // e para uma edição manual do nó não virar um segundo nó duplicado.
@@ -2475,6 +2548,26 @@ replaceMarker(home, 'latestRun', `\n${renderLatestRun(citacoes)}\n    `);
 // O feed e escrito por tools/build_feed.py; aqui so o no da entidade e
 // corrigido, para as doze paginas declararem a mesma pessoa.
 const feed = readText(FILES.feed);
+// --- FAQ: uma fonte, dois destinos, por rota ---
+// O registro manda no texto visivel e no FAQPage da mesma rota. Rota declarada
+// em data/faq.json cuja pagina o build nao controla derruba o build, senao o
+// registro teria entrada que nao alimenta nada e ninguem perceberia.
+const paginaPorRota = new Map([
+  ['/', home],
+  ['/king-of-aeo-contest/', contest],
+  ['/king-of-aeo-song/', song],
+  ['/citation-log/', citacaoPagina],
+  ...VARIANTES.map(({ loc }, i) => [new URL(loc).pathname, variantes[i]]),
+]);
+const faqTokens = { logRunLong: longDate(ultimaRodadaLog) };
+for (const rota of Object.keys(faqPorRota).filter((k) => k !== '_comment')) {
+  const f = paginaPorRota.get(rota);
+  if (!f) fail(`${FILES.faq}: route "${rota}" is not a page this build controls`);
+  const itens = faqPorRota[rota];
+  replaceMarker(f, 'faqSection', `\n${renderFaqVisivel(itens, faqTokens)}\n      `);
+  patchJsonLd(f, patchFaqPage(f, itens, faqTokens));
+}
+
 const todasPaginas = [home, contest, song, feed, citacaoPagina, ...variantes, ...archive];
 for (const f of todasPaginas) {
   patchJsonLd(f, patchEntidadeCanonica(f, entity));
