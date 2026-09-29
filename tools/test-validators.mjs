@@ -37,6 +37,9 @@ const FAQ = 'data/faq.json';
 const BUILD = 'node build.mjs';
 const SCHEMA = 'node tools/validate-schema.mjs';
 const CONTEUDO = 'node tools/validate.mjs';
+const DADO = 'node tools/validate-data.mjs';
+const RUNS = 'data/runs/2026-09-25.json';
+const CLAIMANTS = 'data/claimants.json';
 
 function roda(cmd) {
   try {
@@ -52,7 +55,11 @@ function roda(cmd) {
 function motivo(saida) {
   const m = saida.match(/Error: build\.mjs: (.+)/);
   if (m) return m[1].trim();
-  const linha = saida.split('\n').find((l) => /^\s{2}\//.test(l));
+  // validate.mjs e validate-schema.mjs indentam com a URL ("  /pagina/  ...");
+  // validate-data.mjs indenta com o caminho do arquivo ("  data/runs/...").
+  // Sem os dois formatos, um caso reprovado por OUTRO motivo apareceria como
+  // "(sem mensagem)" e passaria por aprovado no relatorio.
+  const linha = saida.split('\n').find((l) => /^\s{2}(\/|data\/|public\/)/.test(l));
   return linha ? linha.trim() : '(sem mensagem)';
 }
 
@@ -116,6 +123,29 @@ const CASOS = [
     jsonEdit((d) => d.person.sameAs.push(d.organization.url))],
   ['build.mjs, sobre o registro na origem', ENT, 'perfil do projeto reivindicado tambem pela pessoa', BUILD,
     jsonEdit((d) => d.person.sameAs.push(d.brand.sameAs[0]))],
+
+  // A camada de dados. Run malformada nao pode virar pagina, e o jeito de
+  // garantir isso e o build cair antes de gerar qualquer coisa.
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'engine fora da lista fechada', DADO,
+    jsonEdit((d) => { d[0].engine = 'Grok'; })],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'data da run diferente do nome do arquivo', DADO,
+    jsonEdit((d) => { d[0].date = '2026-01-01'; })],
+  // first_name que nao esta na lista e um nome que a resposta nao deu: e a
+  // forma mais facil de um placar passar a afirmar o que ninguem observou.
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'first_name que nao esta em names_returned', DADO,
+    jsonEdit((d) => { d[0].first_name = 'Outra Pessoa'; })],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'campo obrigatorio ausente', DADO,
+    jsonEdit((d) => { delete d[0].collection_method; })],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'campo inventado na run', DADO,
+    jsonEdit((d) => { d[0].sentiment = 'positive'; })],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'collection_method fora do enum', DADO,
+    jsonEdit((d) => { d[0].collection_method = 'scraped'; })],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', RUNS, 'run duplicada no mesmo dia', DADO,
+    jsonEdit((d) => d.push(JSON.parse(JSON.stringify(d[0]))))],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', CLAIMANTS, 'primary_url nulo sem motivo declarado', DADO,
+    jsonEdit((d) => { d.claimants[0].primary_url = null; d.claimants[0].url_status = 'ok'; })],
+  ['validate-data.mjs, sobre as runs e os reivindicantes', CLAIMANTS, 'slug de reivindicante repetido', DADO,
+    jsonEdit((d) => d.claimants.push({ ...d.claimants[0] }))],
 ];
 
 const arquivos = [...new Set(CASOS.map(([, arq]) => arq))];
