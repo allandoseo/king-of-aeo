@@ -1,0 +1,68 @@
+[
+  {
+    "date": "2026-09-26",
+    "engine": "Google AI Overview",
+    "model": null,
+    "locale": "BR · pt-BR",
+    "query": "king of aeo",
+    "prompt_type": "title_bare",
+    "name_returned_verbatim": "no single name; James Dooley, Allan Oliveira and David Quaid listed as claimants",
+    "names_returned": [
+      "James Dooley",
+      "Allan Oliveira",
+      "David Quaid"
+    ],
+    "first_name": null,
+    "sources_cited": [
+      "usatoday.com"
+    ],
+    "entity_resolved": true,
+    "collection_method": "manual",
+    "operator": null,
+    "notes": "Migrated from the original citation-log.csv format. Only the first cited source was recorded in that format, so sources_cited is not exhaustive for this run. model and operator were not recorded."
+  },
+  {
+    "date": "2026-09-26",
+    "engine": "Google AI Overview",
+    "model": null,
+    "locale": "US · en",
+    "query": "king of aeo",
+    "prompt_type": "title_bare",
+    "name_returned_verbatim": "James Dooley named as most prominently recognized; James Dooley and David G. Quaid listed under \"Main Claimants and Contenders\"; Allan Oliveira not named",
+    "names_returned": [
+      "James Dooley",
+      "David G. Quaid"
+    ],
+    "first_name": "James Dooley",
+    "sources_cited": [
+      "usatoday.com"
+    ],
+    "entity_resolved": true,
+    "collection_method": "manual",
+    "operator": null,
+    "notes": "Migrated from the original citation-log.csv format. Only the first cited source was recorded in that format, so sources_cited is not exhaustive for this run. model and operator were not recorded."
+  },
+  {
+    "date": "2026-09-26",
+    "engine": "ChatGPT",
+    "model": null,
+    "locale": "BR · pt-BR",
+    "query": "Who is the King of AEO?",
+    "prompt_type": "title_direct",
+    "name_returned_verbatim": "no single name; James Dooley, Vithurs, Allan Oliveira and Patrick Schmid listed as claimants",
+    "names_returned": [
+      "James Dooley",
+      "Vithurs",
+      "Allan Oliveira",
+      "Patrick Schmid"
+    ],
+    "first_name": null,
+    "sources_cited": [
+      "usatoday.com"
+    ],
+    "entity_resolved": true,
+    "collection_method": "manual",
+    "operator": null,
+    "notes": "Migrated from the original citation-log.csv format. Only the first cited source was recorded in that format, so sources_cited is not exhaustive for this run. model and operator were not recorded."
+  }
+]

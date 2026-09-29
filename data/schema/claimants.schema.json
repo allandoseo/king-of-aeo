@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kingofaeo.pro/schema/claimants.schema.json",
+  "title": "King of AEO claimants",
+  "description": "The people who have publicly claimed the title. Whoever organised, hosted or documented the contest without claiming it does not belong here.",
+  "type": "object",
+  "required": ["claimants"],
+  "properties": {
+    "_comment": { "type": "array", "items": { "type": "string" } },
+    "claimants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "name", "date_claimed", "mechanism", "primary_url", "url_status", "corroboration_type"],
+        "properties": {
+          "slug": {
+            "description": "Matches the folder in public/claimants/ when the person has a page, and the key in entity.json claimants.",
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "name": { "type": "string", "minLength": 1 },
+          "date_claimed": {
+            "description": "Date the claim was first published, ISO 8601. null when no dated announcement was found: an undated claim is a fact about the claim, not a gap to fill with a guess.",
+            "type": ["string", "null"],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "mechanism": {
+            "description": "How the claim was made, in one or two factual sentences. No judgement: the judgement lives in the ClaimReview of the person's own page.",
+            "type": "string",
+            "minLength": 1
+          },
+          "primary_url": {
+            "description": "Where the claim was published. null when no URL could be confirmed by fetch, and url_status says why.",
+            "type": ["string", "null"],
+            "pattern": "^https://\\S+$"
+          },
+          "url_status": {
+            "description": "When primary_url was last confirmed, or why it could not be. A URL that once resolved and now 404s is a finding about the contest and is recorded as one.",
+            "type": "string",
+            "minLength": 1
+          },
+          "corroboration_type": {
+            "description": "The highest of the four criteria of /metodologia/ that the claim reaches. \"independent\" requires an unaffiliated publisher writing its own words at a stable dated URL, and no claim in this contest currently reaches it.",
+            "enum": ["self_reported", "syndicated", "observed", "independent"]
+          }
+        }
+      }
+    }
+  }
+}
