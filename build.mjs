@@ -1391,7 +1391,6 @@ const PAGINAS = [
   { loc: `${SITE}/llms-full.txt`, arquivo: FILES.llmsFull },
   { loc: `${SITE}/evidence.csv`, arquivo: 'public/evidence.csv' },
   { loc: `${SITE}/press-coverage.csv`, arquivo: PRESS_CSV },
-  { loc: 'https://cobertura.kingofaeo.pro/', arquivo: null },
 ];
 
 const SITEMAPS_FILHOS = ['sitemap-pages.xml', 'sitemap-images.xml', 'sitemap-videos.xml'];

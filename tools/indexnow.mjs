@@ -71,8 +71,8 @@ if (!origem.length) {
   process.exit(0);
 }
 
-// O protocolo so aceita URLs do mesmo host da chave. O subdominio da cobertura
-// e outro host: precisa da propria chave, no proprio dominio.
+// O protocolo so aceita URLs do mesmo host da chave. URL de outro host, se
+// alguma voltar ao sitemap, precisa da propria chave, no proprio dominio.
 const minhas = origem.filter((u) => { try { return new URL(u).host === HOST; } catch { return false; } });
 const alheias = origem.filter((u) => !minhas.includes(u));
 

@@ -103,8 +103,6 @@ Rival claims in this contest rest on the same mechanism, described as coverage. 
 
 There is a visual half to this record too: [the picture record](https://kingofaeo.pro/feed/) collects every portrait published here, each one dated, described and linked back to the passage it belongs to.
 
-The record has a press side as well: [Press coverage: 312 outlets](https://cobertura.kingofaeo.pro/) lists the distinct domains that carried the release announcing this claim on 24 September 2026.
-
 ## Verify it yourself
 
 A claim about answer engines should be testable by the person reading it, not taken on trust. Answer engines are non-deterministic: the same prompt can return different sources on different days, in different countries and for different accounts. That cuts both ways, and it is the reason this section gives you the procedure instead of a screenshot. A screenshot proves what one machine said once; a procedure lets you check what the machines say today.
