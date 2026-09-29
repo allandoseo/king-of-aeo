@@ -11,6 +11,7 @@
     "deploy": "npm run build && npm run build:feed && npm run validate && npm run publish:only && npm run indexnow",
     "validate": "node tools/validate.mjs && node tools/validate-schema.mjs",
     "validate:strict": "node tools/validate.mjs --strict && node tools/validate-schema.mjs",
+    "test": "node tools/test-validators.mjs",
     "publish:only": "wrangler pages deploy public --project-name=kingofaeo --branch=main"
   },
   "engines": {
