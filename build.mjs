@@ -1348,7 +1348,7 @@ function renderNavVariantes() {
   const itens = [
     ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
     ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
-    ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
+    ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the seven rival claims of 2026, each with its date and mechanism, and the three names wrongly counted among them'],
     ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
     ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
   ];
