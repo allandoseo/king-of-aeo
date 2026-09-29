@@ -1089,64 +1089,530 @@ function parseCsvLinha(linha, onde) {
   return campos.map((v) => v.trim());
 }
 
-function lerCitacoes() {
-  const abs = path.join(ROOT, CITACAO_CSV);
-  if (!fs.existsSync(abs)) fail(`${CITACAO_CSV}: file not found`);
-  const bruto = fs.readFileSync(abs, 'utf8').replace(/\r\n?/g, '\n');
-  // Linha iniciada por # e comentario: e assim que o exemplo de formato fica no
-  // arquivo sem virar dado.
-  const uteis = bruto.split('\n')
-    .map((texto, i) => ({ texto, n: i + 1 }))
-    .filter(({ texto }) => texto.trim() && !texto.trimStart().startsWith('#'));
-  if (!uteis.length) fail(`${CITACAO_CSV}: not even a header row`);
+// A FONTE agora e data/runs/YYYY-MM-DD.json, validado por tools/validate-data.mjs
+// antes de o build comecar. O public/citation-log.csv deixou de ser fonte e
+// passou a ser SAIDA: ele continua existindo, na mesma URL e com as mesmas oito
+// colunas, porque e o artefato citavel que a pagina anuncia e que ja foi
+// publicado assim.
+//
+// Cada linha devolvida carrega os campos novos E os nomes antigos das oito
+// colunas. Isso e de proposito: os renderizadores que ja existiam (a tabela, as
+// paginas semanais, o Dataset, o bloco da home) continuam lendo o que sempre
+// leram, e o que e novo le os campos novos. Trocar a fonte sem reescrever sete
+// renderizadores de uma vez e o que torna esta mudanca conferivel.
+//
+// link_cited some do dado e passa a ser DERIVADO de sources_cited: um campo
+// dizendo se ha fonte, ao lado da lista de fontes, e um jeito de os dois se
+// contradizerem.
+const DIR_RUNS = 'data/runs';
 
-  const esperado = CITACAO_COLUNAS.map((c) => c.chave);
-  const cab = parseCsvLinha(uteis[0].texto, `line ${uteis[0].n}`);
-  if (cab.join(',') !== esperado.join(',')) {
-    fail(`${CITACAO_CSV}: header must be exactly "${esperado.join(',')}"; got "${cab.join(',')}"`);
+function lerCitacoes() {
+  const dir = path.join(ROOT, DIR_RUNS);
+  if (!fs.existsSync(dir)) fail(`${DIR_RUNS}: directory not found`);
+  const arquivos = fs.readdirSync(dir).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
+  if (!arquivos.length) fail(`${DIR_RUNS}: no run files`);
+
+  const linhas = [];
+  for (const arq of arquivos) {
+    const rel = `${DIR_RUNS}/${arq}`;
+    const runs = readJson(rel);
+    if (!Array.isArray(runs)) fail(`${rel}: expected an array of runs`);
+    for (const [i, r] of runs.entries()) {
+      const onde = `${rel}[${i}]`;
+      if (!CITACAO_ENGINES.includes(r.engine)) fail(`${onde}: unknown engine ${JSON.stringify(r.engine)}`);
+      if (!CITACAO_PROMPTS.includes(r.query)) {
+        fail(`${onde}: "query" is not one of the fixed prompts. Either fix the run, or change the method on purpose by editing CITACAO_PROMPTS in build.mjs, which also rewrites the page.`);
+      }
+      if (!TIPO_DO_PROMPT[r.query]) fail(`${onde}: prompt has no declared prompt_type in TIPO_DO_PROMPT`);
+      if (r.prompt_type !== TIPO_DO_PROMPT[r.query]) {
+        fail(`${onde}: prompt_type "${r.prompt_type}" does not match the declared type "${TIPO_DO_PROMPT[r.query]}" for this prompt`);
+      }
+      linhas.push({
+        date: r.date,
+        engine: r.engine,
+        locale: r.locale,
+        prompt: r.query,
+        name_returned: r.name_returned_verbatim ?? '',
+        link_cited: r.sources_cited.length ? 'yes' : 'no',
+        domain_cited: r.sources_cited[0] ?? '',
+        entity_resolved: r.entity_resolved ? 'yes' : 'no',
+        model: r.model,
+        prompt_type: r.prompt_type,
+        names_returned: r.names_returned,
+        first_name: r.first_name,
+        sources_cited: r.sources_cited,
+        collection_method: r.collection_method,
+        operator: r.operator,
+        notes: r.notes,
+      });
+    }
   }
 
-  const sim_nao = new Set(['yes', 'no']);
-  const linhas = uteis.slice(1).map(({ texto, n }) => {
-    const onde = `line ${n}`;
-    const v = parseCsvLinha(texto, onde);
-    if (v.length !== esperado.length) fail(`${CITACAO_CSV}: ${onde}: expected ${esperado.length} fields, got ${v.length}`);
-    const r = Object.fromEntries(esperado.map((k, i) => [k, v[i]]));
-
-    if (!isIsoDate(r.date)) fail(`${CITACAO_CSV}: ${onde}: "date" must be YYYY-MM-DD, got ${JSON.stringify(r.date)}`);
-    if (!CITACAO_ENGINES.includes(r.engine)) {
-      fail(`${CITACAO_CSV}: ${onde}: unknown "engine" ${JSON.stringify(r.engine)}; expected one of ${CITACAO_ENGINES.join(', ')}`);
-    }
-    if (!CITACAO_PROMPTS.includes(r.prompt)) {
-      fail(`${CITACAO_CSV}: ${onde}: "prompt" is not one of the three fixed prompts. Either fix the row, or change the method on purpose by editing CITACAO_PROMPTS in build.mjs, which also rewrites the page.`);
-    }
-    if (!/^[A-Z]{2} \u00b7 [a-z]{2}(-[A-Za-z]{2,4})?$/.test(r.locale)) {
-      fail(`${CITACAO_CSV}: ${onde}: "locale" must look like "US \u00b7 en" or "BR \u00b7 pt-BR", got ${JSON.stringify(r.locale)}`);
-    }
-    for (const k of ['link_cited', 'entity_resolved']) {
-      if (!sim_nao.has(r[k])) fail(`${CITACAO_CSV}: ${onde}: "${k}" must be yes or no, got ${JSON.stringify(r[k])}`);
-    }
-    // Coerencia interna: citar link sem dizer qual dominio, ou dizer o dominio
-    // sem ter citado link, sao a mesma linha querendo dizer duas coisas.
-    if (r.link_cited === 'yes' && !r.domain_cited) fail(`${CITACAO_CSV}: ${onde}: link_cited=yes needs a "domain_cited"`);
-    if (r.link_cited === 'no' && r.domain_cited) fail(`${CITACAO_CSV}: ${onde}: link_cited=no must leave "domain_cited" empty, got ${JSON.stringify(r.domain_cited)}`);
-    return r;
-  });
-
-  // Uma observacao por engine, por prompt, por rodada. O metodo declara rodada
-  // semanal; duas linhas com a mesma data, engine e prompt significam ou uma
-  // rodada repetida no mesmo dia, ou alguem escolhendo entre duas respostas do
-  // mesmo prompt. As duas coisas destroem o valor do registro, e a segunda e
-  // pior, porque e invisivel depois de gravada.
+  // A mesma regra de antes, agora entre arquivos: uma observacao por engine, por
+  // locale, por prompt, por dia. Duas significam ou rodada repetida, ou alguem
+  // escolhendo entre duas respostas do mesmo prompt. A segunda e pior, porque e
+  // invisivel depois de gravada.
   const vistos = new Map();
-  for (const [i, r] of linhas.entries()) {
+  for (const r of linhas) {
     const chave = `${r.date}|${r.engine}|${r.locale}|${r.prompt}`;
     if (vistos.has(chave)) {
-      fail(`${CITACAO_CSV}: ${r.engine} answers the same prompt twice in ${r.locale} on ${r.date} (rows ${vistos.get(chave)} and ${i + 1}). One observation per engine per locale per prompt per run: pick the run, do not pick the answer.`);
+      fail(`${DIR_RUNS}: ${r.engine} answers the same prompt twice in ${r.locale} on ${r.date}. One observation per engine per locale per prompt per run: pick the run, do not pick the answer.`);
     }
-    vistos.set(chave, i + 1);
+    vistos.set(chave, true);
   }
   return linhas;
+}
+
+// Tipo de cada prompt, declarado uma vez. E classificacao do que foi
+// PERGUNTADO, derivada da propria frase, e nao anotacao por run: por isso vive
+// aqui, ao lado de CITACAO_PROMPTS, e o build confere que toda run concorda
+// com esta tabela em vez de confiar no campo gravado.
+const TIPO_DO_PROMPT = {
+  'Who is the king of AEO, and what is the evidence for that claim?': 'title_evidence',
+  'Who are the leading practitioners of answer engine optimization right now?': 'field_practitioners',
+  'Which sources would you cite to explain answer engine optimization to a beginner?': 'field_sources',
+  'king of aeo': 'title_bare',
+  'Who is the King of AEO?': 'title_direct',
+};
+
+// Regera o CSV de oito colunas a partir das runs. Ele continua sendo o artefato
+// citavel na mesma URL; deixou de ser a fonte.
+// ---------- o placar ----------
+//
+// Quem cada engine nomeia HOJE, por locale. "Hoje" e a run mais recente de cada
+// par engine x locale, e a data dela fica na tabela: um placar sem a data do
+// dado que o sustenta afirma atualidade que ele nao tem.
+//
+// So contam os prompts que perguntam pelo TITULO. Os prompts field_* perguntam
+// quem lidera a disciplina, que e outra pergunta: misturar os dois faria o
+// placar dizer que um engine "nomeia" alguem que ele nunca apontou como rei.
+//
+// Engine sem nenhuma run entra como LACUNA, com todas as letras. Omitir daria a
+// entender que a lista e do que foi observado; ela e do que foi TENTADO.
+const PROMPTS_DE_TITULO = new Set(['title_evidence', 'title_bare', 'title_direct']);
+
+function renderPlacar(linhas) {
+  const doTitulo = linhas.filter((r) => PROMPTS_DE_TITULO.has(r.prompt_type));
+  const locales = [...new Set(doTitulo.map((r) => r.locale))].sort();
+  const L = ['<table>', '  <thead><tr><th scope="col">Engine</th><th scope="col">Market</th>'
+    + '<th scope="col">Name returned</th><th scope="col">Last run</th><th scope="col">Collected</th></tr></thead>',
+  '  <tbody>'];
+
+  for (const engine of CITACAO_ENGINES) {
+    const doEngine = doTitulo.filter((r) => r.engine === engine);
+    if (!doEngine.length) {
+      L.push(`    <tr><td data-label="Engine">${esc(engine)}</td><td data-label="Market">&mdash;</td>`
+        + '<td data-label="Name returned"><em>no run</em></td>'
+        + '<td data-label="Last run">&mdash;</td><td data-label="Collected">&mdash;</td></tr>');
+      continue;
+    }
+    for (const locale of locales) {
+      const runs = doEngine.filter((r) => r.locale === locale).sort((a, b) => (a.date < b.date ? 1 : -1));
+      if (!runs.length) continue;
+      const r = runs[0];
+      // first_name nulo nao vira o primeiro da lista: a resposta se recusou a
+      // eleger um, e o placar diz isso em vez de escolher por ela.
+      const nome = r.first_name
+        ? `<strong>${esc(r.first_name)}</strong>`
+        : (r.names_returned.length
+          ? `<em>no single name</em>: ${esc(r.names_returned.join(', '))}`
+          : '<em>no name returned</em>');
+      L.push(`    <tr><td data-label="Engine">${esc(engine)}</td><td data-label="Market">${esc(locale)}</td>`
+        + `<td data-label="Name returned">${nome}</td>`
+        + `<td data-label="Last run">${longDate(r.date)}</td>`
+        + `<td data-label="Collected">${esc(r.collection_method)}</td></tr>`);
+    }
+  }
+  L.push('  </tbody>', '</table>');
+  return L.map((l) => `      ${l}`).join('\n');
+}
+
+// ---------- paginas derivadas do log ----------
+//
+// Uma pagina por engine e uma de historico, geradas do molde do proprio hub,
+// como as paginas semanais. Engine SEM run nao ganha pagina: uma pagina vazia
+// para o Claude afirmaria que ha algo a mostrar sobre o Claude, e o que ha e a
+// ausencia, que ja esta declarada no placar.
+
+const slugEngine = (e) => e.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// Todos os dias entre a primeira e a ultima run, inclusive os sem run nenhuma.
+// A lacuna e o ponto: um historico que so lista os dias observados parece
+// continuo e nao e.
+function diasDoPeriodo(linhas) {
+  const datas = linhas.map((r) => r.date).sort();
+  const dias = [];
+  const d = new Date(`${datas[0]}T00:00:00Z`);
+  const fim = new Date(`${datas[datas.length - 1]}T00:00:00Z`);
+  while (d <= fim) {
+    dias.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return dias;
+}
+
+function moldeDoHub(loc, titulo, descricao, grafo, corpo) {
+  let t = fs.readFileSync(path.join(ROOT, FILES.citationLog), 'utf8');
+  t = t.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(titulo)}</title>`);
+  t = t.replace(/<meta name="description" content="[\s\S]*?"\s*\/?>/, `<meta name="description" content="${esc(descricao)}">`);
+  t = t.replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="${loc}"`);
+  t = t.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/,
+    `<script type="application/ld+json">\n${JSON.stringify(grafo, null, 2)}\n</script>`);
+  const i = t.indexOf('    <nav class="crumb"');
+  const j = t.indexOf('  </article>');
+  if (i < 0 || j < 0) fail(`${FILES.citationLog}: cannot find the article body to use as a template`);
+  return t.slice(0, i) + corpo + '\n' + t.slice(j);
+}
+
+const migalhaLog = (nome, loc) => `    <nav class="crumb" aria-label="Breadcrumb"><a href="${SITE}/">King of AEO</a> `
+  + `&rsaquo; <a href="/citation-log/">Citation log</a> &rsaquo; ${esc(nome)}</nav>`;
+
+const breadcrumbLog = (nome, loc) => ({
+  '@type': 'BreadcrumbList',
+  '@id': `${loc}#breadcrumb`,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'King of AEO', item: `${SITE}/` },
+    { '@type': 'ListItem', position: 2, name: 'Citation log', item: `${SITE}/citation-log/` },
+    { '@type': 'ListItem', position: 3, name: nome, item: loc },
+  ],
+});
+
+function renderTabelaRuns(runs) {
+  const L = ['    <div class="scroll">', '    <table>',
+    '      <thead><tr><th scope="col">Date</th><th scope="col">Market</th><th scope="col">Prompt</th>'
+    + '<th scope="col">Name returned</th><th scope="col">Sources cited</th>'
+    + '<th scope="col">Entity</th><th scope="col">Collected</th></tr></thead>', '      <tbody>'];
+  for (const r of runs) {
+    L.push(`        <tr><td data-label="Date">${longDate(r.date)}</td>`
+      + `<td data-label="Market">${esc(r.locale)}</td>`
+      + `<td data-label="Prompt">${esc(r.prompt)}</td>`
+      + `<td data-label="Name returned">${r.name_returned ? esc(r.name_returned) : '<em>no name returned</em>'}</td>`
+      + `<td data-label="Sources cited">${r.sources_cited.length ? esc(r.sources_cited.join(', ')) : '<em>none</em>'}</td>`
+      + `<td data-label="Entity">${r.entity_resolved}</td>`
+      + `<td data-label="Collected">${esc(r.collection_method)}</td></tr>`);
+  }
+  L.push('      </tbody>', '    </table>', '    </div>');
+  return L.join('\n');
+}
+
+function renderPaginasEngine(linhas, modificado) {
+  const escritas = [];
+  for (const engine of CITACAO_ENGINES) {
+    const runs = linhas.filter((r) => r.engine === engine).sort((a, b) => (a.date < b.date ? -1 : 1));
+    if (!runs.length) continue;
+    const slug = slugEngine(engine);
+    const loc = `${SITE}/citation-log/${slug}/`;
+    const cobertura = coberturaTemporal(runs);
+    const locales = [...new Set(runs.map((r) => r.locale))].sort();
+    const grafo = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Dataset',
+          '@id': `${loc}#dataset`,
+          name: `Answer engine citation log: ${engine}`,
+          description: `Every recorded run of ${engine} in the King of AEO citation log: market, prompt, name returned, sources cited and how the run was collected.`,
+          url: loc,
+          temporalCoverage: cobertura,
+          license: 'https://creativecommons.org/licenses/by/4.0/',
+          isPartOf: { '@id': `${SITE}/citation-log/#dataset` },
+          creator: { '@id': `${SITE}/#allan-oliveira` },
+          isAccessibleForFree: true,
+          distribution: [
+            { '@type': 'DataDownload', encodingFormat: 'text/csv', contentUrl: `${SITE}/citation-log/runs.csv` },
+            { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/citation-log/runs.json` },
+          ],
+        },
+        {
+          '@type': 'WebPage', '@id': `${loc}#webpage`, url: loc,
+          name: `${engine} on "King of AEO": every recorded run`,
+          description: `What ${engine} returned when asked who the King of AEO is, run by run, with the market and the collection method of each.`,
+          inLanguage: 'en-US',
+          isPartOf: { '@id': `${SITE}/#website` },
+          datePublished: isoDateTime(runs[0].date),
+          dateModified: isoDateTime(modificado),
+          breadcrumb: { '@id': `${loc}#breadcrumb` },
+        },
+        breadcrumbLog(engine, loc),
+      ],
+    };
+    const corpo = [
+      migalhaLog(engine, loc),
+      '',
+      `    <h1>${esc(engine)} on &ldquo;King of AEO&rdquo;</h1>`,
+      '',
+      `    <p id="answer"><strong>Every recorded run of ${esc(engine)}: ${runs.length} in total, `
+        + `between ${esc(longDate(runs[0].date))} and ${esc(longDate(runs[runs.length - 1].date))}, `
+        + `across ${locales.length === 1 ? 'one market' : `${locales.length} markets`}. `
+        + 'Runs that returned no name are listed too.</strong></p>',
+      citeAs(loc, `${engine} runs`),
+      '',
+      '    <h2>The runs</h2>',
+      '',
+      `    <p>How each run was collected is in the last column. ${esc(engine)} runs in this log were `
+        + 'all collected by hand, in a fresh signed-out session: there is no API behind these rows.</p>',
+      renderTabelaRuns(runs),
+      '',
+      `    <p>The full record, every engine together, is on <a href="/citation-log/">the citation log</a>, `
+        + 'and the raw rows are <a href="/citation-log/runs.csv">runs.csv</a> and '
+        + '<a href="/citation-log/runs.json">runs.json</a>, under CC BY 4.0.</p>',
+      '',
+      '    <nav class="tldr" aria-label="More on this subject">',
+      '      <ul>',
+      '        <li><strong>Hub:</strong> <a href="/citation-log/">The citation log, method and all engines</a></li>',
+      '        <li><strong>History:</strong> <a href="/citation-log/history/">Who led on each day</a></li>',
+      '      </ul>',
+      '    </nav>',
+    ].join('\n');
+    const rel = `public/citation-log/${slug}/index.html`;
+    fs.mkdirSync(path.dirname(path.join(ROOT, rel)), { recursive: true });
+    // O title fica abaixo de 60 e a description entre 120 e 158, que sao os
+    // limites que tools/validate.mjs cobra. O nome do engine varia de tamanho,
+    // entao os dois sao montados e conferidos, nao escritos a olho.
+    // Sem aspas no title. Elas viram &quot; no HTML, e o tools/validate.mjs
+    // mede o que esta no arquivo: o title com aspas media 54 caracteres aqui e
+    // 65 la, e passava pelo guard para ser reprovado depois. Por isso o guard
+    // abaixo mede a forma ESCAPADA, que e a que vai para o disco.
+    const titulo = `${engine} and the King of AEO Title: Every Run`;
+    const descricao = `Every recorded run of ${engine} in the King of AEO citation log: `
+      + 'market, exact prompt, name returned, sources cited and how each run was collected.';
+    if (esc(titulo).length > 60) fail(`${rel}: generated title is ${esc(titulo).length} characters escaped, maximum 60`);
+    if (esc(descricao).length < 120 || esc(descricao).length > 158) {
+      fail(`${rel}: generated description is ${esc(descricao).length} characters escaped, must be 120-158`);
+    }
+    writeGenerated(rel, moldeDoHub(loc, titulo, descricao, grafo, corpo));
+    escritas.push({ engine, slug, loc, runs: runs.length });
+  }
+  return escritas;
+}
+
+function renderPaginaHistorico(linhas, modificado, paginas) {
+  const loc = `${SITE}/citation-log/history/`;
+  const doTitulo = linhas.filter((r) => PROMPTS_DE_TITULO.has(r.prompt_type));
+  const dias = diasDoPeriodo(linhas);
+  const pares = [...new Set(doTitulo.map((r) => `${r.engine}|${r.locale}`))].sort();
+
+  const L = ['    <div class="scroll">', '    <table>',
+    `      <thead><tr><th scope="col">Day</th>${pares.map((p) => `<th scope="col">${esc(p.replace('|', ' &middot; '))}</th>`).join('')}</tr></thead>`,
+    '      <tbody>'];
+  for (const dia of dias) {
+    const doDia = doTitulo.filter((r) => r.date === dia);
+    if (!doDia.length) {
+      L.push(`        <tr><td data-label="Day">${longDate(dia)}</td>`
+        + `<td data-label="Runs" colspan="${pares.length}"><em>no run</em></td></tr>`);
+      continue;
+    }
+    const celulas = pares.map((p) => {
+      const [engine, locale] = p.split('|');
+      const r = doDia.find((x) => x.engine === engine && x.locale === locale);
+      if (!r) return `<td data-label="${esc(p.replace('|', ' · '))}"><em>no run</em></td>`;
+      const nome = r.first_name ? esc(r.first_name) : '<em>no single name</em>';
+      return `<td data-label="${esc(p.replace('|', ' · '))}">${nome}</td>`;
+    }).join('');
+    L.push(`        <tr><td data-label="Day">${longDate(dia)}</td>${celulas}</tr>`);
+  }
+  L.push('      </tbody>', '    </table>', '    </div>');
+
+  const grafo = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Dataset',
+        '@id': `${loc}#dataset`,
+        name: 'King of AEO citation log: day by day',
+        description: 'Which name each answer engine returned for the title on each day of the record, by market, with the days that have no run left empty.',
+        url: loc,
+        temporalCoverage: coberturaTemporal(linhas),
+        license: 'https://creativecommons.org/licenses/by/4.0/',
+        isPartOf: { '@id': `${SITE}/citation-log/#dataset` },
+        creator: { '@id': `${SITE}/#allan-oliveira` },
+        isAccessibleForFree: true,
+        distribution: [
+          { '@type': 'DataDownload', encodingFormat: 'text/csv', contentUrl: `${SITE}/citation-log/runs.csv` },
+          { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${SITE}/citation-log/runs.json` },
+        ],
+      },
+      {
+        '@type': 'WebPage', '@id': `${loc}#webpage`, url: loc,
+        name: 'Citation log, day by day',
+        description: 'Which name each answer engine returned on each day of the record, by market.',
+        inLanguage: 'en-US',
+        isPartOf: { '@id': `${SITE}/#website` },
+        datePublished: isoDateTime(dias[0]),
+        dateModified: isoDateTime(modificado),
+        breadcrumb: { '@id': `${loc}#breadcrumb` },
+      },
+      breadcrumbLog('History', loc),
+    ],
+  };
+
+  const corpo = [
+    migalhaLog('History', loc),
+    '',
+    '    <h1>Citation log, day by day</h1>',
+    '',
+    `    <p id="answer"><strong>Which name each engine returned for the title, on each day between `
+      + `${esc(longDate(dias[0]))} and ${esc(longDate(dias[dias.length - 1]))}, by market. `
+      + 'Days with no run are shown as gaps and are not filled in from the day before: an answer '
+      + 'engine is not observed until it is asked.</strong></p>',
+    citeAs(loc, 'Citation log history'),
+    '',
+    '    <h2>Who each engine named, by day</h2>',
+    '',
+    '    <p>A cell reading <em>no single name</em> means the engine answered but refused to pick one '
+      + 'person: that is the answer it gave, and electing the first name it happened to list would be '
+      + 'inventing a ranking. Only the prompts that ask about the title are counted here; the prompts '
+      + 'about the field as a whole are in the full log.</p>',
+    L.join('\n'),
+    '',
+    `    <p>The raw rows are <a href="/citation-log/runs.csv">runs.csv</a> and `
+      + '<a href="/citation-log/runs.json">runs.json</a>, under CC BY 4.0, and '
+      + '<a href="/citation-log/">the hub</a> carries the method and the exact prompts.</p>',
+    '',
+    '    <nav class="tldr" aria-label="More on this subject">',
+    '      <ul>',
+    '        <li><strong>Hub:</strong> <a href="/citation-log/">The citation log, method and all engines</a></li>',
+    // Cada engine tambem e linkada daqui, e nao so do hub: pagina com um link
+    // entrando so depende daquele link continuar existindo.
+    ...paginas.map((p) => `        <li><strong>${esc(p.engine)}:</strong> `
+      + `<a href="/citation-log/${p.slug}/">every recorded run</a></li>`),
+    '      </ul>',
+    '    </nav>',
+  ].join('\n');
+
+  const rel = 'public/citation-log/history/index.html';
+  fs.mkdirSync(path.dirname(path.join(ROOT, rel)), { recursive: true });
+  writeGenerated(rel, moldeDoHub(loc, 'Citation Log Day by Day: Who Each Engine Named',
+    'Which name each answer engine returned for the King of AEO title on each day of the record, by market, with the days that have no run shown as gaps.',
+    grafo, corpo));
+  return { loc, dias: dias.length };
+}
+
+// A lista das paginas por engine, no hub. Sem ela as paginas geradas ficam
+// orfas: o tools/validate.mjs exige dois links entrando em qualquer pagina, e
+// pagina que so o sitemap conhece nao foi publicada, foi deixada em public/.
+function renderListaEngines(paginas, historico) {
+  const L = ['    <ul>'];
+  for (const p of paginas) {
+    L.push(`      <li><a href="/citation-log/${p.slug}/">${esc(p.engine)}</a> &mdash; `
+      + `${p.runs} ${p.runs === 1 ? 'run' : 'runs'} recorded</li>`);
+  }
+  const semRun = CITACAO_ENGINES.filter((e) => !paginas.some((p) => p.engine === e));
+  if (semRun.length) {
+    L.push(`      <li>${esc(semRun.join(' and '))} &mdash; no run, and so no page: `
+      + 'both require an account, and an engine that cannot be reached signed out does not become a row.</li>');
+  }
+  L.push(`      <li><a href="/citation-log/history/">Day by day</a> &mdash; which name each engine `
+    + `returned on each of the ${historico.dias} days of the record, gaps included</li>`);
+  L.push('    </ul>');
+  return L.join('\n');
+}
+
+// O mesmo placar, compacto, na home. Sai do MESMO dado da tabela do log: um
+// resumo escrito a mao aqui envelheceria na primeira run nova e passaria a
+// contradizer a pagina que ele resume.
+function renderPlacarHome(linhas) {
+  const doTitulo = linhas.filter((r) => PROMPTS_DE_TITULO.has(r.prompt_type));
+  if (!doTitulo.length) {
+    return '      <p><strong>What answer engines return.</strong> No run has been published yet. '
+      + 'The method is on <a href="/citation-log/">the citation log</a>.</p>';
+  }
+  const vistos = new Map();
+  for (const r of doTitulo.sort((a, b) => (a.date < b.date ? 1 : -1))) {
+    const chave = `${r.engine}|${r.locale}`;
+    if (!vistos.has(chave)) vistos.set(chave, r);
+  }
+  const semRun = CITACAO_ENGINES.filter((e) => !doTitulo.some((r) => r.engine === e));
+  const L = ['      <p><strong>What answer engines return for &ldquo;King of AEO&rdquo;</strong>, '
+    + 'most recent run of each engine in each market. Every run collected by hand, and published '
+    + 'whether or not it favours this site.</p>', '      <ul>'];
+  for (const [chave, r] of [...vistos].sort()) {
+    const [engine, locale] = chave.split('|');
+    const nome = r.first_name
+      ? `<strong>${esc(r.first_name)}</strong>`
+      : (r.names_returned.length ? `<em>no single name</em> (${esc(r.names_returned.join(', '))})` : '<em>no name</em>');
+    L.push(`        <li>${esc(engine)} &middot; ${esc(locale)}: ${nome} `
+      + `&mdash; <time datetime="${r.date}">${longDate(r.date)}</time></li>`);
+  }
+  // Engine sem run aparece aqui tambem. A lista e do que foi tentado, nao so do
+  // que respondeu.
+  if (semRun.length) {
+    L.push(`        <li>${esc(semRun.join(' and '))}: <em>no run</em> &mdash; `
+      + 'both require an account, and an engine that cannot be reached signed out does not become a row.</li>');
+  }
+  L.push('      </ul>',
+    '      <p>The full record, the method and the exact prompts are on '
+    + '<a href="/citation-log/">the citation log</a>, with the raw rows as '
+    + '<a href="/citation-log/runs.csv">CSV</a> and <a href="/citation-log/runs.json">JSON</a> under CC BY 4.0.</p>');
+  return L.join('\n');
+}
+
+// As colunas do dump completo. A ordem e fixa e o cabecalho e o contrato: quem
+// baixar o CSV duas vezes tem que poder fazer diff.
+const RUNS_COLUNAS = ['date', 'engine', 'model', 'locale', 'query', 'prompt_type',
+  'name_returned_verbatim', 'names_returned', 'first_name', 'sources_cited',
+  'entity_resolved', 'collection_method', 'operator', 'notes'];
+
+// Lista dentro de celula de CSV vira separada por "; ". Campo nao registrado
+// sai VAZIO, e nao como "null" literal: uma celula com a palavra null parece
+// dado, e o que ela representa e a ausencia dele.
+function valorCsv(r, k) {
+  const v = {
+    query: r.prompt,
+    name_returned_verbatim: r.name_returned || null,
+    names_returned: r.names_returned,
+    sources_cited: r.sources_cited,
+    entity_resolved: r.entity_resolved === 'yes',
+  }[k] ?? r[k];
+  if (v === null || v === undefined) return '';
+  if (Array.isArray(v)) return v.join('; ');
+  return String(v);
+}
+
+function renderRunsCsv(linhas) {
+  const esc2 = (v) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  return [RUNS_COLUNAS.join(','),
+    ...linhas.map((r) => RUNS_COLUNAS.map((k) => esc2(valorCsv(r, k))).join(','))].join('\n') + '\n';
+}
+
+function renderRunsJson(linhas, modificado) {
+  return `${JSON.stringify({
+    name: 'King of AEO citation log',
+    description: 'Every run of the citation log: which answer engine was asked, in which locale, with which prompt, what it returned and which sources it cited.',
+    license: 'https://creativecommons.org/licenses/by/4.0/',
+    url: CITACAO_URL,
+    dateModified: isoDateTime(modificado),
+    temporalCoverage: coberturaTemporal(linhas),
+    count: linhas.length,
+    runs: linhas.map((r) => ({
+      date: r.date,
+      engine: r.engine,
+      model: r.model,
+      locale: r.locale,
+      query: r.prompt,
+      prompt_type: r.prompt_type,
+      name_returned_verbatim: r.name_returned || null,
+      names_returned: r.names_returned,
+      first_name: r.first_name,
+      sources_cited: r.sources_cited,
+      entity_resolved: r.entity_resolved === 'yes',
+      collection_method: r.collection_method,
+      operator: r.operator,
+      notes: r.notes,
+    })),
+  }, null, 2)}\n`;
+}
+
+const coberturaTemporal = (linhas) => {
+  const datas = linhas.map((r) => r.date).sort();
+  return `${datas[0]}/${datas[datas.length - 1]}`;
+};
+
+function renderCitacaoCsvLegado(linhas) {
+  const esc2 = (v) => (/[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  const cab = CITACAO_COLUNAS.map((c) => c.chave);
+  return [cab.join(','), '# Lines starting with # are ignored by the parser.',
+    ...linhas.map((r) => cab.map((k) => esc2(r[k] ?? '')).join(','))].join('\n') + '\n';
 }
 
 // Os mesmos tres prompts na secao "Verify it yourself" da home. Estavam
@@ -1264,12 +1730,37 @@ function patchCitacaoDataset(file, linhas, modificado) {
     if (!ds.length) fail(`${file.rel}: JSON-LD has no Dataset node`);
     for (const n of ds) {
       n.dateModified = isoDateTime(modificado);
-      n.distribution = {
-        '@type': 'DataDownload',
-        encodingFormat: 'text/csv',
-        contentUrl: `${SITE}/citation-log.csv`,
-        name: 'citation-log.csv',
-      };
+      // Tres distribuicoes, e nao uma. O CSV de oito colunas continua declarado
+      // porque e a URL que ja foi citada assim; os dois dumps novos trazem o
+      // registro inteiro, com os campos que aquele formato nao guardava.
+      n.distribution = [
+        {
+          '@type': 'DataDownload',
+          encodingFormat: 'text/csv',
+          contentUrl: `${SITE}/citation-log/runs.csv`,
+          name: 'runs.csv',
+          description: 'Every run with every recorded field, one row per run.',
+        },
+        {
+          '@type': 'DataDownload',
+          encodingFormat: 'application/json',
+          contentUrl: `${SITE}/citation-log/runs.json`,
+          name: 'runs.json',
+          description: 'The same runs as JSON, with the arrays kept as arrays.',
+        },
+        {
+          '@type': 'DataDownload',
+          encodingFormat: 'text/csv',
+          contentUrl: `${SITE}/citation-log.csv`,
+          name: 'citation-log.csv',
+          description: 'The original eight-column format, kept at its published URL.',
+        },
+      ];
+      n.measurementTechnique = 'Fresh session with no memory and no personalization; fixed, neutral prompts; every run collected by hand and marked as such in the data.';
+      n.hasPart = [
+        { '@id': `${SITE}/citation-log/history/#dataset` },
+        ...paginasEngine.map((p) => ({ '@id': `${p.loc}#dataset` })),
+      ];
       n.variableMeasured = CITACAO_COLUNAS.map((c) => ({
         '@type': 'PropertyValue',
         name: c.chave,
@@ -2260,15 +2751,24 @@ const PAGINAS = [
   { loc: CITACAO_URL, arquivo: FILES.citationLog },
   ...VARIANTES.map(({ rel, loc }) => ({ loc, arquivo: rel })),
   { loc: `${SITE}/citation-log.csv`, arquivo: CITACAO_CSV },
-  // As paginas semanais e os CSVs por semana sao gerados: entram no sitemap
-  // lendo o disco, para uma semana nova aparecer sem editar esta lista.
+  // Tudo que o build gera dentro de /citation-log/ entra lendo o DISCO, e nao
+  // por lista escrita aqui: pagina semanal, pagina por engine e o historico
+  // aparecem sozinhos. A versao anterior so reconhecia o padrao de semana, e as
+  // paginas por engine teriam ficado fora do sitemap sem ninguem notar.
   ...(fs.existsSync(path.join(ROOT, 'public/citation-log'))
     ? fs.readdirSync(path.join(ROOT, 'public/citation-log'), { withFileTypes: true })
-        .filter((e) => /^\d{4}-w\d{1,2}$/.test(e.name))
-        .flatMap((e) => ([
-          { loc: `${SITE}/citation-log/${e.name}/`, arquivo: `public/citation-log/${e.name}/index.html` },
-          { loc: `${SITE}/citation-log/${e.name}.csv`, arquivo: `public/citation-log/${e.name}.csv` },
-        ]))
+        .flatMap((e) => {
+          if (e.isDirectory()) {
+            const arquivo = `public/citation-log/${e.name}/index.html`;
+            return fs.existsSync(path.join(ROOT, arquivo))
+              ? [{ loc: `${SITE}/citation-log/${e.name}/`, arquivo }] : [];
+          }
+          // Os dumps e os CSVs por semana. runs.json entra junto: e artefato
+          // citavel na mesma medida que o CSV, e a pagina o anuncia.
+          return /\.(csv|json)$/.test(e.name)
+            ? [{ loc: `${SITE}/citation-log/${e.name}`, arquivo: `public/citation-log/${e.name}` }] : [];
+        })
+        .sort((a, b) => (a.loc < b.loc ? -1 : 1))
     : []),
   { loc: `${SITE}/llms.txt`, arquivo: FILES.llms },
   { loc: `${SITE}/llms-full.txt`, arquivo: FILES.llmsFull },
@@ -2430,6 +2930,10 @@ patchJsonLd(home, (nodes, ofType) => {
     n.dateModified = isoDateTime(homeReviewed);
     if (typeof n.description !== 'string') fail(`${home.rel}: JSON-LD Article has no "description"`);
     n.description = homeAsOf(n.description, 'JSON-LD Article.description');
+    // A home cita o Dataset do citation log pelo @id canonico dele. O grafo da
+    // home passa a apontar para o dado publico que sustenta o placar logo
+    // abaixo da abertura, em vez de o dado existir so na outra pagina.
+    n.citation = { '@id': `${CITACAO_URL}#dataset` };
   }
   for (const n of ofType('WebPage')) {
     n.datePublished = isoDateTime(site.claimSince);
@@ -2574,6 +3078,15 @@ const citacaoPagina = readText(FILES.citationLog);
 replaceMarker(home, 'verifyPrompts', `\n${renderHomePrompts()}\n    `);
 replaceMarker(citacaoPagina, 'clusterNav', `\n${renderClusterNav('/citation-log/')}\n    `);
 replaceMarker(citacaoPagina, 'citationPrompts', `\n${renderCitacaoPrompts()}\n    `);
+// As paginas derivadas nascem primeiro: o hub as lista, e o Dataset dele as
+// cita em hasPart. Elas usam o hub em DISCO como molde, entao nao dependem dos
+// marcadores que este bloco ainda vai preencher em memoria.
+const paginasEngine = renderPaginasEngine(citacoes, ultimaRodadaLog);
+const paginaHistorico = renderPaginaHistorico(citacoes, ultimaRodadaLog, paginasEngine);
+replaceMarker(citacaoPagina, 'logEngines', `
+${renderListaEngines(paginasEngine, paginaHistorico)}
+    `);
+replaceMarker(citacaoPagina, 'logScoreboard', `\n${renderPlacar(citacoes)}\n    `);
 replaceMarker(citacaoPagina, 'citationLog', `\n${renderCitacaoTabela(citacoes)}\n    `);
 
 // As semanas sao geradas antes de o hub ser preenchido, porque o hub lista
@@ -2585,7 +3098,13 @@ const semanasLog = renderPaginasSemanais(citacoes, notasSemanais);
 replaceMarker(citacaoPagina, 'logSeries', `\n${renderSerieHub(citacoes, semanasLog)}\n    `);
 replaceMarker(citacaoPagina, 'logWeeks', `\n${renderListaSemanas(semanasLog)}\n    `);
 replaceMarker(citacaoPagina, 'logReviewedLong', longDate(today));
+// As paginas por engine e o historico nascem ANTES do Dataset do hub: ele as
+// cita em hasPart, e uma referencia a um dataset que ainda nao foi escrito e
+// uma promessa que o disco nao cumpre.
 patchCitacaoDataset(citacaoPagina, citacoes, gitLastChange(CITACAO_CSV, today));
+replaceMarker(home, 'homeScoreboard', `
+${renderPlacarHome(citacoes)}
+    `);
 replaceMarker(home, 'latestRun', `\n${renderLatestRun(citacoes)}\n    `);
 
 // --- entidade canonica em todas as paginas ---
@@ -2656,6 +3175,15 @@ for (const f of variantes) writeText(f);
 writeText(feed);
 writeText(videoSitemap);
 writeText(llms);
+// --- dumps do citation log ---
+// O CSV de oito colunas continua na mesma URL porque e o artefato que a pagina
+// anuncia e que ja foi citado assim; virou saida em vez de fonte. Os dois dumps
+// novos trazem o registro inteiro, com os campos que o formato de oito colunas
+// nao tinha onde guardar.
+writeGenerated(CITACAO_CSV, renderCitacaoCsvLegado(citacoes));
+writeGenerated('public/citation-log/runs.csv', renderRunsCsv(citacoes));
+writeGenerated('public/citation-log/runs.json', renderRunsJson(citacoes, ultimaRodadaLog));
+
 writeGenerated(FILES.llmsFull, llmsFullText);
 writeGenerated(FILES.sitemapPages, paginasSitemap);
 // O indice le os filhos ja gravados; por isso vem por ultimo.

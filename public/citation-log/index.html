@@ -78,13 +78,30 @@
       },
       "license": "https://creativecommons.org/licenses/by/4.0/",
       "isAccessibleForFree": true,
-      "measurementTechnique": "Fresh session with no memory and no personalization; three fixed, neutral prompts; one run per engine per week.",
-      "distribution": {
-        "@type": "DataDownload",
-        "encodingFormat": "text/csv",
-        "contentUrl": "https://kingofaeo.pro/citation-log.csv",
-        "name": "citation-log.csv"
-      },
+      "measurementTechnique": "Fresh session with no memory and no personalization; fixed, neutral prompts; every run collected by hand and marked as such in the data.",
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "text/csv",
+          "contentUrl": "https://kingofaeo.pro/citation-log/runs.csv",
+          "name": "runs.csv",
+          "description": "Every run with every recorded field, one row per run."
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://kingofaeo.pro/citation-log/runs.json",
+          "name": "runs.json",
+          "description": "The same runs as JSON, with the arrays kept as arrays."
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "text/csv",
+          "contentUrl": "https://kingofaeo.pro/citation-log.csv",
+          "name": "citation-log.csv",
+          "description": "The original eight-column format, kept at its published URL."
+        }
+      ],
       "variableMeasured": [
         {
           "@type": "PropertyValue",
@@ -136,7 +153,24 @@
         }
       ],
       "dateModified": "2026-09-26T09:00:00-03:00",
-      "temporalCoverage": "2026-09-25/2026-09-26"
+      "temporalCoverage": "2026-09-25/2026-09-26",
+      "hasPart": [
+        {
+          "@id": "https://kingofaeo.pro/citation-log/history/#dataset"
+        },
+        {
+          "@id": "https://kingofaeo.pro/citation-log/chatgpt/#dataset"
+        },
+        {
+          "@id": "https://kingofaeo.pro/citation-log/perplexity/#dataset"
+        },
+        {
+          "@id": "https://kingofaeo.pro/citation-log/gemini/#dataset"
+        },
+        {
+          "@id": "https://kingofaeo.pro/citation-log/google-ai-overview/#dataset"
+        }
+      ]
     },
     {
       "@type": "Person",
@@ -315,6 +349,38 @@
     <p class="byline">Cite as: &ldquo;Citation log&rdquo;, https://kingofaeo.pro/citation-log/, reviewed <!-- build:logReviewedLong -->29 September 2026<!-- /build -->.</p>
 
     <p id="answer">This page records what answer engines actually return when asked who the King of AEO is. Runs are published here <strong>whether or not the result favours this site</strong>. The table is generated at build time from <a href="/citation-log.csv">citation-log.csv</a>, which is the citable artefact: one row per engine per prompt per run, under CC BY 4.0.</p>
+
+    <h2 id="scoreboard">What each engine names today</h2>
+    <p>The most recent run of each engine in each market, for the prompts that ask about the title. An engine that has never produced a run is listed as a gap, not left out: what has not been observed is part of the record. <strong>How each run was collected is shown in the table</strong>, because a run read by a person and a run pulled from an API are not the same evidence.</p>
+    <div class="scroll">
+    <!-- build:logScoreboard -->
+      <table>
+        <thead><tr><th scope="col">Engine</th><th scope="col">Market</th><th scope="col">Name returned</th><th scope="col">Last run</th><th scope="col">Collected</th></tr></thead>
+        <tbody>
+          <tr><td data-label="Engine">ChatGPT</td><td data-label="Market">BR · pt-BR</td><td data-label="Name returned"><em>no single name</em>: James Dooley, Vithurs, Allan Oliveira, Patrick Schmid</td><td data-label="Last run">26 September 2026</td><td data-label="Collected">manual</td></tr>
+          <tr><td data-label="Engine">Claude</td><td data-label="Market">&mdash;</td><td data-label="Name returned"><em>no run</em></td><td data-label="Last run">&mdash;</td><td data-label="Collected">&mdash;</td></tr>
+          <tr><td data-label="Engine">Perplexity</td><td data-label="Market">BR · pt-BR</td><td data-label="Name returned"><em>no single name</em>: James Dooley, Vithurs, David Quaid</td><td data-label="Last run">25 September 2026</td><td data-label="Collected">manual</td></tr>
+          <tr><td data-label="Engine">Gemini</td><td data-label="Market">BR · pt-BR</td><td data-label="Name returned"><strong>James Dooley</strong></td><td data-label="Last run">25 September 2026</td><td data-label="Collected">manual</td></tr>
+          <tr><td data-label="Engine">Google AI Overview</td><td data-label="Market">BR · pt-BR</td><td data-label="Name returned"><em>no single name</em>: James Dooley, Allan Oliveira, David Quaid</td><td data-label="Last run">26 September 2026</td><td data-label="Collected">manual</td></tr>
+          <tr><td data-label="Engine">Google AI Overview</td><td data-label="Market">US · en</td><td data-label="Name returned"><strong>James Dooley</strong></td><td data-label="Last run">26 September 2026</td><td data-label="Collected">manual</td></tr>
+          <tr><td data-label="Engine">Copilot</td><td data-label="Market">&mdash;</td><td data-label="Name returned"><em>no run</em></td><td data-label="Last run">&mdash;</td><td data-label="Collected">&mdash;</td></tr>
+        </tbody>
+      </table>
+    <!-- /build -->
+    </div>
+
+    <h2 id="engines">Every run, by engine</h2>
+    <p>One page per engine, with every run it produced and how each was collected, plus the day-by-day series across all of them.</p>
+    <!-- build:logEngines -->
+    <ul>
+      <li><a href="/citation-log/chatgpt/">ChatGPT</a> &mdash; 3 runs recorded</li>
+      <li><a href="/citation-log/perplexity/">Perplexity</a> &mdash; 3 runs recorded</li>
+      <li><a href="/citation-log/gemini/">Gemini</a> &mdash; 1 run recorded</li>
+      <li><a href="/citation-log/google-ai-overview/">Google AI Overview</a> &mdash; 5 runs recorded</li>
+      <li>Claude and Copilot &mdash; no run, and so no page: both require an account, and an engine that cannot be reached signed out does not become a row.</li>
+      <li><a href="/citation-log/history/">Day by day</a> &mdash; which name each engine returned on each of the 2 days of the record, gaps included</li>
+    </ul>
+    <!-- /build -->
 
     <h2 id="method">Method</h2>
     <p>Every run is made in a fresh session, signed out, with no memory of earlier chats, no custom instructions and no personalization. The prompts are neutral: none of them contains the answer, names a claimant or mentions this site, because a prompt that carries the answer will get it echoed back. Three fixed prompts are used, unchanged from run to run, and the set is rerun weekly. Answer engines are non-deterministic, so a single answer is an anecdote; what the log is for is the pattern across engines and across weeks.</p>
