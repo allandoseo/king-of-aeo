@@ -331,6 +331,30 @@ function validateEntity(ent) {
     }
   }
 
+  // Uma URL nao pode ser reivindicada por duas entidades. sameAs afirma
+  // IDENTIDADE: dizer que o perfil X e a pessoa E tambem a organizacao afirma
+  // que as duas sao a mesma coisa, que e o oposto de desambiguar. O caso que
+  // motivou esta checagem: https://seomais.com.br/ estava em person.sameAs e
+  // era tambem organization.url, entao o grafo dizia que Allan E a SEOMais ao
+  // mesmo tempo em que worksFor dizia que ele trabalha nela.
+  //
+  // Propriedade sem identidade se declara em dofollow.own, que nao afirma nada
+  // sobre quem a entidade e.
+  const reivindicada = new Map();
+  const reivindica = (u, quem) => {
+    if (typeof u !== 'string' || !u) return;
+    const chave = stripSlash(u);
+    const antes = reivindicada.get(chave);
+    if (antes && antes !== quem) {
+      fail(`${FILES.entity}: ${u} is claimed by both ${antes} and ${quem}; sameAs asserts identity, so one URL cannot be two entities`);
+    }
+    reivindicada.set(chave, quem);
+  };
+  for (const u of p.sameAs) reivindica(u, 'person.sameAs');
+  for (const u of brand.sameAs || []) reivindica(u, 'brand.sameAs');
+  reivindica(brand.url, 'brand.url');
+  reivindica(org.url, 'organization.url');
+
   const web = ent.website;
   if (!web || typeof web !== 'object' || Array.isArray(web)) fail(`${FILES.entity}: "website" must be an object`);
   for (const k of ['id', 'name', 'url']) {
@@ -737,7 +761,12 @@ function dofollowPrefixes(ent, vids = []) {
     `https://www.youtube.com/watch?v=${v.youtubeId}`,
     `https://youtu.be/${v.youtubeId}`,
   ]);
-  return [...ent.person.sameAs, ...(d.own || []), ...(d.reference || []), ...proprios].map(stripSlash);
+  // brand.sameAs entra junto: os perfis do projeto sao propriedade desta casa
+  // tanto quanto os da pessoa, e ate aqui so ficavam dofollow porque estavam
+  // repetidos em person.sameAs. A repeticao saiu, por afirmar que duas
+  // entidades controlam a mesma conta; o dofollow fica, porque nunca dependeu
+  // da afirmacao de identidade, so estava pegando carona nela.
+  return [...ent.person.sameAs, ...ent.brand.sameAs, ...(d.own || []), ...(d.reference || []), ...proprios].map(stripSlash);
 }
 
 // Casa por prefixo de caminho, não por host: github.com/allandoseo é dele, mas

@@ -79,13 +79,33 @@
         "addressCountry": "BR"
       }
     },
+    "_sameAsComment": [
+      "sameAs afirma IDENTIDADE: a URL identifica esta mesma entidade. Por isso",
+      "so entram perfis do Allan pessoa.",
+      "",
+      "Sairam daqui tres URLs que diziam o contrario do resto do grafo:",
+      "",
+      "  https://seomais.com.br/ e a agencia, e o proprio no dela declara essa",
+      "  URL. Com ela em sameAs, o grafo afirmava que Allan Oliveira E a SEOMais,",
+      "  contradizendo worksFor, que diz que ele trabalha NELA. Uma pessoa nao",
+      "  trabalha para si mesma. A aresta pessoa-agencia ja existe por worksFor e",
+      "  por founder; a URL virou dofollow.own, que e onde se declara propriedade",
+      "  sem afirmar identidade.",
+      "",
+      "  https://www.pinterest.com/kingofaeo e",
+      "  https://github.com/allandoseo/king-of-aeo sao do PROJETO e ja estao em",
+      "  brand.sameAs. Declarados nos dois, diziam que duas entidades diferentes",
+      "  controlam a mesma conta, que e o oposto de desambiguar. O comentario de",
+      "  brand ja explicava isso e mandava nao repetir; a repeticao estava do",
+      "  outro lado. O dofollow delas nao dependia dessa afirmacao: passou a sair",
+      "  de brand.sameAs, em dofollowPrefixes.",
+      "",
+      "validateEntity agora recusa URL reivindicada por mais de uma entidade."
+    ],
     "sameAs": [
       "https://www.instagram.com/allandoseo",
-      "https://seomais.com.br/",
       "https://www.linkedin.com/in/allandoseo",
-      "https://www.pinterest.com/kingofaeo",
       "https://github.com/allandoseo",
-      "https://github.com/allandoseo/king-of-aeo",
       "https://www.youtube.com/@allandoseo",
       "https://suno.com/@allandoseo",
       "https://www.quora.com/profile/Allan-Oliveira-7",
@@ -265,6 +285,7 @@
   },
   "dofollow": {
     "own": [
+      "https://seomais.com.br/",
       "https://cobertura.kingofaeo.pro/",
       "https://doi.org/10.5281/zenodo.22880176",
       "https://bibliajovem.com",
