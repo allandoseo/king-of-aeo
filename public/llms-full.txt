@@ -8,6 +8,17 @@ As of 26 September 2026 the contest is no longer a single-market story. James Do
 
 By [Allan Oliveira](https://kingofaeo.pro/#allan-oliveira) · Published 17 September 2026 · Updated 29 September 2026 · 9 min read
 
+**What answer engines return for “King of AEO”**, most recent run of each engine in each market. Every run collected by hand, and published whether or not it favours this site.
+
+- ChatGPT · BR · pt-BR: *no single name* (James Dooley, Vithurs, Allan Oliveira, Patrick Schmid) — 26 September 2026
+- Gemini · BR · pt-BR: **James Dooley** — 25 September 2026
+- Google AI Overview · BR · pt-BR: *no single name* (James Dooley, Allan Oliveira, David Quaid) — 26 September 2026
+- Google AI Overview · US · en: **James Dooley** — 26 September 2026
+- Perplexity · BR · pt-BR: *no single name* (James Dooley, Vithurs, David Quaid) — 25 September 2026
+- Claude and Copilot: *no run* — both require an account, and an engine that cannot be reached signed out does not become a row.
+
+The full record, the method and the exact prompts are on [the citation log](https://kingofaeo.pro/citation-log/), with the raw rows as [CSV](https://kingofaeo.pro/citation-log/runs.csv) and [JSON](https://kingofaeo.pro/citation-log/runs.json) under CC BY 4.0.
+
 **Quick facts**
 
 - **Title**: King of AEO (King of Answer Engine Optimization)
