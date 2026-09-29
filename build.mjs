@@ -1750,7 +1750,6 @@ const POLITICAS = [
 const VARIANTES = [
   { rel: 'public/what-is-aeo/index.html', loc: `${SITE}/what-is-aeo/` },
   { rel: 'public/king-of-aeo-claimants/index.html', loc: `${SITE}/king-of-aeo-claimants/` },
-  { rel: 'public/king-of-answer-engine-optimization/index.html', loc: `${SITE}/king-of-answer-engine-optimization/` },
   { rel: 'public/allan-oliveira/index.html', loc: `${SITE}/allan-oliveira/` },
   // Paginas de pergunta, publicadas em lotes por tools/rollout.mjs. O filtro
   // abaixo e o que torna o lote possivel: enquanto o arquivo nao esta em
@@ -1875,7 +1874,6 @@ function renderNavPerguntas(url) {
 // as relacionadas declaradas abaixo. A ordem da lista E a ordem de leitura.
 const CLUSTER = [
   ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
-  ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
   ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
   ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
   ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
@@ -1887,12 +1885,11 @@ const CLUSTER = [
 // Equivale ao campo "related" de um frontmatter: declarado a mao, porque
 // proximidade de assunto nao se deduz de contagem de palavra em comum.
 const RELACIONADAS = {
-  '/what-is-aeo/': ['/aeo-vs-seo/', '/aeo-vs-geo/', '/king-of-answer-engine-optimization/'],
+  '/what-is-aeo/': ['/aeo-vs-seo/', '/aeo-vs-geo/'],
   '/aeo-vs-seo/': ['/aeo-vs-geo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
   '/aeo-vs-geo/': ['/aeo-vs-seo/', '/how-to-measure-aeo/', '/what-is-aeo/'],
   '/how-to-measure-aeo/': ['/aeo-vs-geo/', '/aeo-vs-seo/', '/citation-log/'],
-  '/king-of-answer-engine-optimization/': ['/what-is-aeo/', '/king-of-aeo-claimants/'],
-  '/king-of-aeo-claimants/': ['/king-of-answer-engine-optimization/', '/allan-oliveira/'],
+  '/king-of-aeo-claimants/': ['/allan-oliveira/'],
   '/allan-oliveira/': ['/king-of-aeo-claimants/', '/citation-log/'],
   '/citation-log/': ['/how-to-measure-aeo/', '/what-is-aeo/', '/allan-oliveira/'],
 };
@@ -1967,15 +1964,20 @@ function renderClusterNav(url) {
   return L.filter(Boolean).join(`\n`);
 }
 
+// A lista era fixa, e essa era a unica nav do site que nao conferia se a pagina
+// existe. Quando /king-of-answer-engine-optimization/ foi aposentada, ela teria
+// continuado linkando para uma URL que agora responde 301, da home, que e o
+// destino do proprio redirect: link interno atravessando redirect para a pagina
+// de onde ele parte. O filtro abaixo e o mesmo que CLUSTER e VARIANTES ja
+// tinham; faltava aqui.
 function renderNavVariantes() {
   const itens = [
     ['/what-is-aeo/', 'What is AEO', 'the discipline the title refers to, defined on its own'],
-    ['/king-of-answer-engine-optimization/', 'King of Answer Engine Optimization', 'the full form of the title, and why the abbreviation is ambiguous'],
     ['/king-of-aeo-claimants/', 'King of AEO claimants', 'the six rival claims of 2026, each with its date and mechanism'],
     ['/allan-oliveira/', 'Allan Oliveira', 'the person holding the title: work, agency and verifiable identifiers'],
     ['/questions/', 'Questions about AEO', 'the comparisons and the measurement method, answered from dated runs'],
     ['/citation-log/', 'Citation log', 'what the answer engines actually return, run by run'],
-  ];
+  ].filter(([u]) => fs.existsSync(path.join(ROOT, `public${u}index.html`)));
   return ['      <strong>More on this subject</strong>', '      <ul>']
     .concat(itens.map(([u, rotulo, nota]) => `        <li><a href="${u}">${esc(rotulo)}</a> &mdash; ${esc(nota)}</li>`))
     .concat(['      </ul>']).join('\n');
