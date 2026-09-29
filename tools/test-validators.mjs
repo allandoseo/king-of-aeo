@@ -109,6 +109,13 @@ const CASOS = [
     jsonEdit((d) => { d.brand.correctionsPolicy = 'https://kingofaeo.pro/nao-existe/'; })],
   ['build.mjs, sobre o registro na origem', ENT, 'claimant com @id de pagina em vez de @id de site', BUILD,
     jsonEdit((d) => { d.claimants.vithurs.id = 'https://kingofaeo.pro/claimants/vithurs/#claimant'; })],
+  // sameAs afirma identidade: a mesma URL em duas entidades diz que as duas sao
+  // a mesma coisa. Era o caso de https://seomais.com.br/, que estava em
+  // person.sameAs e era tambem organization.url, contradizendo o worksFor.
+  ['build.mjs, sobre o registro na origem', ENT, 'URL da agencia reivindicada tambem pela pessoa', BUILD,
+    jsonEdit((d) => d.person.sameAs.push(d.organization.url))],
+  ['build.mjs, sobre o registro na origem', ENT, 'perfil do projeto reivindicado tambem pela pessoa', BUILD,
+    jsonEdit((d) => d.person.sameAs.push(d.brand.sameAs[0]))],
 ];
 
 const arquivos = [...new Set(CASOS.map(([, arq]) => arq))];
