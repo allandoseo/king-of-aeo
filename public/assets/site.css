@@ -114,3 +114,21 @@ footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem
 @media (min-width:1040px){
   .scroll.wide{width:900px;margin-left:calc((100% - 900px) / 2)}
 }
+
+/* /king-of-aeo-song/: o player e o primeiro e maior elemento abaixo do H1, e e
+   o LCP da pagina. Por isso a capa e um <img> local com fetchpriority="high" e
+   nao background-image: background nao aceita prioridade, so e descoberto depois
+   que o CSS chega, e a imagem vinha de i.ytimg.com, terceiro host. O iframe do
+   YouTube nunca entra no carregamento; o script troca os filhos de .player no
+   clique, e o <img> sai junto com o botao. */
+.player{position:relative;aspect-ratio:16/9;width:100%;background:#000;border-radius:8px;overflow:hidden;margin:0 0 1.25rem;border:1px solid var(--blue-line)}
+.player-poster{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
+.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.listen{display:flex;flex-wrap:wrap;gap:.6rem;margin:0 0 2rem;padding:0;list-style:none}
+.listen a{display:inline-block;padding:.55rem 1rem;border:1.5px solid var(--blue);border-radius:999px;font-size:.9rem;font-weight:700;text-decoration:none}
+.listen a:hover{background:var(--blue-soft)}
+.lyrics{background:var(--blue-soft);border-radius:8px;padding:1.25rem 1.4rem;margin:0 0 1.5rem;white-space:pre-line;font-size:1rem;line-height:1.7}
+.note{font-size:.9rem;color:var(--muted)}
+.still{margin:2.5rem 0 0}
+.still img{display:block;width:100%;max-width:420px;height:auto;border-radius:8px;margin:0 auto}
+.still figcaption{font-size:.85rem;color:var(--muted);margin:.6rem auto 0;max-width:420px;text-align:center}

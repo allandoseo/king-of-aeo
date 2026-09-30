@@ -534,6 +534,9 @@ function validateVideos(doc) {
   if (!sp || typeof sp !== 'object' || Array.isArray(sp)) fail(`${FILES.videos}: "songPage" must be an object with youtubeId and title`);
   if (!YT_ID.test(sp.youtubeId || '')) fail(`${FILES.videos}: songPage.youtubeId must be the 11-character YouTube id`);
   if (typeof sp.title !== 'string' || sp.title === '') fail(`${FILES.videos}: songPage.title must be a non-empty string`);
+  if (typeof sp.poster !== 'string' || !sp.poster.startsWith('/')) fail(`${FILES.videos}: songPage.poster must be a site-absolute path to the local cover`);
+  if (!Number.isInteger(sp.posterWidth) || !Number.isInteger(sp.posterHeight)) fail(`${FILES.videos}: songPage.posterWidth and posterHeight must be integers`);
+  if (typeof sp.posterAlt !== 'string' || sp.posterAlt === '') fail(`${FILES.videos}: songPage.posterAlt must describe the cover`);
 
   return doc;
 }
@@ -573,9 +576,13 @@ function renderVideo(v) {
   ];
 }
 
+// A capa da pagina da musica e um <img> local, nao background-image: ela e o LCP
+// e precisa de fetchpriority, que background nao aceita. O script do clique troca
+// os filhos de .player, entao a imagem sai junto com o botao quando o iframe entra.
 function renderSongPlayer(sp) {
   return [
-    `<div class="player" style="background-image:url(${esc(capaUrl(sp.youtubeId))})">`,
+    '<div class="player">',
+    `  <img class="player-poster" src="${esc(sp.poster)}" width="${sp.posterWidth}" height="${sp.posterHeight}" alt="${esc(sp.posterAlt)}" fetchpriority="high" decoding="async">`,
     ...playTrigger(sp.youtubeId, sp.title).map((l) => `  ${l}`),
     '</div>',
   ];

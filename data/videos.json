@@ -44,7 +44,10 @@
     "songPage: o video de /king-of-aeo-song/. Nao ocupa slot da home, mas usa a",
     "mesma fachada de capa e play, por isso o id vive aqui e nao chumbado no HTML",
     "daquela pagina. So youtubeId e title, porque o resto do schema daquele video",
-    "ja e escrito a mao no JSON-LD da propria pagina."
+    "ja e escrito a mao no JSON-LD da propria pagina. poster, posterWidth,",
+    "posterHeight e posterAlt descrevem a capa local que o build poe como <img>",
+    "com fetchpriority=high: ela e o LCP daquela pagina e nao pode vir de",
+    "i.ytimg.com, que e outro host e chegaria tarde demais."
   ],
   "videos": [
     {
@@ -72,6 +75,10 @@
   ],
   "songPage": {
     "youtubeId": "4b-dHmjz6O8",
-    "title": "King of AEO Song: The Crown Is in Brazil, by Allan Oliveira"
+    "title": "King of AEO Song: The Crown Is in Brazil, by Allan Oliveira",
+    "poster": "/img/king-of-aeo-song-poster-1280x720.webp",
+    "posterWidth": 1280,
+    "posterHeight": 720,
+    "posterAlt": "Cover of the King of AEO song: the title The King of AEO over Allan Oliveira, crowned in a green and gold robe, shaking hands with a man in a torch-lit stone hall while two onlookers stare"
   }
 }
