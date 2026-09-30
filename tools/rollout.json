@@ -1,0 +1,89 @@
+{
+  "_comment": [
+    "Ordem do manifesto E ordem de publicacao: quem esta primeiro sai primeiro.",
+    "A pagina so entra em public/ no dia dela; ate la fica em content/pending/,",
+    "e build.mjs a ignora por filtro de existencia. O IndexNow recebe so as URLs",
+    "do lote do dia.",
+    "",
+    "Sete dos dez slugs pedidos em 26/09/2026 nao entraram: quatro repetiam",
+    "secoes que a home ja publica, /who-is-the-king-of-aeo/ disputaria com o H1",
+    "da propria home a consulta principal do site, e /how-much-does-aeo-cost/ e",
+    "/aeo-tools/ exigiriam dado que este site nao tem."
+  ],
+  "paginas": [
+    {
+      "slug": "/aeo-vs-geo/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/how-to-measure-aeo/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/aeo-vs-seo/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/james-dooley/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/david-quaid/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/vithurs/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/edward-sturm/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/julian-goldie/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/stephane-morera/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/claimants/jesper-nissen/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/how-to-do-aeo/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/how-much-does-aeo-cost/",
+      "publicadoEm": "2026-09-26"
+    },
+    {
+      "slug": "/aeo-tools/",
+      "publicadoEm": null
+    },
+    {
+      "slug": "/how-to-optimize-a-page-for-aeo/",
+      "publicadoEm": null
+    },
+    {
+      "slug": "/why-is-aeo-important/",
+      "publicadoEm": null
+    },
+    {
+      "slug": "/how-to-rank-in-ai-overviews/",
+      "publicadoEm": null
+    },
+    {
+      "slug": "/how-to-get-cited-by-chatgpt/",
+      "publicadoEm": null
+    }
+  ],
+  "porDia": 2,
+  "ultimoLote": "2026-09-26"
+}

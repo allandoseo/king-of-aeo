@@ -4,8 +4,14 @@
   --blue:#0b3d91;
   --blue-soft:#e8f0fe;
   --blue-line:#c5d5f5;
+  /* --line era usada em .toc e em figure.shot img e nunca tinha sido definida:
+     as duas bordas caiam para currentColor e saiam em azul-marinho escuro em
+     vez de divisor claro. Este e o unico pedaco da etapa 1 que ficou, porque
+     conserta defeito e nao muda estilo. */
+  --line:#d6e2f7;
   --muted:#5b6478;
   --gold:#c9a227;
+  --mono:ui-monospace,SFMono-Regular,"IBM Plex Mono",Menlo,Consolas,monospace;
   --measure:68ch;
 }
 *{box-sizing:border-box}
@@ -19,7 +25,20 @@ header.site{border-bottom:1px solid var(--blue-line)}
 .brand{display:flex;align-items:center;gap:.6rem;padding:1rem 0;font-weight:800;color:var(--blue);text-decoration:none;font-size:1rem}
 .brand svg{width:22px;height:22px}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-.nav{display:flex;gap:1.1rem;font-size:.9rem;font-weight:700}
+/* flex-wrap era nowrap e o menu nao cabia: com seis itens ele media 419px
+   dentro de uma tela de 375, e a pagina inteira ganhava rolagem horizontal.
+   Acontecia nas 22 paginas, porque o cabecalho e o mesmo em todas. */
+.nav{display:flex;flex-wrap:wrap;gap:.45rem 1.1rem;font-size:.9rem;font-weight:700}
+@media (max-width:560px){
+  /* No celular o menu ocupa a largura toda e quebra em duas linhas alinhadas
+     a esquerda, em vez de brigar por espaco com a marca na mesma linha. */
+  .bar{gap:.35rem}
+  .nav{width:100%;gap:.35rem 1rem;font-size:.85rem}
+  /* inline-block para o padding contar na caixa: como <a> inline, o alvo
+     media 34px de altura. .7rem leva a caixa a 44px, que e a recomendacao da
+     Apple e o nivel AAA do WCAG. Custa uns 13px de cabecalho no celular. */
+  .nav a{display:inline-block;padding:.7rem 0}
+}
 /* O card voltou a miniatura: a mesma faixa ja toca no player do slot video-1,
    logo acima, e embedar de novo aqui repetiria a musica na mesma pagina. */
 .songcard{display:grid;grid-template-columns:200px 1fr;gap:1.1rem;align-items:center;border:1px solid var(--blue-line);border-radius:10px;padding:1rem;margin:2rem 0}
@@ -43,7 +62,7 @@ figcaption{font-size:.85rem;color:var(--muted);margin-top:.5rem}
 .toc ol{margin:0;padding-left:1.2rem;columns:2;column-gap:2rem}
 .toc li{margin:.2rem 0;break-inside:avoid}
 @media(max-width:640px){.toc ol{columns:1}}
-.prompt{background:#f6f7f9;border-left:3px solid var(--blue);padding:.7rem .9rem;margin:.6rem 0 1rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
+.prompt{background:#f6f7f9;border-left:3px solid var(--blue);padding:.7rem .9rem;margin:.6rem 0 1rem;font-family:var(--mono);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
 h2{font-size:clamp(1.4rem,3.4vw,1.85rem);line-height:1.2;letter-spacing:-.015em;font-weight:800;margin:2.75rem 0 .9rem;scroll-margin-top:1rem}
 h3{font-size:1.15rem;font-weight:800;margin:1.75rem 0 .5rem}
 p{margin:0 0 1.1rem}
@@ -132,3 +151,9 @@ footer.site{border-top:1px solid var(--blue-line);margin-top:3rem;padding:1.5rem
 .still{margin:2.5rem 0 0}
 .still img{display:block;width:100%;max-width:420px;height:auto;border-radius:8px;margin:0 auto}
 .still figcaption{font-size:.85rem;color:var(--muted);margin:.6rem auto 0;max-width:420px;text-align:center}
+
+/* Captura de tela alinhada a coluna de texto, como o resto do corpo. Chegou a
+   sair para 900px junto com as tabelas largas, e ficou desalinhada: tabela
+   larga precisa da largura, imagem nao, e a diferenca se via na pagina.
+   A borda fica, senao a captura, que e branca, se dissolve no fundo. */
+figure.shot img{border:1px solid var(--line)}

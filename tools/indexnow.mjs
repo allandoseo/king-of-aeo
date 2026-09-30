@@ -34,6 +34,19 @@ function morre(msg) {
   process.exit(1);
 }
 
+// INDEXNOW_KEY no ambiente tem precedencia sobre o arquivo. Vale dizer o que
+// isso protege e o que nao protege: o protocolo EXIGE que a chave esteja
+// publicada em https://<host>/<chave>.txt, porque e assim que o buscador prova
+// que quem pediu a indexacao controla o dominio. Ela e publica por desenho.
+// Ler do ambiente serve para trocar de chave sem editar codigo, e para o build
+// rodar onde o arquivo ainda nao foi para o disco. Nao e segredo.
+function chaveDoAmbiente() {
+  const v = (process.env.INDEXNOW_KEY ?? '').trim();
+  if (!v) return null;
+  if (!/^[0-9a-zA-Z-]{8,128}$/.test(v)) morre('INDEXNOW_KEY fora do formato aceito pelo protocolo');
+  return v;
+}
+
 // A chave e um arquivo na raiz publica cujo nome, sem .txt, e o proprio conteudo.
 function achaChave() {
   const dir = path.join(ROOT, 'public');
@@ -76,7 +89,7 @@ if (!origem.length) {
 const minhas = origem.filter((u) => { try { return new URL(u).host === HOST; } catch { return false; } });
 const alheias = origem.filter((u) => !minhas.includes(u));
 
-const chave = achaChave();
+const chave = chaveDoAmbiente() ?? achaChave();
 const corpo = {
   host: HOST,
   key: chave,

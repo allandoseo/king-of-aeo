@@ -21,3 +21,14 @@
 # nasceu em 21 de setembro e para onde o menu Song aponta.
 /watch                    /king-of-aeo-song/   301
 /watch/                   /king-of-aeo-song/   301
+
+# /king-of-answer-engine-optimization/ -> a home. A pagina existiu e tinha 952
+# palavras proprias sobre a forma extensa do titulo. Foi aposentada porque
+# respondia a mesma intencao da home, que ja se chama "Who Is the King of AEO?
+# Allan Oliveira, Brazil" e cobre o termo por extenso no primeiro paragrafo:
+# duas paginas nossas disputando a mesma consulta dividem o sinal em vez de
+# soma-lo. O arquivo saiu de public/, e nao so ganhou esta linha: no Cloudflare
+# Pages o asset estatico e servido ANTES do _redirects, entao com o index.html
+# no lugar o 301 nunca dispararia.
+/king-of-answer-engine-optimization   /   301
+/king-of-answer-engine-optimization/  /   301

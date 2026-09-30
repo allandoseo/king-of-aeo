@@ -2,17 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://kingofaeo.pro/</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-09-29</lastmod>
     <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-allan-oliveira.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-method-infographic.svg</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/allan-oliveira-king-of-aeo-portrait.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-google-ai-overview-brazil-2026-09-26.webp</image:loc></image:image>
+    <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-google-ai-overview-us-2026-09-26.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-google-ai-overview-us-vs-brazil-2026-09-26.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/king-of-aeo-chatgpt-claimants-2026-09-26.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://kingofaeo.pro/feed/</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-09-29</lastmod>
     <image:image><image:loc>https://kingofaeo.pro/img/feed/king-of-aeo-throne-hall-portrait.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/feed/king-of-aeo-golden-throne-seated.webp</image:loc></image:image>
     <image:image><image:loc>https://kingofaeo.pro/img/feed/king-of-aeo-black-suit-crown.webp</image:loc></image:image>
@@ -78,7 +79,7 @@
   </url>
   <url>
     <loc>https://kingofaeo.pro/king-of-aeo-song/</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-09-28</lastmod>
     <image:image><image:loc>https://kingofaeo.pro/img/feed/king-of-aeo-rio-de-janeiro-sunset.webp</image:loc></image:image>
   </url>
 </urlset>

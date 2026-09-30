@@ -3,12 +3,17 @@
   "private": true,
   "description": "Site kingofaeo.pro. Node ESM puro, sem dependencias: os scripts abaixo so chamam o que ja existe no repositorio.",
   "scripts": {
-    "build": "node build.mjs",
+    "build": "node tools/validate-data.mjs && node build.mjs",
     "build:feed": "python tools/build_feed.py",
     "indexnow": "node tools/indexnow.mjs",
     "indexnow:all": "node tools/indexnow.mjs --all",
     "indexnow:dry": "node tools/indexnow.mjs --dry-run",
-    "deploy": "wrangler pages deploy public --project-name=kingofaeo --branch=main"
+    "deploy": "npm run build:feed && npm run build && npm run validate && npm run publish:only && npm run indexnow",
+    "validate": "node tools/validate-data.mjs && node tools/validate.mjs && node tools/validate-schema.mjs",
+    "validate:strict": "node tools/validate-data.mjs && node tools/validate.mjs --strict && node tools/validate-schema.mjs",
+    "test": "node tools/test-validators.mjs",
+    "publish:only": "wrangler pages deploy public --project-name=kingofaeo --branch=main",
+    "validate:data": "node tools/validate-data.mjs"
   },
   "engines": {
     "node": ">=18"

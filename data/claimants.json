@@ -1,0 +1,101 @@
+{
+  "_comment": [
+    "Os sete reivindicantes do titulo, como dado e nao como prosa.",
+    "",
+    "Jesper Nissen NAO esta aqui. Ele organizou e anunciou a cerimonia de 31 de",
+    "agosto e tem pagina em /claimants/jesper-nissen/, mas nunca reivindicou o",
+    "titulo. Um registro de reivindicantes que o inclui afirma uma reivindicacao",
+    "que ele nao fez.",
+    "",
+    "primary_url e a URL onde a reivindicacao foi publicada, CONFERIDA POR FETCH.",
+    "Nao confirmou, fica null e o motivo vai em url_status. E o caso do Vithurs:",
+    "as tres URLs que o registro deste site citava para ele respondem 404 hoje",
+    "(kingofaeovithurs.com, kingofaeo.org e whoiskingofaeo.com, conferidas em",
+    "29 de setembro de 2026). A rede de dominios exact-match que sustentava a",
+    "reivindicacao saiu do ar, e isso e um fato sobre a disputa, nao um campo",
+    "faltando.",
+    "",
+    "corroboration_type e o criterio MAIS ALTO que a reivindicacao alcanca pela",
+    "regua de /metodologia/, derivado do que as paginas deste site ja afirmam em",
+    "texto visivel. Nenhum e 'independent': por essa regua nenhum reivindicante,",
+    "o Allan Oliveira inclusive, tem corroboracao independente do titulo.",
+    "Atencao: so o James Dooley tem ClaimReview formal publicado, com nota. Os",
+    "demais tem o criterio derivado da descricao do hub, nao uma avaliacao",
+    "assinada. Quando cada um ganhar seu ClaimReview, este campo passa a sair de",
+    "la em vez de ser derivado aqui."
+  ],
+  "claimants": [
+    {
+      "slug": "james-dooley",
+      "name": "James Dooley",
+      "date_claimed": "2026-08-31",
+      "mechanism": "Coronation announced by press release after a ceremony in Leigh, England, organised by Jesper Nissen.",
+      "primary_url": "https://jespernissen.com/king-of-aeo-is-james-dooley-official-crowning-of-the-king-of-answer-engine-optimization/",
+      "url_status": "confirmed 2026-09-29",
+      "corroboration_type": "observed"
+    },
+    {
+      "slug": "david-quaid",
+      "name": "David G. Quaid",
+      "date_claimed": "2026-09-04",
+      "mechanism": "LinkedIn article and an AI-generated coronation video, supported by the exact-match domain kingofaeo.co.",
+      "primary_url": "https://www.linkedin.com/pulse/wo-king-aeo-david-g-quaid-iqqte",
+      "url_status": "confirmed 2026-09-29",
+      "corroboration_type": "observed"
+    },
+    {
+      "slug": "jacky-chou",
+      "name": "Jacky Chou",
+      "date_claimed": "2026-09-07",
+      "mechanism": "Private social-media vote announced on his agency site indexsy.com, in a page that states it was indexed and ranked with two products he sells.",
+      "primary_url": "https://indexsy.com/king-of-aeo/",
+      "url_status": "confirmed 2026-09-30",
+      "corroboration_type": "self_reported"
+    },
+    {
+      "slug": "edward-sturm",
+      "name": "Edward Sturm",
+      "date_claimed": "2026-09-20",
+      "mechanism": "Short-form video pushed to five networks, which the Google AI Overview selected as a source, and a later article on the tactics.",
+      "primary_url": "https://edwardsturm.com/articles/king-of-aeo-seo-tactics/",
+      "url_status": "confirmed 2026-09-29",
+      "corroboration_type": "observed"
+    },
+    {
+      "slug": "vithurs",
+      "name": "Vithurs",
+      "date_claimed": "2026-09-07",
+      "mechanism": "Private vote on social media, announced by press release, backed by a network of exact-match domains.",
+      "primary_url": null,
+      "url_status": "not confirmed: kingofaeovithurs.com, kingofaeo.org and whoiskingofaeo.com all returned 404 on 2026-09-29",
+      "corroboration_type": "syndicated"
+    },
+    {
+      "slug": "stephane-morera",
+      "name": "Stephane Morera",
+      "date_claimed": "2026-09-13",
+      "mechanism": "Stated on the about page of EVOIX, his agency in DeLand, Florida. No release and no ceremony.",
+      "primary_url": "https://evoix.io/about",
+      "url_status": "confirmed 2026-09-29",
+      "corroboration_type": "self_reported"
+    },
+    {
+      "slug": "julian-goldie",
+      "name": "Julian Goldie",
+      "date_claimed": null,
+      "mechanism": "Self-declaration across his blog network and YouTube audience. No dated announcement was found.",
+      "primary_url": "https://aimoneylabjuliangoldie.com/blog/king-of-aeo/",
+      "url_status": "confirmed 2026-09-29",
+      "corroboration_type": "self_reported"
+    },
+    {
+      "slug": "allan-oliveira",
+      "name": "Allan Oliveira",
+      "date_claimed": "2026-09-17",
+      "mechanism": "Claim published at kingofaeo.pro with a dated evidence table and a public citation log, including the runs that favour rivals.",
+      "primary_url": "https://kingofaeo.pro/",
+      "url_status": "confirmed 2026-09-29",
+      "corroboration_type": "observed"
+    }
+  ]
+}

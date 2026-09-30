@@ -102,20 +102,18 @@
       "status": "Observed"
     },
     {
-      "pending": true,
-      "date": "[[DATA]]",
-      "evidence": "Google AI Overview, US, query \"king of aeo\"",
+      "date": "2026-09-26",
+      "evidence": "Google AI Overview for the query \"king of aeo\" in the United States: James Dooley named, Allan Oliveira not named",
       "type": "Screenshot",
-      "where": "[[/img/evidence/YYYY-MM-DD-google-ai-overview-us.webp]]",
-      "status": "Self-reported"
+      "where": "https://kingofaeo.pro/img/king-of-aeo-google-ai-overview-us-2026-09-26.webp",
+      "status": "Observed"
     },
     {
-      "pending": true,
-      "date": "[[DATA]]",
-      "evidence": "ChatGPT answer to \"who is the king of AEO?\"",
+      "date": "2026-09-26",
+      "evidence": "ChatGPT answer to \"Who is the King of AEO?\", logged out: four claimants listed and no single holder",
       "type": "Screenshot",
-      "where": "[[/img/evidence/YYYY-MM-DD-chatgpt-us.webp]]",
-      "status": "Self-reported"
+      "where": "https://kingofaeo.pro/img/king-of-aeo-chatgpt-claimants-2026-09-26.webp",
+      "status": "Observed"
     },
     {
       "pending": true,

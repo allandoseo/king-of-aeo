@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kingofaeo.pro/schema/run.schema.json",
+  "title": "King of AEO citation log run",
+  "description": "One observation of one answer engine, on one date, in one locale, for one prompt. A file in data/runs/ is an array of these. The file name is the date, and every run in it must carry that same date.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "date", "engine", "model", "locale", "query", "prompt_type",
+      "name_returned_verbatim", "names_returned", "first_name",
+      "sources_cited", "entity_resolved", "collection_method", "operator", "notes"
+    ],
+    "properties": {
+      "date": {
+        "description": "Date of the run, ISO 8601. Must equal the file name.",
+        "type": "string",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      },
+      "engine": {
+        "description": "Answer engine queried. The list is closed on purpose: a new engine is an editorial decision about the method, not a free-text field.",
+        "enum": ["ChatGPT", "Claude", "Perplexity", "Gemini", "Google AI Overview", "Copilot"]
+      },
+      "model": {
+        "description": "Model or version the engine was running, when the interface states it. null when it was not recorded; never guessed from the date.",
+        "type": ["string", "null"],
+        "minLength": 1
+      },
+      "locale": {
+        "description": "Country and language of the run, as \"CC · lang\". Answer engines return different answers in different markets, so a run without its locale is not reproducible.",
+        "type": "string",
+        "pattern": "^[A-Z]{2} · [a-zA-Z-]+$"
+      },
+      "query": {
+        "description": "The prompt submitted, verbatim.",
+        "type": "string",
+        "minLength": 1
+      },
+      "prompt_type": {
+        "description": "Which question the prompt asks. Derived from the prompt text by a declared table in build.mjs, not annotated per run: it classifies what was asked, and asserts nothing about what came back.",
+        "enum": ["title_evidence", "title_bare", "title_direct", "field_practitioners", "field_sources"]
+      },
+      "name_returned_verbatim": {
+        "description": "What the engine returned about the name, verbatim, including hedges like \"no single name\". null when the engine returned no name at all. This field is the record; names_returned is a reading of it.",
+        "type": ["string", "null"],
+        "minLength": 1
+      },
+      "names_returned": {
+        "description": "Every person named in the answer, in the order the answer names them. Transcription of name_returned_verbatim, never inference. Empty array when no name was returned.",
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "uniqueItems": true
+      },
+      "first_name": {
+        "description": "The name the engine put first or stated as primary. null when the answer explicitly gives no single name: the absence is the finding, and filling it would invent a ranking the engine did not give. Must be one of names_returned when set.",
+        "type": ["string", "null"],
+        "minLength": 1
+      },
+      "sources_cited": {
+        "description": "Domains the answer attributed, in the order shown. Empty array when the answer cited nothing. Runs migrated from the original CSV hold only the first domain, and say so in notes.",
+        "type": "array",
+        "items": { "type": "string", "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$" }
+      },
+      "entity_resolved": {
+        "description": "Whether the engine resolved the entity, naming the person and the work instead of echoing the phrase in the query.",
+        "type": "boolean"
+      },
+      "collection_method": {
+        "description": "How the run was collected. \"manual\" means a person opened the engine and read the answer; \"api\" means a programmatic call. It is published in the interface, not only here: a reader has to be able to tell one from the other.",
+        "enum": ["api", "manual"]
+      },
+      "operator": {
+        "description": "Who ran it. null when it was not recorded. Never backfilled from who probably ran it.",
+        "type": ["string", "null"],
+        "minLength": 1
+      },
+      "notes": {
+        "description": "Anything about this run a reader needs in order to read it correctly, including what the format of the day failed to capture. null when there is nothing to say.",
+        "type": ["string", "null"],
+        "minLength": 1
+      }
+    }
+  }
+}

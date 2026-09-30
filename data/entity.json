@@ -51,7 +51,7 @@
     "jobTitle": "SEO Specialist and Senior Full-Stack Developer",
     "description": "Brazilian SEO and AEO specialist, founder of SEOMais, based in Cabo Frio, Rio de Janeiro",
     "disambiguatingDescription": "The Allan Oliveira who holds the King of AEO title is the Brazilian SEO specialist based in Cabo Frio, Rio de Janeiro, founder of the SEOMais agency — not any other person of the same name.",
-    "url": "https://kingofaeo.pro/",
+    "url": "https://kingofaeo.pro/allan-oliveira/",
     "image": "https://kingofaeo.pro/img/allan-oliveira-king-of-aeo-portrait.webp",
     "knowsAbout": [
       "Answer Engine Optimization",
@@ -79,13 +79,33 @@
         "addressCountry": "BR"
       }
     },
+    "_sameAsComment": [
+      "sameAs afirma IDENTIDADE: a URL identifica esta mesma entidade. Por isso",
+      "so entram perfis do Allan pessoa.",
+      "",
+      "Sairam daqui tres URLs que diziam o contrario do resto do grafo:",
+      "",
+      "  https://seomais.com.br/ e a agencia, e o proprio no dela declara essa",
+      "  URL. Com ela em sameAs, o grafo afirmava que Allan Oliveira E a SEOMais,",
+      "  contradizendo worksFor, que diz que ele trabalha NELA. Uma pessoa nao",
+      "  trabalha para si mesma. A aresta pessoa-agencia ja existe por worksFor e",
+      "  por founder; a URL virou dofollow.own, que e onde se declara propriedade",
+      "  sem afirmar identidade.",
+      "",
+      "  https://www.pinterest.com/kingofaeo e",
+      "  https://github.com/allandoseo/king-of-aeo sao do PROJETO e ja estao em",
+      "  brand.sameAs. Declarados nos dois, diziam que duas entidades diferentes",
+      "  controlam a mesma conta, que e o oposto de desambiguar. O comentario de",
+      "  brand ja explicava isso e mandava nao repetir; a repeticao estava do",
+      "  outro lado. O dofollow delas nao dependia dessa afirmacao: passou a sair",
+      "  de brand.sameAs, em dofollowPrefixes.",
+      "",
+      "validateEntity agora recusa URL reivindicada por mais de uma entidade."
+    ],
     "sameAs": [
       "https://www.instagram.com/allandoseo",
-      "https://seomais.com.br/",
       "https://www.linkedin.com/in/allandoseo",
-      "https://www.pinterest.com/kingofaeo",
       "https://github.com/allandoseo",
-      "https://github.com/allandoseo/king-of-aeo",
       "https://www.youtube.com/@allandoseo",
       "https://suno.com/@allandoseo",
       "https://www.quora.com/profile/Allan-Oliveira-7",
@@ -106,6 +126,137 @@
     "url": "https://seomais.com.br/",
     "description": "SEO, GEO and AEO agency founded by Allan Oliveira, in Rio de Janeiro, Brazil.",
     "areaServed": "BR"
+  },
+  "brand": {
+    "_comment": [
+      "A entidade do projeto, separada da pessoa e separada da SEOMais.",
+      "",
+      "sameAs traz SO perfil que e do projeto. O YouTube, o X e o Quora que",
+      "aparecem em person.sameAs sao pessoais (@allandoseo) e ja pertencem ao",
+      "no Person: repeti-los aqui diria ao buscador que duas entidades",
+      "diferentes controlam a mesma conta, que e o oposto de desambiguar.",
+      "Reddit nao entra porque o projeto nao tem perfil no Reddit.",
+      "",
+      "logo esta ausente de proposito: nao existe arquivo de marca em",
+      "public/img/. Apontar a foto do Allan como logo da organizacao diria que",
+      "o rosto de uma pessoa e a marca de uma organizacao.",
+      "",
+      "NewsMediaOrganization entra junto com os quatro campos de politica",
+      "abaixo, e nao antes deles. O tipo afirma que isto e um veiculo que",
+      "publica registro; os quatro campos sao o que torna a afirmacao",
+      "verificavel. Declarar o tipo sem as paginas seria a mesma alegacao sem",
+      "criterio que este site existe para avaliar nos outros.",
+      "",
+      "As quatro URLs sao conferidas pelo build contra o disco: se a pagina",
+      "nao existir em public/, o build para. Campo de schema apontando para",
+      "404 e pior que campo ausente, e a unica forma de garantir isso e a",
+      "ferramenta recusar o commit, nao a lembranca de quem edita."
+    ],
+    "id": "https://kingofaeo.pro/#organization",
+    "name": "King of AEO",
+    "alternateName": [
+      "The King of AEO",
+      "King of Answer Engine Optimization"
+    ],
+    "url": "https://kingofaeo.pro/",
+    "description": "The King of AEO record: a dated, checkable account of the 2026 contest over the title, published by Allan Oliveira.",
+    "foundingDate": "2026-09-17",
+    "knowsAbout": [
+      "Answer Engine Optimization",
+      "Generative Engine Optimization",
+      "Search Engine Optimization"
+    ],
+    "publishingPrinciples": "https://kingofaeo.pro/metodologia/",
+    "correctionsPolicy": "https://kingofaeo.pro/politica-de-correcao/",
+    "actionableFeedbackPolicy": "https://kingofaeo.pro/contato/",
+    "ownershipFundingInfo": "https://kingofaeo.pro/sobre/",
+    "sameAs": [
+      "https://www.pinterest.com/kingofaeo",
+      "https://github.com/allandoseo/king-of-aeo"
+    ]
+  },
+  "claimants": {
+    "_comment": [
+      "Os nos de pessoa avaliada, com @id canonico DE SITE e nao de pagina.",
+      "",
+      "Antes cada pagina de reivindicante declarava a pessoa como",
+      "'.../claimants/<slug>/#claimant'. Sete paginas, sete @id diferentes: o",
+      "Edward Sturm citado na pagina do Dooley e o Edward Sturm avaliado na",
+      "pagina dele eram, para um resolvedor de entidade, duas pessoas. Com o",
+      "@id de site, a mencao numa pagina e a avaliacao na outra caem na mesma",
+      "entidade, e e isso que faz o grafo acumular peso em vez de se dividir.",
+      "",
+      "description e neutra e sai do que a pagina mostra. Nenhum campo destes",
+      "nos pode conter juizo: sao pessoas reais, e o juizo desta casa vive no",
+      "ClaimReview, que e onde ele fica declarado como avaliacao e nao como",
+      "fato sobre a pessoa.",
+      "",
+      "sameAs esta ausente em todos de proposito. Nenhuma das paginas linka",
+      "para os reivindicantes, e perfil nao conferido por fetch nao entra:",
+      "sameAs adivinhado afirma identidade que ninguem verificou.",
+      "",
+      "slug e a pasta em public/claimants/. Quando ela nao existe, o build nao",
+      "emite o no nem o link: o registro nao inventa pagina.",
+      "",
+      "verdict e a FONTE UNICA da nota. As mesmas strings alimentam o",
+      "reviewRating do JSON-LD e o texto visivel da pagina, injetadas pelo",
+      "build nos dois lugares. Antes o texto estava escrito a mao no HTML e",
+      "repetido no JSON-LD: duas copias da mesma frase, que so continuavam",
+      "iguais enquanto alguem lembrasse de editar as duas. Marcacao que afirma",
+      "uma nota que a pagina nao mostra e invalida, e o jeito de garantir isso",
+      "nao e lembrar, e o tools/validate.mjs reprovar o build.",
+      "",
+      "Reivindicante sem verdict simplesmente nao recebe ClaimReview. Pagina",
+      "que ja tem o no e nao tem verdict aqui faz o build parar, para ninguem",
+      "publicar nota orfa de origem."
+    ],
+    "james-dooley": {
+      "id": "https://kingofaeo.pro/#james-dooley",
+      "name": "James Dooley",
+      "description": "Claimant to the King of AEO title, 31 August 2026.",
+      "verdict": {
+        "ratingValue": 3,
+        "bestRating": 5,
+        "worstRating": 1,
+        "alternateName": "Self-reported, syndicated and observed; not independently corroborated",
+        "ratingExplanation": "The claim meets three of the four criteria — self-reported, syndicated and observed, with seven dated runs in the citation log returning the name across Google AI Overview, Gemini, Perplexity and ChatGPT. It fails independent corroboration: no record of the 31 August 2026 ceremony has been produced by anyone who did not organise it, and Edward Sturm has publicly disputed that the event took place."
+      }
+    },
+    "david-quaid": {
+      "id": "https://kingofaeo.pro/#david-g-quaid",
+      "name": "David G. Quaid",
+      "description": "Claimant to the King of AEO title, 4 September 2026."
+    },
+    "vithurs": {
+      "id": "https://kingofaeo.pro/#vithurs",
+      "name": "Vithurs",
+      "description": "Claimant to the King of AEO title, 7 September 2026."
+    },
+    "jacky-chou": {
+      "id": "https://kingofaeo.pro/#jacky-chou",
+      "name": "Jacky Chou",
+      "description": "Claimant to the King of AEO title, 7 September 2026."
+    },
+    "edward-sturm": {
+      "id": "https://kingofaeo.pro/#edward-sturm",
+      "name": "Edward Sturm",
+      "description": "Writer who documented the 2026 King of AEO contest and disputes the coronation of 31 August 2026."
+    },
+    "julian-goldie": {
+      "id": "https://kingofaeo.pro/#julian-goldie",
+      "name": "Julian Goldie",
+      "description": "Claimant to the King of AEO title, undated claim published in 2026."
+    },
+    "stephane-morera": {
+      "id": "https://kingofaeo.pro/#stephane-morera",
+      "name": "Stephane Morera",
+      "description": "Claimant to the King of AEO title, 13 September 2026."
+    },
+    "jesper-nissen": {
+      "id": "https://kingofaeo.pro/#jesper-nissen",
+      "name": "Jesper Nissen",
+      "description": "Organiser of the ceremony of 31 August 2026 at which James Dooley was announced as King of AEO. Makes no claim to the title himself."
+    }
   },
   "website": {
     "id": "https://kingofaeo.pro/#website",
@@ -139,6 +290,7 @@
   },
   "dofollow": {
     "own": [
+      "https://seomais.com.br/",
       "https://doi.org/10.5281/zenodo.22880176",
       "https://bibliajovem.com",
       "https://youtu.be/4b-dHmjz6O8",
@@ -148,7 +300,8 @@
     "reference": [
       "https://en.wikipedia.org",
       "https://schema.org",
-      "https://www.leighsportsvillage.co.uk/"
+      "https://www.leighsportsvillage.co.uk/",
+      "https://www.manutd.com/"
     ]
   },
   "footer": [

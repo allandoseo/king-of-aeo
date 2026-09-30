@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "Configuracao de um cliente do monitor. Copie este arquivo, renomeie para o",
+    "slug do cliente e edite. O slug do arquivo e o slug usado nos comandos.",
+    "",
+    "queries: as consultas FIXAS. Nao mude entre rodadas sem decidir mudar: se",
+    "mudarem, a serie temporal deixa de ser comparavel e a medicao perde o",
+    "sentido. O validador recusa observacao com consulta fora desta lista, de",
+    "proposito, para a mudanca ser deliberada e nao acidental.",
+    "",
+    "Escolha consultas que um cliente real digitaria, neutras, sem o nome da",
+    "marca dentro. Consulta que ja contem a resposta devolve a resposta.",
+    "",
+    "own_domains: usado para separar 'citou algum link' de 'citou o nosso link',",
+    "que sao coisas muito diferentes e viram linhas diferentes do relatorio."
+  ],
+
+  "brand": "SEOMais",
+  "entity": "SEOMais, agencia de SEO, GEO e AEO no Rio de Janeiro",
+  "own_domains": ["seomais.com.br", "kingofaeo.pro"],
+
+  "queries": [
+    "melhor agencia de SEO no Rio de Janeiro",
+    "agencia de answer engine optimization no Brasil",
+    "como fazer minha marca ser citada pelo ChatGPT",
+    "quem sao os especialistas em AEO no Brasil"
+  ],
+
+  "engines": [
+    "ChatGPT",
+    "Claude",
+    "Perplexity",
+    "Gemini",
+    "Google AI Overview",
+    "Copilot"
+  ],
+
+  "locales": ["BR · pt-BR"]
+}

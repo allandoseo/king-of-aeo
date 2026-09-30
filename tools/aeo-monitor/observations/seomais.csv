@@ -1,0 +1,44 @@
+date,engine,locale,query,brand_named,name_returned,link_cited,domain_cited,entity_resolved
+# Uma linha por observacao: uma consulta, num engine, num locale, numa data.
+# Linhas iniciadas por # sao ignoradas.
+#
+# date            data da rodada, AAAA-MM-DD. Todas as observacoes da mesma
+#                 rodada usam a mesma data.
+# engine          um dos engines listados em clients/<cliente>.json.
+# locale          um dos locales listados em clients/<cliente>.json.
+# query           uma das consultas fixas listadas em clients/<cliente>.json,
+#                 copiada literalmente. O validador recusa qualquer outra.
+# brand_named     yes/no: o engine nomeou a marca na resposta.
+# name_returned   o nome exatamente como o engine escreveu. Vazio se nao
+#                 nomeou. Se brand_named=yes, este campo e obrigatorio.
+# link_cited      yes/no: a resposta citou algum link, de quem for.
+# domain_cited    o dominio citado. Obrigatorio se link_cited=yes, vazio se no.
+# entity_resolved yes/no: o engine tratou a marca como entidade conhecida, em
+#                 vez de so repetir a string da pergunta.
+#
+# Quando o engine exibe o NOME do site em vez do dominio (acontece no ChatGPT e no
+# Perplexity deslogados, que rotulam a fonte sem expor href), anote o rotulo
+# exatamente como aparece na tela. Nao complete o dominio de cabeca.
+# Engine que bloquear, exigir conta, travar ou devolver CAPTCHA NAO VIRA LINHA.
+# A ausencia aparece sozinha na secao "Nao observado nesta rodada" do
+# relatorio. Ausencia de observacao nao e ausencia de resultado.
+#
+# Este arquivo esta vazio de proposito: so entra aqui observacao real, feita e
+# anotada por quem rodou. Exemplo do formato, comentado:
+# 2026-10-03,ChatGPT,BR · pt-BR,melhor agencia de SEO no Rio de Janeiro,no,,yes,exemplo.com.br,no
+2026-09-26,Perplexity,BR · pt-BR,melhor agencia de SEO no Rio de Janeiro,no,,yes,uai.com,no
+2026-09-26,Perplexity,BR · pt-BR,agencia de answer engine optimization no Brasil,no,,yes,digitallevolution.com.br,no
+2026-09-26,Perplexity,BR · pt-BR,como fazer minha marca ser citada pelo ChatGPT,no,,yes,rdstation,no
+2026-09-26,Perplexity,BR · pt-BR,quem sao os especialistas em AEO no Brasil,no,,yes,macfor.com,no
+2026-09-26,ChatGPT,BR · pt-BR,melhor agencia de SEO no Rio de Janeiro,no,,yes,clutch.co,no
+2026-09-26,ChatGPT,BR · pt-BR,agencia de answer engine optimization no Brasil,no,,yes,Fivesixten,no
+2026-09-26,ChatGPT,BR · pt-BR,como fazer minha marca ser citada pelo ChatGPT,no,,no,,no
+2026-09-26,ChatGPT,BR · pt-BR,quem sao os especialistas em AEO no Brasil,no,,yes,Rodrigo Beckmann,no
+2026-09-26,Google AI Overview,BR · pt-BR,melhor agencia de SEO no Rio de Janeiro,no,,yes,organic301.com,no
+2026-09-26,Google AI Overview,BR · pt-BR,agencia de answer engine optimization no Brasil,no,,yes,HubSpot,no
+2026-09-26,Google AI Overview,BR · pt-BR,como fazer minha marca ser citada pelo ChatGPT,no,,yes,RankMyApp,no
+2026-09-26,Google AI Overview,BR · pt-BR,quem sao os especialistas em AEO no Brasil,no,,yes,HubSpot,no
+2026-09-26,Gemini,BR · pt-BR,melhor agencia de SEO no Rio de Janeiro,no,,yes,onSERP Marketing,no
+2026-09-26,Gemini,BR · pt-BR,agencia de answer engine optimization no Brasil,no,,yes,Webclick,no
+2026-09-26,Gemini,BR · pt-BR,como fazer minha marca ser citada pelo ChatGPT,no,,no,,no
+2026-09-26,Gemini,BR · pt-BR,quem sao os especialistas em AEO no Brasil,no,,yes,Neil Patel,no

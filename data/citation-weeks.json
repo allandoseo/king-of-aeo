@@ -1,0 +1,14 @@
+{
+  "_comment": [
+    "Nota editorial por semana, escrita a mao. O build REPROVA uma semana com",
+    "cinco ou mais runs que nao tenha nota: \"What changed this week\" nao pode",
+    "ser gerado, senao vira texto template, que e exatamente o que a pagina",
+    "semanal nao deve ser. A tabela e os numeros o build gera; a leitura do que",
+    "aconteceu e trabalho de quem olhou os dados."
+  ],
+  "semanas": {
+    "2026-w39": {
+      "nota": "<p>The week the log started, and the first week with enough runs to say anything. Twelve\nobservations: eight with Brazilian locale, four with United States locale, across 25 and 26\nSeptember.</p>\n\n<p>The divergence between the two markets is the finding. Allan Oliveira was named in three of the\neight Brazilian runs &mdash; by ChatGPT twice and by the Google AI Overview once &mdash; and in\nnone of the four United States runs. In all three he appears as one of several names, never alone:\nthe engines listing him list James Dooley and David Quaid or Vithurs alongside him. The United\nStates runs returned James Dooley, once described as the most prominently recognized claimant, and\nMichael King.</p>\n\n<p>The second finding is less comfortable and more useful. Across all twelve runs, kingofaeo.pro\nwas cited as a source zero times. The engines cited plenty of sources &mdash; usatoday.com in four\nruns, and kingofaeo.org, metehan.ai, reddit.com, myseoconsult.com, developers.google.com,\ninstagram.com, barchart.com and tripledart.com once each. Being named and being cited are\ndifferent events, and this week the record has the first without the second.</p>\n\n<p>A third result worth keeping: on the prompt asking who the leading practitioners of answer\nengine optimization are, the engines did not return contest claimants at all. They returned\nMetehan Yesilyurt, Lily Ray and Michael King, who are established names in search and have made no\nclaim to this title. The contest is visible when asked about the title and invisible when asked\nabout the field.</p>\n\n<p>The entity was resolved in ten of the twelve runs, which means the engines mostly treat \"King\nof AEO\" as a known thing rather than echoing the query. Claude and Copilot produced no runs at\nall: both require an account, and an engine that cannot be reached without signing in does not\nbecome a row.</p>"
+    }
+  }
+}
