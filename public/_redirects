@@ -15,3 +15,9 @@
 /aeo-king/                /   301
 /king-of-aeo-2026         /king-of-aeo-contest/   301
 /king-of-aeo-2026/        /king-of-aeo-contest/   301
+
+# /watch/ -> a pagina da musica: endereco curto para divulgar o video, sem
+# mexer no canonico. A pagina continua em /king-of-aeo-song/, que e onde ela
+# nasceu em 21 de setembro e para onde o menu Song aponta.
+/watch                    /king-of-aeo-song/   301
+/watch/                   /king-of-aeo-song/   301
