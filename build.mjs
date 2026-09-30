@@ -613,6 +613,8 @@ function durationSeconds(iso) {
 }
 
 // Bloco <url> da home no sitemap de vídeo, um <video:video> por vídeo declarado.
+// Sem content_loc: ele pede o arquivo de mídia, e não existe MP4 próprio; a URL
+// de watch e uma página, não um arquivo. Fica o player_loc, que já basta.
 // A entrada de /king-of-aeo-song/ continua escrita à mão no arquivo, fora do
 // marcador: ela tem tags e descrição próprias que não vêm de data/videos.json.
 function renderHomeVideoSitemap(list, channelUrl) {
@@ -623,7 +625,6 @@ function renderHomeVideoSitemap(list, channelUrl) {
     `      <video:title>${esc(v.name)}</video:title>`,
     `      <video:description>${esc(v.description)}</video:description>`,
     `      <video:player_loc allow_embed="yes">https://www.youtube-nocookie.com/embed/${esc(v.youtubeId)}</video:player_loc>`,
-    `      <video:content_loc>https://www.youtube.com/watch?v=${esc(v.youtubeId)}</video:content_loc>`,
     `      <video:duration>${durationSeconds(v.duration)}</video:duration>`,
     `      <video:publication_date>${isoDateTime(v.uploadDate)}</video:publication_date>`,
     '      <video:family_friendly>yes</video:family_friendly>',
@@ -647,7 +648,6 @@ function videoNode(v, personId) {
     uploadDate: isoDateTime(v.uploadDate),
     duration: v.duration,
     embedUrl: `https://www.youtube-nocookie.com/embed/${v.youtubeId}`,
-    contentUrl: `https://www.youtube.com/watch?v=${v.youtubeId}`,
     author: v.owner ? { '@id': personId } : { '@type': 'Organization', name: v.channel },
   };
 }
