@@ -164,9 +164,31 @@ for (const d of docs) {
     if (!SEM_REGRA_DE_CONTEUDO.has(d.url)) avisa(d.url, 'sem <link rel="canonical">');
     continue;
   }
+  // Canonical para fora do dominio pode repetir: a consolidacao de sinal manda
+  // duas paginas daqui para a mesma pagina do destino de proposito. Duplicata
+  // dentro do proprio dominio continua erro, que e o caso original da regra.
+  if (!d.canonical.startsWith('https://kingofaeo.pro/')) continue;
   const antes = porCanonical.get(d.canonical);
   if (antes) falha(d.url, `canonical duplicado, ja usado por ${antes}: ${d.canonical}`);
   else porCanonical.set(d.canonical, d.url);
+}
+
+// Rotas que o public/_redirects resolve com 301. Lido uma vez, no formato do
+// Cloudflare Pages: "<origem> <destino> <codigo>", com "*" no fim da origem.
+const REDIRECTS = (() => {
+  const abs = path.join(PUB, '_redirects');
+  if (!fs.existsSync(abs)) return [];
+  return fs.readFileSync(abs, 'utf8').split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'))
+    .map((l) => l.split(/\s+/)[0])
+    .filter(Boolean);
+})();
+
+function temRedirect(alvo) {
+  return REDIRECTS.some((p) => (p.endsWith('*')
+    ? alvo.startsWith(p.slice(0, -1))
+    : p === alvo || p === alvo.replace(/\/$/, '')));
 }
 
 // ---------- 3. link interno quebrado, e grafo de links ----------
@@ -178,6 +200,10 @@ for (const d of docs) {
     const alvo = normaliza(href);
     if (!alvo) continue;
     if (!alvoExiste(alvo)) {
+      // Rota coberta por uma regra do _redirects nao esta quebrada: responde 301.
+      // Sem isto, aposentar uma pagina com redirect viraria erro de link, que e o
+      // oposto do que a aposentadoria faz.
+      if (temRedirect(alvo)) continue;
       falha(d.url, `link interno quebrado: ${alvo}`);
       continue;
     }

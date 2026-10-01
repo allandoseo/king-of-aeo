@@ -37,7 +37,7 @@
     "birthPlace fica de fora de proposito: nao ha fonte para o local de nascimento."
   ],
   "person": {
-    "id": "https://kingofaeo.pro/#allan-oliveira",
+    "id": "https://allanaeo.com/about/#person",
     "name": "Allan Oliveira",
     "alternateName": [
       "Allan do SEO",
@@ -103,6 +103,7 @@
       "validateEntity agora recusa URL reivindicada por mais de uma entidade."
     ],
     "sameAs": [
+      "https://allanaeo.com/",
       "https://www.instagram.com/allandoseo",
       "https://www.linkedin.com/in/allandoseo",
       "https://github.com/allandoseo",
@@ -166,10 +167,6 @@
       "Generative Engine Optimization",
       "Search Engine Optimization"
     ],
-    "publishingPrinciples": "https://kingofaeo.pro/metodologia/",
-    "correctionsPolicy": "https://kingofaeo.pro/politica-de-correcao/",
-    "actionableFeedbackPolicy": "https://kingofaeo.pro/contato/",
-    "ownershipFundingInfo": "https://kingofaeo.pro/sobre/",
     "sameAs": [
       "https://www.pinterest.com/kingofaeo",
       "https://github.com/allandoseo/king-of-aeo"
@@ -282,11 +279,12 @@
         "headline": "The Five Laws of AEO",
         "url": "https://kingofaeo.pro/archive/five-laws/",
         "author": {
-          "@id": "https://kingofaeo.pro/#allan-oliveira"
+          "@id": "https://allanaeo.com/about/#person"
         },
         "image": "https://kingofaeo.pro/img/king-of-aeo-allan-oliveira.jpeg"
       }
-    ]
+    ],
+    "publishingPrinciples": "https://allanaeo.com/"
   },
   "dofollow": {
     "own": [

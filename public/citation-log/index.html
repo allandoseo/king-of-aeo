@@ -43,7 +43,7 @@
         "@id": "https://kingofaeo.pro/#website"
       },
       "about": {
-        "@id": "https://kingofaeo.pro/#allan-oliveira"
+        "@id": "https://allanaeo.com/about/#person"
       },
       "dateModified": "2026-09-26T09:00:00-03:00",
       "breadcrumb": {
@@ -68,113 +68,8 @@
       ]
     },
     {
-      "@type": "Dataset",
-      "@id": "https://kingofaeo.pro/citation-log/#dataset",
-      "name": "King of AEO citation log",
-      "description": "Dated log of what answer engines return when asked who the King of AEO is: the engine, the exact prompt, the name returned, whether a link was cited, the domain cited and whether the entity was resolved.",
-      "url": "https://kingofaeo.pro/citation-log/",
-      "creator": {
-        "@id": "https://kingofaeo.pro/#allan-oliveira"
-      },
-      "license": "https://creativecommons.org/licenses/by/4.0/",
-      "isAccessibleForFree": true,
-      "measurementTechnique": "Fresh session with no memory and no personalization; fixed, neutral prompts; every run collected by hand and marked as such in the data.",
-      "distribution": [
-        {
-          "@type": "DataDownload",
-          "encodingFormat": "text/csv",
-          "contentUrl": "https://kingofaeo.pro/citation-log/runs.csv",
-          "name": "runs.csv",
-          "description": "Every run with every recorded field, one row per run."
-        },
-        {
-          "@type": "DataDownload",
-          "encodingFormat": "application/json",
-          "contentUrl": "https://kingofaeo.pro/citation-log/runs.json",
-          "name": "runs.json",
-          "description": "The same runs as JSON, with the arrays kept as arrays."
-        },
-        {
-          "@type": "DataDownload",
-          "encodingFormat": "text/csv",
-          "contentUrl": "https://kingofaeo.pro/citation-log.csv",
-          "name": "citation-log.csv",
-          "description": "The original eight-column format, kept at its published URL."
-        }
-      ],
-      "variableMeasured": [
-        {
-          "@type": "PropertyValue",
-          "name": "date",
-          "alternateName": "Date",
-          "description": "Date of the run, ISO 8601 (YYYY-MM-DD)."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "engine",
-          "alternateName": "Engine",
-          "description": "Answer engine queried. One of: ChatGPT, Claude, Perplexity, Gemini, Google AI Overview, Copilot."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "locale",
-          "alternateName": "Locale",
-          "description": "Country and language the run was made in, as \"CC · lang\". Answer engines return different answers in different markets, so a run without its locale is not reproducible."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "prompt",
-          "alternateName": "Prompt",
-          "description": "The prompt submitted, verbatim. One of the three fixed prompts of the method."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "name_returned",
-          "alternateName": "Name returned",
-          "description": "The name the engine gave as King of AEO, verbatim. Empty when the engine returned no name."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "link_cited",
-          "alternateName": "Link cited",
-          "description": "Whether the answer cited a link at all: yes or no."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "domain_cited",
-          "alternateName": "Domain cited",
-          "description": "Domain of the first source the answer attributes. An answer may cite several; only the first is recorded. Empty when no link was cited."
-        },
-        {
-          "@type": "PropertyValue",
-          "name": "entity_resolved",
-          "alternateName": "Entity resolved",
-          "description": "Whether the engine resolved the entity, naming the person and the work instead of repeating the phrase it found: yes or no."
-        }
-      ],
-      "dateModified": "2026-09-26T09:00:00-03:00",
-      "temporalCoverage": "2026-09-25/2026-09-26",
-      "hasPart": [
-        {
-          "@id": "https://kingofaeo.pro/citation-log/history/#dataset"
-        },
-        {
-          "@id": "https://kingofaeo.pro/citation-log/chatgpt/#dataset"
-        },
-        {
-          "@id": "https://kingofaeo.pro/citation-log/perplexity/#dataset"
-        },
-        {
-          "@id": "https://kingofaeo.pro/citation-log/gemini/#dataset"
-        },
-        {
-          "@id": "https://kingofaeo.pro/citation-log/google-ai-overview/#dataset"
-        }
-      ]
-    },
-    {
       "@type": "Person",
-      "@id": "https://kingofaeo.pro/#allan-oliveira",
+      "@id": "https://allanaeo.com/about/#person",
       "name": "Allan Oliveira",
       "alternateName": [
         "Allan do SEO",
@@ -192,9 +87,6 @@
       "image": "https://kingofaeo.pro/img/allan-oliveira-king-of-aeo-portrait.webp",
       "worksFor": {
         "@id": "https://seomais.com.br/#organization"
-      },
-      "affiliation": {
-        "@id": "https://kingofaeo.pro/#organization"
       },
       "knowsAbout": [
         "Answer Engine Optimization",
@@ -223,6 +115,7 @@
         }
       },
       "sameAs": [
+        "https://allanaeo.com/",
         "https://www.instagram.com/allandoseo",
         "https://www.linkedin.com/in/allandoseo",
         "https://github.com/allandoseo",
@@ -241,25 +134,12 @@
       ]
     },
     {
-      "@type": "Organization",
-      "@id": "https://seomais.com.br/#organization",
-      "name": "SEOMais",
-      "url": "https://seomais.com.br/",
-      "description": "SEO, GEO and AEO agency founded by Allan Oliveira, in Rio de Janeiro, Brazil.",
-      "areaServed": "BR",
-      "founder": {
-        "@id": "https://kingofaeo.pro/#allan-oliveira"
-      }
-    },
-    {
       "@type": "WebSite",
       "@id": "https://kingofaeo.pro/#website",
       "url": "https://kingofaeo.pro/",
       "name": "King of AEO",
       "inLanguage": "en-US",
-      "publisher": {
-        "@id": "https://kingofaeo.pro/#organization"
-      },
+      "publishingPrinciples": "https://allanaeo.com/",
       "hasPart": [
         {
           "@type": "CollectionPage",
@@ -279,41 +159,10 @@
           "headline": "The Five Laws of AEO",
           "url": "https://kingofaeo.pro/archive/five-laws/",
           "author": {
-            "@id": "https://kingofaeo.pro/#allan-oliveira"
+            "@id": "https://allanaeo.com/about/#person"
           },
           "image": "https://kingofaeo.pro/img/king-of-aeo-allan-oliveira.jpeg"
         }
-      ]
-    },
-    {
-      "@type": [
-        "Organization",
-        "NewsMediaOrganization"
-      ],
-      "@id": "https://kingofaeo.pro/#organization",
-      "name": "King of AEO",
-      "alternateName": [
-        "The King of AEO",
-        "King of Answer Engine Optimization"
-      ],
-      "url": "https://kingofaeo.pro/",
-      "description": "The King of AEO record: a dated, checkable account of the 2026 contest over the title, published by Allan Oliveira.",
-      "foundingDate": "2026-09-17",
-      "knowsAbout": [
-        "Answer Engine Optimization",
-        "Generative Engine Optimization",
-        "Search Engine Optimization"
-      ],
-      "founder": {
-        "@id": "https://kingofaeo.pro/#allan-oliveira"
-      },
-      "publishingPrinciples": "https://kingofaeo.pro/metodologia/",
-      "correctionsPolicy": "https://kingofaeo.pro/politica-de-correcao/",
-      "actionableFeedbackPolicy": "https://kingofaeo.pro/contato/",
-      "ownershipFundingInfo": "https://kingofaeo.pro/sobre/",
-      "sameAs": [
-        "https://www.pinterest.com/kingofaeo",
-        "https://github.com/allandoseo/king-of-aeo"
       ]
     }
   ]
@@ -336,6 +185,7 @@
       <a href="/king-of-aeo-song/">Song</a>
       <a href="/archive/">Archives</a>
       <a href="/king-of-aeo-contest/">Contest</a>
+      <a href="https://allanaeo.com/">EXPERIMENTS</a>
     </nav>
   </div>
 </header>
@@ -346,9 +196,9 @@
 
     <h1>Citation log</h1>
 
-    <p class="byline">Cite as: &ldquo;Citation log&rdquo;, https://kingofaeo.pro/citation-log/, reviewed <!-- build:logReviewedLong -->30 September 2026<!-- /build -->.</p>
+    <p class="byline">Cite as: &ldquo;Citation log&rdquo;, https://kingofaeo.pro/citation-log/, reviewed <!-- build:logReviewedLong -->1 October 2026<!-- /build -->.</p>
 
-    <p id="answer">This page records what answer engines actually return when asked who the King of AEO is. Runs are published here <strong>whether or not the result favours this site</strong>. The table is generated at build time from <a href="/citation-log.csv">citation-log.csv</a>, which is the citable artefact: one row per engine per prompt per run, under CC BY 4.0.</p>
+    <p id="answer">This page records what answer engines actually return when asked who the King of AEO is. Runs are published here <strong>whether or not the result favours this site</strong>. The table is generated at build time from <a href="/citation-log.csv">citation-log.csv</a>, which is the citable artefact: one row per engine per prompt per run, under CC BY 4.0. The same runs are written up weekly as <a href="https://allanaeo.com/research/">the weekly citation watch on allanaeo.com</a>.</p>
 
     <h2 id="scoreboard">What each engine names today</h2>
     <p>The most recent run of each engine in each market, for the prompts that ask about the title. An engine that has never produced a run is listed as a gap, not left out: what has not been observed is part of the record. <strong>How each run was collected is shown in the table</strong>, because a run read by a person and a run pulled from an API are not the same evidence.</p>

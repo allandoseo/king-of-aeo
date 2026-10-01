@@ -32,3 +32,12 @@
 # no lugar o 301 nunca dispararia.
 /king-of-answer-engine-optimization   /   301
 /king-of-answer-engine-optimization/  /   301
+
+# Doacao de sinal para allanaeo.com. As quatro paginas de politica do publisher
+# saem deste dominio: elas descreviam quem publica e como se corrige, e esse
+# papel agora e do allanaeo.com. 301 no caminho inteiro, com curinga, para nao
+# deixar sub-rota orfa.
+/metodologia/*            https://allanaeo.com/research/   301
+/politica-de-correcao/*   https://allanaeo.com/about/      301
+/contato/*                https://allanaeo.com/about/      301
+/sobre/*                  https://allanaeo.com/about/      301
