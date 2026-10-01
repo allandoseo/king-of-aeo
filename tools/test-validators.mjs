@@ -71,35 +71,31 @@ const jsonEdit = (fn) => (texto) => {
 
 // grupo, arquivo, nome, comando que tem que reprovar, adulteracao
 const CASOS = [
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'ratingExplanation adulterado no texto visivel', SCHEMA,
-    (t) => t.replace('It fails independent corroboration', 'It meets independent corroboration')],
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'alternateName adulterado so no JSON-LD', SCHEMA,
-    (t) => t.replace('"alternateName": "Self-reported, syndicated and observed; not independently corroborated"', '"alternateName": "Fully corroborated"')],
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'nota do JSON-LD divergindo da pagina', SCHEMA,
-    (t) => t.replace('"ratingValue": 3', '"ratingValue": 4')],
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'ratingValue fora da escala', SCHEMA,
-    (t) => t.replace('"ratingValue": 3', '"ratingValue": 9')],
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'ClaimReview sem itemReviewed', SCHEMA,
-    (t) => t.replace(/"itemReviewed": \{[^}]*\},\n/, '')],
+  // Idem: o ratingExplanation era campo do ClaimReview.
+  // O caso do ratingValue saiu com o ClaimReview: sem o no, o campo de
+  // data/entity.json nao vira marcacao nenhuma e nao ha o que reprovar.
   ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'resposta de FAQ apagada da pagina', SCHEMA,
     (t) => t.replace(/<p>No corroborated answer exists[\s\S]*?<\/p>/, '<p>removido</p>')],
   ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'pergunta de FAQ apagada da pagina', SCHEMA,
     (t) => t.replace('<summary>Was the Leigh ceremony independently verified?</summary>', '<summary>outra coisa</summary>')],
   ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'referencia @id orfa', SCHEMA,
-    (t) => t.replace('/claimants/james-dooley/#citation-sturm",\n      "name"', '/claimants/james-dooley/#nao-existe",\n      "name"')],
+    // O no citado antes vivia no Article, que saiu na poda. A regra continua
+    // valendo, entao o caso passa a pendurar a referencia do WebPage.
+    (t) => t.replace('"breadcrumb": {\n        "@id": "https://kingofaeo.pro/claimants/james-dooley/#breadcrumb"', '"breadcrumb": {\n        "@id": "https://kingofaeo.pro/claimants/james-dooley/#nao-existe"')],
   ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, '@id de pagina de volta na pessoa', SCHEMA,
     (t) => t.replace(/"@id": "https:\/\/kingofaeo\.pro\/#james-dooley"/g, '"@id": "https://kingofaeo.pro/claimants/james-dooley/#claimant"')],
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'Article.headline acima de 110 caracteres', SCHEMA,
-    (t) => t.replace('"headline": "Is James Dooley the King of AEO?"', `"headline": "${'x'.repeat(111)}"`)],
-  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'pagina com nota que nao linka para a metodologia', SCHEMA,
-    (t) => t.replace(/href="\/metodologia\/"/g, 'href="/outra/"')],
+  ['validate-schema.mjs, sobre o HTML publicado', DOOLEY, 'nome da pagina acima de 110 caracteres', SCHEMA,
+    (t) => t.replace('"name": "Is James Dooley the King of AEO?"', `"name": "${'x'.repeat(111)}"`)],
+  // Os dois casos do alternateName e da nota saem com o ClaimReview: os campos
+  // que eles adulteravam viviam nele, e o no nao esta mais no grafo.
   ['validate-schema.mjs, sobre o HTML publicado', HOME, 'dois blocos JSON-LD na mesma pagina', SCHEMA,
     (t) => t.replace('</head>', '<script type="application/ld+json">{"@context":"https://schema.org","@graph":[]}</script>\n</head>')],
-  ['validate-schema.mjs, sobre o HTML publicado', HOME, 'campo de politica do Organization apontando para 404', SCHEMA,
-    (t) => t.replace('"correctionsPolicy": "https://kingofaeo.pro/politica-de-correcao/"', '"correctionsPolicy": "https://kingofaeo.pro/nao-existe/"')],
   ['validate-schema.mjs, sobre o HTML publicado', SONG, 'pergunta repetida em duas rotas', SCHEMA,
     (t) => t.replace('"name": "What does Rei do AEO mean?"', '"name": "Is this an official award?"')],
 
+  // Saem com a /metodologia/ e com o no Organization: a pagina foi 301 para o
+  // allanaeo.com e o no nao esta mais no grafo, entao nao ha nota a linkar nem
+  // campo de politica a conferir.
   ['build.mjs, sobre o registro na origem', FAQ, 'pergunta repetida entre rotas', BUILD,
     jsonEdit((d) => d['/king-of-aeo-song/'].push({ q: 'What is AEO?', a: 'teste' }))],
   ['build.mjs, sobre o registro na origem', FAQ, 'comentario HTML dentro de uma resposta', BUILD,
@@ -108,12 +104,15 @@ const CASOS = [
     jsonEdit((d) => { d['/nao-existe/'] = [{ q: 'a', a: 'b' }]; })],
   ['build.mjs, sobre o registro na origem', FAQ, 'pergunta repetida dentro da mesma rota', BUILD,
     jsonEdit((d) => d['/'].push({ ...d['/'][0] }))],
-  ['build.mjs, sobre o registro na origem', ENT, 'verdict com ratingValue fora da escala', BUILD,
-    jsonEdit((d) => { d.claimants['james-dooley'].verdict.ratingValue = 7; })],
-  ['build.mjs, sobre o registro na origem', ENT, 'verdict ausente em claimant com ClaimReview', BUILD,
-    jsonEdit((d) => { delete d.claimants['james-dooley'].verdict; })],
-  ['build.mjs, sobre o registro na origem', ENT, 'campo de politica apontando para pagina inexistente', BUILD,
-    jsonEdit((d) => { d.brand.correctionsPolicy = 'https://kingofaeo.pro/nao-existe/'; })],
+  // O caso do campo de politica apontando para pagina inexistente saiu junto
+  // com a regra que ele provava: o no Organization nao esta mais no grafo e as
+  // quatro paginas de politica foram 301 para allanaeo.com, entao nao ha campo
+  // a conferir. Um teste que prova uma trava removida prova apenas a si mesmo.
+  // Os casos do ClaimReview e do verdict sairam com o no que eles provavam:
+  // ClaimReview foi podado do grafo (TASK 5e), e sem ele o verdict de
+  // data/entity.json nao alimenta mais nada que o build emita. Mantê-los
+  // seria exigir que o build reprovasse uma adulteracao em campo que ja
+  // nao vira marcacao nenhuma.
   ['build.mjs, sobre o registro na origem', ENT, 'claimant com @id de pagina em vez de @id de site', BUILD,
     jsonEdit((d) => { d.claimants.vithurs.id = 'https://kingofaeo.pro/claimants/vithurs/#claimant'; })],
   // sameAs afirma identidade: a mesma URL em duas entidades diz que as duas sao

@@ -248,10 +248,17 @@ for (const d of docs) {
     }
   }
 
-  // 6. Article.headline com o limite que o Google trunca.
+  // 6. Titulo do no de pagina com o limite que o Google trunca. Valia so para
+  // Article.headline; depois da poda o titulo da pagina vive em WebPage.name na
+  // maioria das rotas, e o limite e do titulo, nao do tipo que o carrega.
   for (const art of colhe(nos, 'Article')) {
     if (typeof art.headline === 'string' && art.headline.length > 110) {
       falha(d.url, `Article.headline com ${art.headline.length} caracteres, maximo 110`);
+    }
+  }
+  for (const pag of colhe(nos, 'WebPage')) {
+    if (typeof pag.name === 'string' && pag.name.length > 110) {
+      falha(d.url, `WebPage.name com ${pag.name.length} caracteres, maximo 110`);
     }
   }
 
