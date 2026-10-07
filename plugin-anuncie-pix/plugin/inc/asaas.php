@@ -110,6 +110,19 @@ function apix_cliente($nome, $cpf, $email, $telefone) {
  *
  * externalReference leva o ID do rascunho. E por ele que o webhook sabe qual
  * anuncio publicar, sem confiar em nada mais do que vem de fora.
+ *
+ * SO PIX, e de proposito — nao e pendencia nem falta de tempo. O Asaas aceita
+ * BOLETO e CREDIT_CARD, e e tentador "so acrescentar". Nao acrescente:
+ *
+ * Pix cai na hora, e e isso que faz o anuncio publicar sozinho. Boleto compensa
+ * em dias e cartao pode ser estornado semanas depois. Os dois exigiriam um
+ * estado que nao existe aqui — "pago, mas ainda nao confirmado" — com anuncio no
+ * ar que talvez precise sair, fila de conferencia e tratamento de estorno. Seria
+ * a parte mais facil de errar do plugin inteiro, e o erro custa dinheiro.
+ *
+ * Se um dia entrar, nao basta trocar esta linha: apix_status_pagos() e o webhook
+ * precisam distinguir "recebido" de "confirmado", e apix_despublica() ja cobre o
+ * estorno mas nunca foi exercitada com cartao.
  */
 function apix_cobranca($cliente_id, $valor, $descricao, $post_id) {
   $dias = max(1, (int) apix_config()['vence_dias']);

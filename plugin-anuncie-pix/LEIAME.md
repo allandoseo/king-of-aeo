@@ -232,6 +232,10 @@ php teste-lembretes.php  # 54 asserções
 ## Pendente
 
 - Envio automático por WhatsApp pela Cloud API da Meta, se a política aceitar o ramo do site (só `apix_whats_url()` muda).
-- Boleto e cartão além do Pix (o Asaas suporta; é trocar o `billingType` e tratar o prazo de compensação, que no boleto são dias).
 
-Cupom de desconto ficou **fora de escopo** por decisão do dono do site.
+## Fora de escopo, por decisão do dono do site
+
+- **Cupom de desconto.**
+- **Boleto e cartão.** O pagamento é só Pix. Está fixo no código, não é configuração: `billingType` é sempre `PIX`.
+
+Pix é o único meio em que o dinheiro cai na hora, e é isso que faz o anúncio publicar sozinho. Boleto compensa em dias e cartão pode ser estornado semanas depois — os dois exigiriam um estado intermediário ("pago, mas ainda não confirmado") que não existe hoje e que seria a parte mais fácil de errar de todo o plugin.
