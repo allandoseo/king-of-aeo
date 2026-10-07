@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Travestis Mix — protótipo de tema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=League+Gothic&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Tokens extraídos do style.css arquivado (2017), 105 KB
+   ============================================================ */
+:root{
+  --vermelho:#cf0a0a;
+  --vermelho-vivo:#f01c1d;
+  --laranja:#da6c0c;
+  --laranja-claro:#ff9523;
+  --amarelo:#f4e371;
+  --amarelo-claro:#fcf3c3;
+  --cinza-escuro:#343434;
+  --cinza:#a5a5a5;
+  --cinza-claro:#dbdbdb;
+  --fundo:#2b2b2b;
+  --container:1040px;
+  --sidebar:260px;
+  --verde-wpp:#25a244;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--fundo);
+  font-family:'Lato',Arial,sans-serif;
+  font-size:13px;
+  color:#333;
+}
+a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+.content{width:var(--container);max-width:100%;margin:0 auto;padding:0 10px}
+
+/* ---------- topo ---------- */
+.toposite{
+  background:linear-gradient(180deg,var(--vermelho-vivo) 0%,var(--vermelho) 100%);
+  border-bottom:3px solid #8f0606;
+}
+.toposite .content{display:flex;align-items:flex-end;gap:30px;padding-top:14px}
+.logo{font-family:'League Gothic',Impact,sans-serif;line-height:.82;color:#fff;padding-bottom:12px}
+.logo .l1{display:block;font-size:34px;letter-spacing:.06em}
+.logo .l2{display:block;font-size:72px;letter-spacing:.02em}
+.logo .l3{display:block;font-family:'Lato',sans-serif;font-size:9px;letter-spacing:.22em;font-weight:700;margin-top:4px}
+.faixa-fotos{flex:1;display:grid;grid-template-columns:repeat(6,1fr);gap:3px;align-self:stretch;padding-top:10px}
+.faixa-fotos span{background:#7d0b0b;border:1px solid rgba(255,255,255,.18)}
+.links{width:100%;order:3}
+.links ul{display:flex;gap:26px;margin:0;padding:10px 0 8px;list-style:none}
+.links a{
+  font-family:'League Gothic',Impact,sans-serif;
+  font-size:19px;letter-spacing:.07em;color:#fff;text-transform:uppercase;
+}
+.links a:hover{color:var(--amarelo)}
+
+/* ---------- corpo ---------- */
+.wrapergr{background:var(--cinza-escuro);padding:16px 0 40px}
+.contentvip{width:var(--container);max-width:100%;margin:0 auto;padding:0 10px;display:flex;gap:16px;align-items:flex-start}
+
+/* ---------- barra lateral ---------- */
+.barralateral{width:var(--sidebar);flex:0 0 var(--sidebar)}
+.widgetpesquisa,.widgetcidades{background:#fff;margin-bottom:14px;border:1px solid #1d1d1d}
+.widgetpesquisa h2,.widgetcidades h2{
+  margin:0;padding:8px 12px;
+  background:linear-gradient(180deg,var(--vermelho-vivo),var(--vermelho));
+  color:#fff;font-family:'League Gothic',Impact,sans-serif;
+  font-size:19px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;
+}
+.widgetpesquisa form{display:flex;padding:10px}
+.pesquisar{flex:1;border:1px solid var(--cinza-claro);padding:6px 8px;font:inherit;min-width:0}
+.enviar{
+  width:34px;border:0;background:var(--vermelho) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E") center/16px no-repeat;
+  cursor:pointer;
+}
+.nav__list{margin:0;padding:0;list-style:none}
+.nav__list > li{border-bottom:1px solid #ececec}
+.nav__list > li > label{
+  display:block;padding:7px 12px;cursor:pointer;
+  font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#444;
+}
+.nav__list > li > label:hover{background:var(--amarelo-claro)}
+.fa-angle-right{display:inline-block;width:12px;color:var(--vermelho);font-weight:900}
+.fa-angle-right::before{content:"›"}
+.group-list{display:none;margin:0;padding:0 0 6px 24px;list-style:none;background:#fafafa}
+.group-list li a{display:block;padding:4px 0;font-size:12px;color:#666}
+.group-list li a:hover{color:var(--vermelho)}
+input[type=checkbox]:checked ~ .group-list{display:block}
+
+/* ---------- coluna principal ---------- */
+.garotas{flex:1;min-width:0}
+.barra-secao{
+  background:linear-gradient(180deg,var(--vermelho-vivo),var(--vermelho));
+  color:#fff;padding:7px 14px;margin:0 0 12px;
+  font-family:'League Gothic',Impact,sans-serif;
+  font-size:20px;font-weight:400;letter-spacing:.07em;text-transform:uppercase;
+}
+.barra-secao.cinza{background:linear-gradient(180deg,#6e6e6e,#555)}
+.banner-topo{background:#fff;border:1px solid #1d1d1d;height:60px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+
+/* cartão VIP */
+.garotavip{display:flex;gap:14px;background:#fff;border:1px solid #1d1d1d;padding:12px;margin-bottom:12px}
+.garotavipfoto{flex:0 0 220px}
+.garotavipfoto .ph{aspect-ratio:3/4;background:#e4e4e4;border:1px solid var(--cinza-claro);
+  display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px;text-align:center;padding:8px}
+.garotadados{flex:1;min-width:0;display:flex;flex-direction:column}
+.nome{
+  font-family:'League Gothic',Impact,sans-serif;font-size:24px;letter-spacing:.05em;
+  text-transform:uppercase;color:#222;margin:0 0 8px;
+}
+.fone,.fonewhats{
+  display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:15px;
+  padding:7px 12px;border-radius:3px;margin-bottom:7px;
+}
+.fone{background:var(--vermelho)}
+.fonewhats{background:var(--verde-wpp)}
+.fone .ic,.fonewhats .ic{
+  width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.22);
+  display:grid;place-items:center;font-size:11px;
+}
+.descricao{font-size:12px;line-height:1.5;color:#555;margin:6px 0 10px}
+.vermais{
+  align-self:flex-end;margin-top:auto;
+  display:inline-flex;align-items:center;gap:6px;
+  border:1px solid var(--cinza-claro);background:#f7f7f7;
+  padding:5px 12px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#777;
+}
+.vermais:hover{border-color:var(--vermelho);color:var(--vermelho)}
+
+/* destaques e grade normal */
+.destaques,.grade{display:grid;gap:10px;margin-bottom:18px}
+.destaques{grid-template-columns:repeat(4,1fr)}
+.grade{grid-template-columns:repeat(4,1fr)}
+.itemnormal{background:#fff;border:1px solid #1d1d1d;padding:6px}
+.imagemnormal{aspect-ratio:3/4;background:#e4e4e4;border:1px solid var(--cinza-claro);
+  display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px}
+.titulonormal{
+  display:block;text-align:center;padding:7px 2px 3px;
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#444;
+}
+
+/* ---------- rodapé ---------- */
+.aviso{background:var(--cinza-escuro);color:#9a9a9a;font-size:11px;line-height:1.6;
+  text-align:center;padding:22px 0 26px;border-top:1px solid #444}
+.rodape{background:linear-gradient(180deg,var(--vermelho-vivo),var(--vermelho));padding:18px 0}
+.rodape .content{display:flex;align-items:center;gap:40px}
+.rodape .logo .l2{font-size:46px}
+.rodape .logo .l1{font-size:22px}
+.rodape ul{display:flex;flex-wrap:wrap;gap:22px;margin:0;padding:0;list-style:none}
+.rodape a{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#fff}
+.rodape a:hover{color:var(--amarelo)}
+
+/* ---------- responsivo (o original não era) ---------- */
+@media (max-width:900px){
+  .contentvip{flex-direction:column}
+  .barralateral{width:100%;flex:none}
+  .destaques,.grade{grid-template-columns:repeat(2,1fr)}
+  .faixa-fotos{display:none}
+  .garotavip{flex-direction:column}
+  .garotavipfoto{flex:none}
+  .rodape .content{flex-direction:column;align-items:flex-start;gap:16px}
+}
+</style>
+</head>
+<body>
+
+<header class="toposite">
+  <div class="content">
+    <div class="logo">
+      <span class="l1">Travestis</span>
+      <span class="l2">Mix</span>
+      <span class="l3">A divulgação das T-Gatas</span>
+    </div>
+    <div class="faixa-fotos" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <nav class="links">
+      <ul>
+        <li><a href="#">Travestis</a></li>
+        <li><a href="#">Anunciar</a></li>
+        <li><a href="#">Contato</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="wrapergr">
+  <div class="contentvip">
+
+    <aside class="barralateral">
+      <div class="widgetpesquisa">
+        <h2>Encontre T-Gatas</h2>
+        <form onsubmit="return false">
+          <input class="pesquisar" type="text" aria-label="Buscar">
+          <button class="enviar" type="submit" aria-label="Buscar"></button>
+        </form>
+      </div>
+      <div class="widgetcidades">
+        <h2>Estados</h2>
+        <nav>
+          <ul class="nav__list">
+            <li><input id="g1" type="checkbox" hidden><label for="g1"><span class="fa-angle-right"></span>Acre</label>
+              <ul class="group-list"><li><a href="#">Rio Branco</a></li></ul></li>
+            <li><input id="g2" type="checkbox" hidden><label for="g2"><span class="fa-angle-right"></span>Amazonas</label>
+              <ul class="group-list"><li><a href="#">Manaus</a></li></ul></li>
+            <li><input id="g3" type="checkbox" hidden><label for="g3"><span class="fa-angle-right"></span>Bahia</label>
+              <ul class="group-list"><li><a href="#">Salvador</a></li><li><a href="#">Feira de Santana</a></li></ul></li>
+            <li><input id="g4" type="checkbox" hidden><label for="g4"><span class="fa-angle-right"></span>Minas Gerais</label>
+              <ul class="group-list"><li><a href="#">Belo Horizonte</a></li><li><a href="#">Uberlândia</a></li></ul></li>
+            <li><input id="g5" type="checkbox" hidden><label for="g5"><span class="fa-angle-right"></span>Paraná</label>
+              <ul class="group-list"><li><a href="#">Curitiba</a></li><li><a href="#">Londrina</a></li></ul></li>
+            <li><input id="g6" type="checkbox" hidden><label for="g6"><span class="fa-angle-right"></span>Rio de Janeiro</label>
+              <ul class="group-list"><li><a href="#">Rio de Janeiro</a></li><li><a href="#">Niterói</a></li></ul></li>
+            <li><input id="g7" type="checkbox" hidden><label for="g7"><span class="fa-angle-right"></span>Santa Catarina</label>
+              <ul class="group-list"><li><a href="#">Florianópolis</a></li></ul></li>
+            <li><input id="g8" type="checkbox" hidden><label for="g8"><span class="fa-angle-right"></span>São Paulo</label>
+              <ul class="group-list"><li><a href="#">São Paulo</a></li><li><a href="#">Campinas</a></li><li><a href="#">Santos</a></li></ul></li>
+          </ul>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="garotas">
+      <div class="banner-topo">espaço de banner</div>
+      <h1 class="barra-secao">Travestis VIP — Cidade</h1>
+
+      <article class="garotavip">
+        <div class="garotavipfoto"><div class="ph">foto do anúncio</div></div>
+        <div class="garotadados">
+          <h2 class="nome">Nome do perfil</h2>
+          <span class="fone"><span class="ic">✆</span> Telefone</span>
+          <span class="fonewhats"><span class="ic">♦</span> WhatsApp</span>
+          <p class="descricao">Texto descritivo do anúncio, escrito por quem anuncia. Esta área recebe o conteúdo enviado no cadastro e tem altura variável conforme o tamanho do texto.</p>
+          <a class="vermais" href="#">Visitar perfil ›</a>
+        </div>
+      </article>
+
+      <article class="garotavip">
+        <div class="garotavipfoto"><div class="ph">foto do anúncio</div></div>
+        <div class="garotadados">
+          <h2 class="nome">Nome do perfil</h2>
+          <span class="fone"><span class="ic">✆</span> Telefone</span>
+          <span class="fonewhats"><span class="ic">♦</span> WhatsApp</span>
+          <p class="descricao">Segundo cartão, para mostrar o espaçamento vertical entre anúncios VIP e como o bloco se comporta com descrição curta.</p>
+          <a class="vermais" href="#">Visitar perfil ›</a>
+        </div>
+      </article>
+
+      <h2 class="barra-secao">Destaques — Cidade</h2>
+      <div class="destaques">
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+      </div>
+
+      <h2 class="barra-secao cinza">Acompanhantes — Cidade</h2>
+      <div class="grade">
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+        <div class="itemnormal"><div class="imagemnormal">foto</div><span class="titulonormal">Nome do perfil</span></div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<div class="aviso">
+  <div class="content">
+    Este site não é responsável pelos anúncios aqui publicados, tão pouco por consequências diretas ou indiretas que possam<br>
+    comprometer o dano, marcas, pessoas, ou serviços oferecidos nos referidos anúncios.
+  </div>
+</div>
+
+<footer class="rodape">
+  <div class="content">
+    <div class="logo">
+      <span class="l1">Travestis</span>
+      <span class="l2">Mix</span>
+    </div>
+    <ul>
+      <li><a href="#">Travestis BH</a></li>
+      <li><a href="#">Travestis SP</a></li>
+      <li><a href="#">Travestis RJ</a></li>
+      <li><a href="#">Contato</a></li>
+      <li><a href="#">Anunciar</a></li>
+      <li><a href="#">Área da anunciante</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
