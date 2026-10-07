@@ -232,6 +232,6 @@ php teste-lembretes.php  # 54 asserções
 ## Pendente
 
 - Envio automático por WhatsApp pela Cloud API da Meta, se a política aceitar o ramo do site (só `apix_whats_url()` muda).
-
-- Cupom de desconto.
 - Boleto e cartão além do Pix (o Asaas suporta; é trocar o `billingType` e tratar o prazo de compensação, que no boleto são dias).
+
+Cupom de desconto ficou **fora de escopo** por decisão do dono do site.
