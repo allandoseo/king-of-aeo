@@ -11,6 +11,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
 delete_option('apix_config');
 delete_option('apix_pagina_anunciar');
+delete_option('apix_pagina_area');
 wp_clear_scheduled_hook('apix_manutencao');
 
 global $wpdb;

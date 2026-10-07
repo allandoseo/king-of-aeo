@@ -629,22 +629,38 @@ function apix_avisa($url, $texto) {
   exit;
 }
 
-/** A pagina que tem o shortcode [anunciar], para mandar o anunciante ao Pix. */
-function apix_pagina_anunciar() {
-  $guardada = (int) get_option('apix_pagina_anunciar');
+/**
+ * Acha a pagina que contem um shortcode, e guarda o ID para nao buscar de novo.
+ *
+ * A busca por conteudo e lenta e imprecisa; a opcao serve de cache. Se a pagina
+ * for apagada ou despublicada, o cache e ignorado e a busca roda outra vez.
+ */
+function apix_pagina_por_shortcode($shortcode, $opcao) {
+  $guardada = (int) get_option($opcao);
   if ($guardada && get_post_status($guardada) === 'publish') return get_permalink($guardada);
 
   $achadas = get_posts([
     'post_type'   => 'page',
+    'post_status' => 'publish',
     'numberposts' => 1,
     'fields'      => 'ids',
-    's'           => '[anunciar]',
+    's'           => $shortcode,
   ]);
   if ($achadas) {
-    update_option('apix_pagina_anunciar', (int) $achadas[0]);
+    update_option($opcao, (int) $achadas[0]);
     return get_permalink((int) $achadas[0]);
   }
   return home_url('/');
+}
+
+/** A pagina com [anunciar], para mandar o anunciante ao Pix. */
+function apix_pagina_anunciar() {
+  return apix_pagina_por_shortcode('[anunciar]', 'apix_pagina_anunciar');
+}
+
+/** A pagina com [minha-area], usada nos lembretes de vencimento. */
+function apix_pagina_area() {
+  return apix_pagina_por_shortcode('[minha-area]', 'apix_pagina_area');
 }
 
 /** Aviso ao dono do site a cada edicao. */

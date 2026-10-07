@@ -35,6 +35,12 @@ function apix_sanitiza($bruto) {
     'moderar'    => empty($bruto['moderar']) ? 0 : 1,
     'sessao_dias'=> max(1, min(90, absint($bruto['sessao_dias'] ?? 7))),
     'link_min'   => max(5, min(1440, absint($bruto['link_min'] ?? 30))),
+    'lembrar_antes'    => trim(preg_replace('/[^0-9,\s]/', '', (string) ($bruto['lembrar_antes'] ?? ''))),
+    'lembrar_depois'   => trim(preg_replace('/[^0-9,\s]/', '', (string) ($bruto['lembrar_depois'] ?? ''))),
+    'lembrete_assunto' => sanitize_text_field($bruto['lembrete_assunto'] ?? ''),
+    // textarea de texto puro: sem tag nenhuma, porque vai para corpo de e-mail
+    'lembrete_corpo'   => wp_strip_all_tags((string) ($bruto['lembrete_corpo'] ?? '')),
+    'whats_msg'        => wp_strip_all_tags((string) ($bruto['whats_msg'] ?? '')),
     'planos'     => [],
   ];
 
@@ -265,6 +271,88 @@ function apix_pagina() {
               name="<?php echo esc_attr(APIX_OPCAO); ?>[whats]"
               value="<?php echo esc_attr($c['whats']); ?>" placeholder="5511999999999">
             <p class="description">Mostrado ao anunciante se o Pix nao carregar. So numeros, com pais e DDD.</p>
+          </td>
+        </tr>
+      </table>
+
+      <h2>Lembrete de vencimento</h2>
+      <p class="description">
+        O e-mail sai sozinho. O WhatsApp fica em
+        <a href="<?php echo esc_url(admin_url('edit.php?post_type=' . apix_cpt() . '&page=apix-vencimentos')); ?>">Anuncios
+        &rarr; Vencimentos</a>, com a mensagem pronta e um botao por anunciante.
+      </p>
+      <p class="description" style="margin-top:.5rem">
+        <strong>Envio automatico por WhatsApp nao esta aqui porque nao existe de
+        forma simples.</strong> Exige a Cloud API da Meta: empresa verificada,
+        numero dedicado (nao serve o que voce ja usa no WhatsApp) e modelo de
+        mensagem aprovado antes de qualquer envio. A politica de mensagens da Meta
+        tambem restringe conteudo adulto — confira antes de investir tempo, porque
+        a conta pode cair depois de tudo pronto. As alternativas nao oficiais
+        violam os termos, derrubam o numero e precisam de um processo rodando
+        sempre, que hospedagem de WordPress nao tem.
+      </p>
+
+      <table class="form-table" role="presentation">
+        <tr>
+          <th scope="row"><label for="apix-antes">Avisar antes de vencer</label></th>
+          <td>
+            <input type="text" id="apix-antes" class="regular-text"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[lembrar_antes]"
+              value="<?php echo esc_attr($c['lembrar_antes']); ?>" placeholder="7, 3, 1">
+            <p class="description">
+              Dias antes do vencimento, separados por virgula. Vazio desliga.
+              Sai <strong>um</strong> e-mail por marco, nunca dois no mesmo dia:
+              se o site ficar fora do ar e voltar com tres marcos vencidos, vai
+              um so — tres e-mails seguidos e a melhor forma de cair no spam.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-depois">Avisar depois de vencer</label></th>
+          <td>
+            <input type="text" id="apix-depois" class="regular-text"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[lembrar_depois]"
+              value="<?php echo esc_attr($c['lembrar_depois']); ?>" placeholder="2">
+            <p class="description">
+              Dias depois, para quem deixou vencer. E o aviso que mais converte:
+              o anuncio saiu do ar e a pessoa percebeu a falta. Depois do ultimo
+              marco o plugin para de insistir.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-assunto">Assunto do e-mail</label></th>
+          <td>
+            <input type="text" id="apix-assunto" class="large-text"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[lembrete_assunto]"
+              value="<?php echo esc_attr($c['lembrete_assunto']); ?>">
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-corpo">Texto do e-mail</label></th>
+          <td>
+            <textarea id="apix-corpo" class="large-text" rows="9"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[lembrete_corpo]"><?php
+              echo esc_textarea($c['lembrete_corpo']); ?></textarea>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-wmsg">Mensagem do WhatsApp</label></th>
+          <td>
+            <textarea id="apix-wmsg" class="large-text" rows="3"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[whats_msg]"><?php
+              echo esc_textarea($c['whats_msg']); ?></textarea>
+            <p class="description">Curta: ela viaja dentro da URL do link do WhatsApp.</p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Marcadores</th>
+          <td>
+            <code>{anuncio}</code> nome do anuncio &nbsp;
+            <code>{dias}</code> dias (sempre positivo) &nbsp;
+            <code>{plano}</code> &nbsp; <code>{valor}</code> &nbsp;
+            <code>{link}</code> pagina da area do anunciante &nbsp;
+            <code>{site}</code> nome do site
           </td>
         </tr>
       </table>

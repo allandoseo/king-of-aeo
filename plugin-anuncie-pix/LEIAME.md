@@ -113,6 +113,38 @@ O webhook aceita tanto a cobrança da primeira compra quanto a da renovação, e
 
 ---
 
+## Lembrete de vencimento
+
+### Por e-mail: automático
+
+Marcos configuráveis **antes** (padrão `7, 3, 1` dias) e **depois** do vencimento (padrão `2` dias). O aviso de depois é o que mais converte: o anúncio saiu do ar e a pessoa sentiu a falta. Passado o último marco, o plugin para de insistir.
+
+Sai **um e-mail por marco, nunca dois no mesmo dia**. Se o site ficar fora do ar e voltar com três marcos vencidos, vai só o mais urgente, e os outros são marcados como entregues — três e-mails seguidos é a melhor forma de cair no spam. A decisão fica numa função pura, `apix_marco_lembrete()`, com 18 asserções em cima dela.
+
+Renovar **zera os marcos**, senão quem renovou nunca mais seria avisado: os marcos do ciclo anterior ficariam marcados como enviados para sempre.
+
+Marcadores para o assunto e o corpo: `{anuncio}` `{dias}` `{plano}` `{valor}` `{link}` `{site}`. O `{dias}` sai sempre positivo — "vence em -3 dias" não se escreve.
+
+### Por WhatsApp: um clique, em **Anúncios → Vencimentos**
+
+A tela lista quem está vencendo com a mensagem já escrita e um botão por anunciante. O clique abre o WhatsApp com o texto pronto e você aperta enviar.
+
+Não é automático. **E automático, de forma fácil, não existe** — vale saber por quê antes de procurar:
+
+| Caminho | O que custa de verdade |
+|---|---|
+| **Cloud API da Meta** (oficial) | Conta Meta Business, **empresa verificada**, um número **dedicado** (não serve o que você já usa no WhatsApp), e modelo de mensagem **aprovado pela Meta** antes de qualquer envio fora da janela de 24h. A verificação leva dias. E a política de mensagens da Meta restringe conteúdo adulto — confira com cuidado antes de investir tempo, porque a conta pode cair depois de tudo pronto. |
+| **Baileys / whatsapp-web.js** e similares | Viola os termos, o número é banido com frequência, e precisa de um processo Node rodando sempre — hospedagem compartilhada de WordPress não tem isso. |
+| **Revenda de gateway** | As baratas são a linha de cima embrulhada, com o mesmo risco de banimento só que no número do cliente. As oficiais são a Cloud API com mensalidade. |
+
+O botão resolve sem nada disso: sai do **seu** número (que o anunciante reconhece), não custa nada, não precisa de aprovação e não tem risco de banimento. São dois segundos por anunciante.
+
+> Não consegui verificar as regras atuais da Meta online — o ambiente onde este plugin foi gerado não alcança sites externos. Confira a política de mensagens do WhatsApp Business antes de contar com o caminho oficial.
+
+Se um dia você quiser o envio automático, **o único lugar a mexer é `apix_whats_url()`**. Quem avisar, quando, com que texto e o controle de repetição já estão prontos e valem para os dois caminhos.
+
+---
+
 ## Segurança do upload
 
 Você escolheu permitir upload **antes** do pagamento. É o cenário mais cômodo para o anunciante e o pior para o servidor: qualquer pessoa na internet grava arquivo no seu site sem se identificar e sem pagar nada. As cinco camadas, e o que cada uma de fato resolve:
@@ -186,17 +218,20 @@ python3 empacota.py
 ## Testes
 
 ```bash
-php teste.php        # 43 asserções
-php teste-area.php   # 58 asserções
+php teste.php            # 43 asserções
+php teste-area.php       # 58 asserções
+php teste-lembretes.php  # 54 asserções
 ```
 
-101 asserções, sem WordPress, sem banco e sem rede. `teste-wp-falso.php` é um WordPress mínimo com armazenamento em memória de opções, transients, posts e meta — o suficiente para testar lógica que mexe em estado.
+155 asserções, sem WordPress, sem banco e sem rede. `teste-wp-falso.php` é um WordPress mínimo com armazenamento em memória de opções, transients, posts e meta — o suficiente para testar lógica que mexe em estado.
 
 - **`teste.php`** — CPF/CNPJ pelo dígito verificador, carimbo assinado anti-robô, `.htaccess`, limites, e o reempacotamento contra um *polyglot* real.
+- **`teste-lembretes.php`** — a regra dos marcos (inclusive o site que ficou fora do ar e voltou com três marcos vencidos de uma vez), a não repetição, o aviso depois de vencer, a normalização do telefone para o `wa.me`, os marcadores e a volta à estaca zero ao renovar.
 - **`teste-area.php`** — cookie de sessão (hash trocado, prazo esticado, assinatura forjada, cookie vencido, lixo), dono do anúncio, link de uso único, **mensagem idêntica para e-mail que existe e que não existe**, freio de pedidos, liberação e recusa de alteração, foto em análise solta do post, e a soma de prazo na renovação nos dois casos.
 
 ## Pendente
 
-- Avisar o anunciante por e-mail alguns dias antes de o plano vencer, com link direto para a renovação (a renovação em si já existe; falta o lembrete).
+- Envio automático por WhatsApp pela Cloud API da Meta, se a política aceitar o ramo do site (só `apix_whats_url()` muda).
+
 - Cupom de desconto.
 - Boleto e cartão além do Pix (o Asaas suporta; é trocar o `billingType` e tratar o prazo de compensação, que no boleto são dias).

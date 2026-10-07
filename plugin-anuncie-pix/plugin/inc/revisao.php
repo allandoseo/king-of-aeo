@@ -246,5 +246,10 @@ function apix_aplica_renovacao($post_id) {
   delete_post_meta($post_id, 'apix_renov_plano');
   delete_post_meta($post_id, 'apix_qr');
 
+  // zera os lembretes: comeca um ciclo novo, e sem isto quem renovou nunca mais
+  // seria avisado — os marcos do ciclo anterior continuariam marcados como ja
+  // enviados para sempre
+  delete_post_meta($post_id, 'apix_lembretes');
+
   do_action('apix_anuncio_renovado', $post_id);
 }

@@ -61,6 +61,16 @@ function apix_config() {
     'moderar'    => 1,           // edicao em anuncio no ar espera liberacao
     'sessao_dias'=> 7,           // quanto dura o login da area do anunciante
     'link_min'   => 30,          // validade do link de acesso enviado por e-mail
+    'lembrar_antes'  => '7, 3, 1',   // dias antes do vencimento
+    'lembrar_depois' => '2',         // dias depois, para quem deixou vencer
+    'lembrete_assunto' => 'Seu anuncio em {site} vence em {dias} dia(s)',
+    'lembrete_corpo'   => "Ola.\n\nSeu anuncio \"{anuncio}\" vence em {dias} dia(s).\n\n"
+                        . "Para renovar e continuar no ar, acesse:\n{link}\n\n"
+                        . "Plano atual: {plano} ({valor}).\n\n"
+                        . "A renovacao soma ao prazo que ainda resta, entao renovar antes nao "
+                        . "faz voce perder os dias que sobraram.\n",
+    'whats_msg'  => 'Oi! Seu anuncio "{anuncio}" em {site} vence em {dias} dia(s). '
+                  . 'Para renovar: {link}',
     'planos'     => apix_planos_padrao(),
   ];
   $c = get_option(APIX_OPCAO, []);
@@ -148,6 +158,7 @@ require_once __DIR__ . '/inc/formulario.php';
 require_once __DIR__ . '/inc/area.php';
 require_once __DIR__ . '/inc/revisao.php';
 require_once __DIR__ . '/inc/webhook.php';
+require_once __DIR__ . '/inc/lembretes.php';
 require_once __DIR__ . '/inc/manutencao.php';
 if (is_admin()) require_once __DIR__ . '/inc/painel.php';
 
