@@ -217,6 +217,8 @@ function is_feed(){return false;} function is_embed(){return false;} function is
 function is_page($i=''){return false;} function is_singular($t=''){return true;}
 function in_the_loop(){return true;} function is_main_query(){return true;}
 function get_search_form($a=[]){return '';}
+function locate_template($nomes,$carregar=false,$uma=true){return '';}
+function get_theme_mod($n,$p=false){return $p;}
 
 /** wp_mail falso: guarda a mensagem. */
 function wp_mail($para,$assunto,$corpo,$cab='',$anexos=[]){

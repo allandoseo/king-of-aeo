@@ -14,48 +14,13 @@
 
 if (!defined('ABSPATH')) exit;
 
+// O CSS base e os tokens de cor vivem em inc/visual.php; a tela do Pix, em
+// inc/checkout.php. Este arquivo cuida so do formulario e do recebimento.
 add_shortcode('anunciar', 'apix_shortcode');
 
 function apix_shortcode() {
   $token = isset($_GET['anuncio']) ? sanitize_text_field(wp_unslash($_GET['anuncio'])) : '';
   return $token !== '' ? apix_painel_pix($token) : apix_formulario();
-}
-
-/* ------------------------------------------------------------------ estilo */
-/** CSS embutido, pelo mesmo motivo do plugin de banners: arquivo de plugin no
- *  HTML e caminho identico repetido nos sites da rede. */
-function apix_css() {
-  static $saiu = false;
-  if ($saiu) return '';
-  $saiu = true;
-  return '<style>
-.apix{max-width:720px;margin:0 auto;font-size:1rem}
-.apix h3{margin:1.6rem 0 .6rem;font-size:1.1rem}
-.apix label{display:block;margin:.9rem 0 .25rem;font-weight:600}
-.apix input[type=text],.apix input[type=email],.apix input[type=tel],.apix textarea,.apix select{
-  width:100%;padding:.6rem .7rem;border:1px solid #bbb;border-radius:6px;font:inherit;background:#fff;color:#111}
-.apix textarea{min-height:9rem;resize:vertical}
-.apix .apix-dica{font-size:.82rem;opacity:.7;margin:.2rem 0 0}
-.apix .apix-check{display:flex;gap:.55rem;align-items:flex-start;margin:.9rem 0;font-weight:400}
-.apix .apix-check input{margin-top:.28rem;flex:0 0 auto}
-.apix .apix-planos{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-.apix .apix-plano{border:2px solid #ddd;border-radius:8px;padding:.85rem;cursor:pointer;font-weight:400}
-.apix .apix-plano:has(input:checked){border-color:#b5176b;background:#fdf4f8}
-.apix .apix-plano b{display:block;font-size:1.05rem}
-.apix .apix-plano .apix-preco{font-size:1.25rem;font-weight:700;margin:.3rem 0}
-.apix button{margin-top:1.4rem;padding:.85rem 1.6rem;border:0;border-radius:6px;background:#b5176b;
-  color:#fff;font:inherit;font-weight:700;cursor:pointer}
-.apix button:hover{background:#8d1153}
-.apix .apix-erro{border-left:4px solid #c0392b;background:#fdeceb;padding:.8rem 1rem;margin:0 0 1.2rem;border-radius:0 6px 6px 0}
-.apix .apix-aviso{border-left:4px solid #e0a800;background:#fff8e6;padding:.8rem 1rem;margin:1rem 0;border-radius:0 6px 6px 0;font-size:.9rem}
-.apix-pix{text-align:center}
-.apix-pix img{width:260px;height:260px;max-width:100%;image-rendering:pixelated;border:1px solid #ddd;border-radius:8px}
-.apix-copia{display:flex;gap:.5rem;margin:1rem auto;max-width:520px}
-.apix-copia input{flex:1;font-family:ui-monospace,monospace;font-size:.78rem}
-.apix-copia button{margin:0;white-space:nowrap}
-.apix-estado{font-weight:700;margin:1.2rem 0}
-.apix-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-</style>';
 }
 
 /* -------------------------------------------------------------- formulario */
@@ -64,8 +29,10 @@ function apix_formulario() {
   $erros = get_transient('apix_erros_' . apix_ip_hash());
   if ($erros) delete_transient('apix_erros_' . apix_ip_hash());
 
-  $h = apix_css();
+  $h  = apix_css() . apix_checkout_css();
   $h .= '<div class="apix">';
+  $h .= apix_logo_html();
+  $h .= apix_passos_html(1);
 
   if ($erros && is_array($erros)) {
     $h .= '<div class="apix-erro"><strong>Nao foi possivel enviar:</strong><ul>';
@@ -294,94 +261,6 @@ function apix_volta($url, $erros) {
   set_transient('apix_erros_' . apix_ip_hash(), $erros, 10 * MINUTE_IN_SECONDS);
   wp_safe_redirect($url);
   exit;
-}
-
-/* ------------------------------------------------------------- painel do Pix */
-function apix_painel_pix($token) {
-  $post_id = apix_post_por_token($token);
-  if (!$post_id) {
-    return apix_css() . '<div class="apix"><div class="apix-erro">Anuncio nao encontrado. '
-      . 'O link pode ter expirado.</div></div>';
-  }
-
-  $status = (string) get_post_meta($post_id, 'apix_status', true);
-  $h = apix_css() . '<div class="apix apix-pix">';
-
-  if (in_array($status, apix_status_pagos(), true) || get_post_status($post_id) === 'publish') {
-    $h .= '<h3>Pagamento confirmado</h3>';
-    $h .= '<p>Seu anuncio esta no ar.</p>';
-    if (get_post_status($post_id) === 'publish') {
-      $h .= '<p><a href="' . esc_url(get_permalink($post_id)) . '">Ver o anuncio</a></p>';
-    }
-    return $h . '</div>';
-  }
-
-  $cobranca = (string) get_post_meta($post_id, 'apix_cobranca', true);
-
-  // O payload do Pix nao muda enquanto a cobranca existe, entao fica guardado.
-  // Sem isso, cada recarregada da pagina — e o anunciante recarrega, esperando
-  // a confirmacao — era uma chamada a API. Varias abas abertas estouravam o
-  // limite da conta, e ai NENHUM anunciante conseguia gerar cobranca.
-  $qr = get_post_meta($post_id, 'apix_qr', true);
-  if (!is_array($qr) || empty($qr['payload'])) {
-    $qr = $cobranca !== '' ? apix_pix_qrcode($cobranca) : new WP_Error('apix', 'sem cobranca');
-    if (!is_wp_error($qr) && !empty($qr['payload'])) {
-      update_post_meta($post_id, 'apix_qr', [
-        'payload'      => (string) $qr['payload'],
-        'encodedImage' => (string) ($qr['encodedImage'] ?? ''),
-      ]);
-    }
-  }
-
-  if (is_wp_error($qr) || empty($qr['payload'])) {
-    $h .= '<div class="apix-erro">Nao foi possivel carregar o Pix agora. '
-        . 'Recarregue a pagina em alguns segundos.</div>';
-    $whats = apix_config()['whats'];
-    if ($whats !== '') {
-      $h .= '<p>Se continuar, fale com o suporte: <a rel="nofollow" href="https://wa.me/'
-          . esc_attr($whats) . '">WhatsApp</a></p>';
-    }
-    return $h . '</div>';
-  }
-
-  $valor = (float) get_post_meta($post_id, 'apix_valor', true);
-
-  $h .= '<h3>Pague o Pix para publicar</h3>';
-  $h .= '<p>Valor: <strong>' . esc_html(apix_moeda($valor)) . '</strong></p>';
-
-  if (!empty($qr['encodedImage'])) {
-    // base64 vem da API; o esc_attr nao deixa sair do atributo
-    $h .= '<img alt="QR Code do Pix" src="data:image/png;base64,'
-        . esc_attr($qr['encodedImage']) . '" width="260" height="260">';
-  }
-
-  $h .= '<div class="apix-copia">'
-      . '<input type="text" id="apix-payload" readonly value="' . esc_attr($qr['payload']) . '">'
-      . '<button type="button" id="apix-copiar">Copiar</button></div>';
-
-  $h .= '<p class="apix-dica">Abra o aplicativo do seu banco, escolha Pix '
-      . 'Copia e Cola e cole o codigo. Ou aponte a camera para o QR Code.</p>';
-
-  $h .= '<p class="apix-estado" id="apix-estado">Aguardando o pagamento...</p>';
-  $h .= '<p class="apix-dica">Esta pagina se atualiza sozinha. Assim que o Pix '
-      . 'cair, o anuncio publica automaticamente — pode levar alguns segundos. '
-      . 'Guarde este link para voltar depois.</p>';
-
-  // JS embutido: so copia e consulta o status. Sem biblioteca, sem arquivo.
-  $h .= '<script>(function(){
-var b=document.getElementById("apix-copiar"),c=document.getElementById("apix-payload");
-if(b&&c)b.addEventListener("click",function(){c.select();
-  (navigator.clipboard?navigator.clipboard.writeText(c.value):Promise.reject()).then(
-    function(){b.textContent="Copiado";},function(){document.execCommand("copy");b.textContent="Copiado";});});
-var e=document.getElementById("apix-estado"),n=0;
-var u=' . wp_json_encode(rest_url(APIX_NS . '/status')) . '+"?t="+encodeURIComponent(' . wp_json_encode($token) . ');
-function v(){if(n++>120)return;fetch(u,{headers:{"Accept":"application/json"}}).then(function(r){return r.json();})
- .then(function(d){if(d&&d.pago){e.textContent="Pagamento confirmado. Publicando...";
-   setTimeout(function(){location.reload();},1500);}else{setTimeout(v,5000);}})
- .catch(function(){setTimeout(v,8000);});}
-setTimeout(v,5000);})();</script>';
-
-  return $h . '</div>';
 }
 
 /* --------------------------------------------------------------- utilidades */

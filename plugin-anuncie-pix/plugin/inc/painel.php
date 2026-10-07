@@ -22,6 +22,10 @@ function apix_sanitiza($bruto) {
   if (!is_array($bruto)) $bruto = [];
   $atual = apix_config();
 
+  // o <input type="color"> nao tem estado vazio: ele sempre manda um valor. A
+  // caixa "voltar a herdar do tema" e o unico jeito de zerar o campo.
+  if (!empty($_POST['apix_limpar_cor'])) $bruto['cor'] = '';
+
   $limpo = [
     'ambiente'   => in_array($bruto['ambiente'] ?? '', ['sandbox', 'producao'], true)
                       ? $bruto['ambiente'] : 'sandbox',
@@ -41,6 +45,17 @@ function apix_sanitiza($bruto) {
     // textarea de texto puro: sem tag nenhuma, porque vai para corpo de e-mail
     'lembrete_corpo'   => wp_strip_all_tags((string) ($bruto['lembrete_corpo'] ?? '')),
     'whats_msg'        => wp_strip_all_tags((string) ($bruto['whats_msg'] ?? '')),
+    // Cor entra DENTRO de um bloco <style>, entao so hexadecimal passa. Um valor
+    // com "}" fecharia a regra e o resto viraria CSS livre na pagina — injecao de
+    // CSS, que consegue cobrir a tela, trocar o texto de um botao ou esconder um
+    // aviso. Valor invalido vira '', que significa "herdar do tema".
+    'cor'          => apix_cor_valida($bruto['cor'] ?? ''),
+    'cor_esc'      => apix_cor_valida($bruto['cor_esc'] ?? ''),
+    'cor_botao'    => apix_cor_valida($bruto['cor_botao'] ?? ''),
+    'raio'         => ($bruto['raio'] ?? '') === '' ? '' : (string) min(40, absint($bruto['raio'])),
+    'logo'         => esc_url_raw(trim((string) ($bruto['logo'] ?? '')), ['http', 'https']),
+    'logo_mostrar' => empty($bruto['logo_mostrar']) ? 0 : 1,
+    'passos'       => empty($bruto['passos']) ? 0 : 1,
     'planos'     => [],
   ];
 
@@ -271,6 +286,124 @@ function apix_pagina() {
               name="<?php echo esc_attr(APIX_OPCAO); ?>[whats]"
               value="<?php echo esc_attr($c['whats']); ?>" placeholder="5511999999999">
             <p class="description">Mostrado ao anunciante se o Pix nao carregar. So numeros, com pais e DDD.</p>
+          </td>
+        </tr>
+      </table>
+
+      <h2>Aparencia do checkout</h2>
+      <p class="description">
+        <strong>Por padrao o checkout herda a cor, o raio e a fonte do tema.</strong>
+        Os campos abaixo so existem para quando a heranca nao acertar.
+      </p>
+      <p class="description" style="margin-top:.5rem">
+        A heranca funciona assim: o plugin usa tokens proprios cujo valor padrao e
+        uma cadeia que tenta os nomes de variavel dos temas da rede, em ordem
+        (<code>--acento</code>, <code>--red</code>, <code>--roxo</code>,
+        <code>--theme-palette-color-1</code>). Por isso o checkout ja sai na cor
+        certa nos temas claros e nos escuros sem configuracao. Preencher um campo
+        aqui passa por cima da cadeia.
+      </p>
+
+      <table class="form-table" role="presentation">
+        <tr>
+          <th scope="row"><label for="apix-cor">Cor de destaque</label></th>
+          <td>
+            <input type="color" id="apix-cor" style="width:4rem;height:2.2rem;vertical-align:middle"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[cor]"
+              value="<?php echo esc_attr($c['cor'] ?: '#b5176b'); ?>">
+            <code><?php echo esc_html($c['cor'] !== '' ? $c['cor'] : 'herdando do tema'); ?></code>
+            <?php if ($c['cor'] !== '') : ?>
+              <label style="margin-left:1rem"><input type="checkbox" name="apix_limpar_cor" value="1">
+              Voltar a herdar do tema</label>
+            <?php endif; ?>
+            <p class="description">
+              Botoes, preco e a borda do plano escolhido. O seletor de cor do
+              navegador nao tem estado "vazio", por isso a caixa acima para limpar.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-cor-esc">Cor de destaque no hover</label></th>
+          <td>
+            <input type="color" id="apix-cor-esc" style="width:4rem;height:2.2rem;vertical-align:middle"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[cor_esc]"
+              value="<?php echo esc_attr($c['cor_esc'] ?: '#8d1153'); ?>">
+            <code><?php echo esc_html($c['cor_esc'] !== '' ? $c['cor_esc'] : 'herdando do tema'); ?></code>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-cor-botao">Cor do texto sobre o botao</label></th>
+          <td>
+            <input type="color" id="apix-cor-botao" style="width:4rem;height:2.2rem;vertical-align:middle"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[cor_botao]"
+              value="<?php echo esc_attr($c['cor_botao'] ?: '#ffffff'); ?>">
+            <code><?php echo esc_html($c['cor_botao'] !== '' ? $c['cor_botao'] : 'branco (padrao)'); ?></code>
+            <p class="description">
+              Contraste nao se calcula em CSS, e herdar o texto do tema daria texto
+              escuro sobre botao escuro. Branco serve para quase todo acento
+              saturado; troque se o seu for claro (amarelo, por exemplo).
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row"><label for="apix-raio">Arredondamento</label></th>
+          <td>
+            <input type="number" id="apix-raio" min="0" max="40" class="small-text"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[raio]"
+              value="<?php echo esc_attr($c['raio']); ?>" placeholder="auto"> px
+            <p class="description">Vazio herda o <code>--raio</code> do tema, ou usa 8px.</p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Logo no topo</th>
+          <td>
+            <label><input type="checkbox" value="1"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[logo_mostrar]"
+              <?php checked(!empty($c['logo_mostrar'])); ?>> Mostrar logo no formulario e no checkout</label>
+            <p style="margin:.6rem 0 0">
+              <input type="url" class="regular-text"
+                name="<?php echo esc_attr(APIX_OPCAO); ?>[logo]"
+                value="<?php echo esc_attr($c['logo']); ?>"
+                placeholder="deixe vazio para usar a logo do tema">
+            </p>
+            <p class="description">
+              Vazio usa a logo do site (Personalizar &rarr; Identidade). Preencha
+              com a URL de uma imagem da Midia so se quiser outra aqui.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Barra de etapas</th>
+          <td>
+            <label><input type="checkbox" value="1"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[passos]"
+              <?php checked(!empty($c['passos'])); ?>> Mostrar "Seus dados &rarr; Pagamento &rarr; No ar"</label>
+            <p class="description">
+              Nao e enfeite: o anunciante acabou de entregar CPF, telefone e fotos
+              a um site que nao conhece. Ver que falta uma etapa e a diferenca
+              entre esperar a confirmacao e desistir.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Layout proprio</th>
+          <td>
+            <p class="description" style="margin-top:0">
+              Para mudar o HTML do checkout, crie
+              <code>anuncie-pix/checkout.php</code> na pasta do tema. Ele recebe
+              <code>$dados</code> com <code>titulo</code>, <code>valor</code>,
+              <code>plano</code>, <code>payload</code>, <code>imagem</code>,
+              <code>token</code> e <code>renovacao</code>, e e usado em vez do HTML
+              embutido.
+              <?php
+              $tpl = locate_template(['anuncie-pix/checkout.php']);
+              echo $tpl
+                ? '<br><strong style="color:#1a7f37">O tema tem esse arquivo e ele esta em uso.</strong>'
+                : '<br>O tema nao tem esse arquivo; o layout embutido esta em uso.';
+              ?>
+              Editar o plugin em vez disso faz a alteracao se perder na proxima
+              atualizacao.
+            </p>
           </td>
         </tr>
       </table>

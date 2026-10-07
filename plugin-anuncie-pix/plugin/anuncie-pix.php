@@ -71,6 +71,14 @@ function apix_config() {
                         . "faz voce perder os dias que sobraram.\n",
     'whats_msg'  => 'Oi! Seu anuncio "{anuncio}" em {site} vence em {dias} dia(s). '
                   . 'Para renovar: {link}',
+    // aparencia: vazio = herdar do tema (ver inc/visual.php)
+    'cor'          => '',
+    'cor_esc'      => '',
+    'cor_botao'    => '',
+    'raio'         => '',
+    'logo'         => '',
+    'logo_mostrar' => 1,
+    'passos'       => 1,
     'planos'     => apix_planos_padrao(),
   ];
   $c = get_option(APIX_OPCAO, []);
@@ -152,9 +160,11 @@ add_action('init', function () {
 }, 5);
 
 /* ------------------------------------------------------------------- partes */
+require_once __DIR__ . '/inc/visual.php';
 require_once __DIR__ . '/inc/asaas.php';
 require_once __DIR__ . '/inc/fotos.php';
 require_once __DIR__ . '/inc/formulario.php';
+require_once __DIR__ . '/inc/checkout.php';
 require_once __DIR__ . '/inc/area.php';
 require_once __DIR__ . '/inc/revisao.php';
 require_once __DIR__ . '/inc/webhook.php';

@@ -683,24 +683,30 @@ function apix_css_area() {
   static $saiu = false;
   if ($saiu) return '';
   $saiu = true;
-  return '<style>
+  // sem cor fixa: tudo sai dos tokens de inc/visual.php, entao a area acompanha
+  // o tema — claro ou escuro — sem configuracao
+  return '<style id="apix-area-css">
 .apix-topo{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
 .apix-sair{font-size:.88rem}
 .apix-volta{margin:0 0 .4rem;font-size:.9rem}
-.apix-card{border:1px solid #ddd;border-radius:8px;padding:1rem 1.1rem;margin:0 0 1rem}
+.apix-card{border:1px solid var(--apix-linha);border-radius:var(--apix-raio);
+  padding:1rem 1.1rem;margin:0 0 1rem;background:var(--apix-fundo)}
 .apix-card h4{margin:0 0 .4rem;font-size:1.05rem}
-.apix-estado-linha{margin:.2rem 0 .6rem;font-size:.9rem}
-.apix-pill{display:inline-block;padding:.12rem .55rem;border-radius:999px;font-size:.76rem;
+.apix-estado-linha{margin:.2rem 0 .6rem;font-size:.9rem;color:var(--apix-texto-2)}
+.apix-pill{display:inline-block;padding:.14rem .6rem;border-radius:999px;font-size:.74rem;
   font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.apix-pill--ok{background:#dff3e4;color:#1a7f37}
-.apix-pill--espera{background:#fff3cd;color:#8a6d00}
-.apix-pill--mal{background:#fdeceb;color:#b32d2e}
+.apix-pill--ok{background:color-mix(in srgb,#1a7f37 18%,transparent);color:#1a7f37}
+.apix-pill--espera{background:color-mix(in srgb,#e0a800 20%,transparent);color:#8a6d00}
+.apix-pill--mal{background:color-mix(in srgb,#c0392b 16%,transparent);color:#c0392b}
 .apix-acoes{margin:0;display:flex;flex-wrap:wrap;gap:.9rem;font-size:.92rem}
-.apix h4{margin:1.4rem 0 .5rem;font-size:1rem}
 .apix-grade{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
-.apix-foto{display:block;border:1px solid #ddd;border-radius:6px;padding:.4rem;font-weight:400;font-size:.82rem}
-.apix-foto img{width:100%;height:auto;border-radius:4px;display:block;margin-bottom:.35rem}
+.apix-foto{display:block;border:1px solid var(--apix-linha);border-radius:var(--apix-raio);
+  padding:.4rem;font-weight:400;font-size:.82rem;background:var(--apix-fundo)}
+.apix-foto img{width:100%;height:auto;border-radius:calc(var(--apix-raio) - 2px);
+  display:block;margin-bottom:.35rem}
 .apix-foto span{display:flex;gap:.35rem;align-items:center}
-.apix-foto--espera{border-style:dashed;border-color:#e0a800;background:#fffdf5}
+.apix-foto input{accent-color:var(--apix-acento)}
+.apix-foto--espera{border-style:dashed;border-color:#e0a800;
+  background:color-mix(in srgb,#e0a800 8%,transparent)}
 </style>';
 }

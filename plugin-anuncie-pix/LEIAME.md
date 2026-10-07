@@ -113,6 +113,61 @@ O webhook aceita tanto a cobrança da primeira compra quanto a da renovação, e
 
 ---
 
+## Aparência: o checkout herda o tema
+
+O checkout, o formulário e a área do anunciante **saem na cor do site sem configuração** — e isso corrigiu um bug, não só a estética.
+
+### O bug que existia
+
+A primeira versão tinha cor fixa no código: acento magenta, campo com `background:#fff` e `color:#111`. Funciona num tema claro. Nos outros dois temas da rede, que são **escuros**, era campo branco em página `#0f0f0f` com rótulo invisível. Não era "pouco personalizado": era ilegível.
+
+### Por que não dá para só ler `--acento` do tema
+
+Cada tema batizou as variáveis do seu jeito:
+
+| Tema | Fundo | Acento | Texto |
+|---|---|---|---|
+| ahnovinha | `--superficie` `#fff` | `--acento` `#fb016a` | `--tinta` |
+| diretorio-mix | `--panel` `#1f1f1f` | `--red` `#e01111` | `--ink` |
+| gatasprive | `--superficie` `#1a1a1c` | `--roxo` `#720eec` | `--texto` |
+| Blocksy | `--theme-palette-color-8` | `--theme-palette-color-1` | `--theme-palette-color-4` |
+
+### Como funciona
+
+O plugin usa tokens próprios (`--apix-acento`, `--apix-fundo`, …) e o padrão de cada um é uma **cadeia de `var()`** que tenta os nomes conhecidos em ordem, terminando num valor seguro:
+
+```css
+--apix-acento: var(--acento, var(--red, var(--roxo, var(--theme-palette-color-1, #b5176b))));
+```
+
+Instalado em qualquer um dos três temas, o checkout já sai certo. Em tema desconhecido, cai no padrão.
+
+Os tokens ficam no escopo `.apix`, **nunca em `:root`** — o plugin não redefine variável do tema e não muda a cor do site. Coberto por teste.
+
+### Quando a herança não acertar
+
+**Configurações → Anuncie com Pix → Aparência do checkout**: cor de destaque, cor do hover, cor do texto sobre o botão, arredondamento, logo e barra de etapas. Campo vazio significa *herdar*; preenchido passa por cima da cadeia.
+
+O contraste do texto sobre o botão é campo separado porque **contraste não se calcula em CSS**, e herdar o texto do tema daria texto escuro sobre botão escuro. Branco serve para quase todo acento saturado.
+
+> O `<input type="color">` não tem estado vazio — ele sempre manda um valor. Por isso existe a caixa "voltar a herdar do tema" ao lado.
+
+### Injeção de CSS
+
+O valor da cor entra **dentro de um bloco `<style>`**. Um valor com `}` fecharia a regra e o resto viraria CSS livre na página — e CSS consegue bastante coisa: cobrir a tela, trocar o texto de um botão, esconder um aviso.
+
+Só hexadecimal passa, e a validação roda **duas vezes**: ao salvar e **de novo na saída**. A segunda é a que protege de verdade: a opção pode ser escrita por outro caminho (WP-CLI, outro plugin, migração, banco direto), e aí a validação da entrada não participou. Oito tentativas de injeção estão no banco de teste, incluindo `#fff</style><script>`.
+
+### Layout próprio, sem editar o plugin
+
+Crie **`anuncie-pix/checkout.php`** na pasta do tema e ele é usado em vez do HTML embutido, recebendo `$dados` com `titulo`, `valor`, `plano`, `payload`, `imagem`, `token` e `renovacao`. Editar o plugin em vez disso faz a alteração se perder na próxima atualização. O painel mostra se o tema tem o arquivo.
+
+### O que o checkout mostra
+
+Resumo do pedido (anúncio, plano, dias, total), QR Code, Pix Copia e Cola com botão de copiar, estado que se atualiza sozinho, e link de suporte. Mais a barra **Seus dados → Pagamento → No ar**, que não é enfeite: o anunciante acabou de entregar CPF, telefone e fotos a um site que não conhece, e ver que falta uma etapa é a diferença entre esperar a confirmação e desistir.
+
+---
+
 ## Lembrete de vencimento
 
 ### Por e-mail: automático
@@ -221,11 +276,13 @@ python3 empacota.py
 php teste.php            # 43 asserções
 php teste-area.php       # 58 asserções
 php teste-lembretes.php  # 54 asserções
+php teste-visual.php     # 48 asserções
 ```
 
-155 asserções, sem WordPress, sem banco e sem rede. `teste-wp-falso.php` é um WordPress mínimo com armazenamento em memória de opções, transients, posts e meta — o suficiente para testar lógica que mexe em estado.
+203 asserções, sem WordPress, sem banco e sem rede. `teste-wp-falso.php` é um WordPress mínimo com armazenamento em memória de opções, transients, posts e meta — o suficiente para testar lógica que mexe em estado.
 
 - **`teste.php`** — CPF/CNPJ pelo dígito verificador, carimbo assinado anti-robô, `.htaccess`, limites, e o reempacotamento contra um *polyglot* real.
+- **`teste-visual.php`** — oito tentativas de injeção de CSS no campo de cor, a cadeia de herança dos quatro temas, a ausência de cor fixa no CSS base, o escopo `.apix` em vez de `:root`, a barra de etapas e a logo.
 - **`teste-lembretes.php`** — a regra dos marcos (inclusive o site que ficou fora do ar e voltou com três marcos vencidos de uma vez), a não repetição, o aviso depois de vencer, a normalização do telefone para o `wa.me`, os marcadores e a volta à estaca zero ao renovar.
 - **`teste-area.php`** — cookie de sessão (hash trocado, prazo esticado, assinatura forjada, cookie vencido, lixo), dono do anúncio, link de uso único, **mensagem idêntica para e-mail que existe e que não existe**, freio de pedidos, liberação e recusa de alteração, foto em análise solta do post, e a soma de prazo na renovação nos dois casos.
 
