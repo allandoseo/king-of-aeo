@@ -251,6 +251,9 @@ function apix_recebe() {
   update_post_meta($post_id, 'apix_plano', $p['slug']);
   update_post_meta($post_id, 'apix_valor', (float) $p['valor']);
   update_post_meta($post_id, 'apix_email', $email);
+  // e por este hash que a area do anunciante acha os anuncios da pessoa: o
+  // cookie de sessao guarda o hash, nunca o e-mail
+  update_post_meta($post_id, 'apix_email_hash', apix_email_hash($email));
   // CPF so o suficiente para conferir com o Asaas, nunca inteiro:
   // guardar CPF completo no banco de um site de anuncio e risco sem retorno
   update_post_meta($post_id, 'apix_cpf_fim', substr($cpf, -4));

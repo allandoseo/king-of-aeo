@@ -1,91 +1,11 @@
 <?php
 /**
- * Banco de teste do plugin Anuncie com Pix.
+ * Banco de teste do plugin Anuncie com Pix: validacao, carimbo anti-robo e o
+ * reempacotamento das fotos.
  *
- * Testa o que nao depende da API do Asaas: validacao de CPF/CNPJ, o carimbo
- * assinado do formulario e — o mais importante — o reempacotamento das fotos.
+ * Rode com: php teste.php
  */
-define('ABSPATH', __DIR__ . '/');
-define('HOUR_IN_SECONDS', 3600);
-define('DAY_IN_SECONDS', 86400);
-define('MINUTE_IN_SECONDS', 60);
-define('MB_IN_BYTES', 1048576);
-
-$GLOBALS['opcoes'] = [];
-function add_action($g,$cb,$p=10,$n=1){} function add_filter($g,$cb,$p=10,$n=1){}
-function remove_filter($g,$cb,$p=10){} function add_shortcode($t,$cb){}
-function is_admin(){return false;} function post_type_exists($t){return true;}
-function taxonomy_exists($t){return true;} function register_post_type($t,$a){}
-function register_taxonomy($t,$o,$a){} function register_activation_hook($f,$cb){}
-function register_deactivation_hook($f,$cb){} function wp_next_scheduled($h){return false;}
-function wp_schedule_event($t,$r,$h){} function wp_clear_scheduled_hook($h){}
-function flush_rewrite_rules(){} function get_option($k,$d=false){return $GLOBALS['opcoes'][$k] ?? $d;}
-function update_option($k,$v){$GLOBALS['opcoes'][$k]=$v; return true;}
-function wp_generate_password($n=12,$s=true,$x=false){return substr(str_repeat('a1b2c3d4e5f6g7h8',8),0,$n);}
-function wp_hash($d){return hash_hmac('md5',$d,'sal-de-teste');}
-function wp_upload_dir(){return ['basedir'=>sys_get_temp_dir().'/apix-teste','baseurl'=>'http://x/u'];}
-function trailingslashit($s){return rtrim($s,'/').'/';}
-function wp_mkdir_p($d){return is_dir($d) || mkdir($d,0777,true);}
-function wp_basename($p){return basename($p);}
-function sanitize_title($s){return strtolower(preg_replace('/[^a-z0-9]+/i','-',$s));}
-function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
-function home_url($p=''){return 'https://exemplo.com'.$p;}
-function get_bloginfo($x=''){return '6.5';}
-function wp_parse_url($u,$c=-1){return $c===-1?parse_url($u):parse_url($u,$c);}
-function wp_json_encode($d){return json_encode($d);}
-function rest_url($p=''){return 'https://exemplo.com/wp-json/'.$p;}
-function wp_remote_request($u,$a){return new WP_Error('sem_rede','sem rede no teste');}
-function is_wp_error($t){return $t instanceof WP_Error;}
-function wp_remote_retrieve_response_code($r){return 0;}
-function wp_remote_retrieve_body($r){return '';}
-function sanitize_text_field($s){return trim(strip_tags((string)$s));}
-function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
-function absint($n){return abs((int)$n);}
-function get_post_thumbnail_id($p=null){return 0;}
-function set_post_thumbnail($p,$a){}
-function get_children($a){return [];}
-function wp_delete_attachment($id,$f=false){}
-function wp_insert_attachment($a,$f,$p){return 123;}
-function wp_update_attachment_metadata($id,$m){}
-function wp_generate_attachment_metadata($id,$f){return [];}
-function wp_upload_bits($nome,$x,$bits){
-  $d = wp_upload_dir()['basedir'].'/'.APIX_PASTA;
-  wp_mkdir_p($d);
-  $cheio = $d.'/'.$nome;
-  file_put_contents($cheio,$bits);
-  return ['file'=>$cheio,'url'=>'http://x/'.$nome,'error'=>false];
-}
-class WP_Error {
-  private $c,$m;
-  public function __construct($c='',$m='',$d=null){$this->c=$c;$this->m=$m;}
-  public function get_error_message(){return $this->m;}
-  public function get_error_code(){return $this->c;}
-}
-class WP_REST_Request {}
-class WP_REST_Response { public function __construct($d=null,$s=200){} }
-function register_rest_route($ns,$r,$a){}
-function get_posts($a){return [];}
-function get_post_meta($p,$k,$s=false){return '';}
-function update_post_meta($p,$k,$v){}
-function get_post_status($p){return 'draft';}
-function get_permalink($p=null){return 'https://exemplo.com/a/';}
-function get_edit_post_link($p,$c=''){return '';}
-function get_the_title($p=null){return 'T';}
-function wp_specialchars_decode($s,$q=null){return $s;}
-function wp_mail($a,$b,$c){return true;}
-function wp_update_post($a){return true;}
-function do_action($g,...$a){}
-function date_i18n($f,$t){return date($f,$t);}
-function get_transient($k){return false;} function set_transient($k,$v,$t){}
-function delete_transient($k){} function term_exists($t,$tx='',$p=0){return 0;}
-function wp_insert_term($t,$tx='',$a=[]){return ['term_id'=>1];}
-function wp_set_object_terms($p,$t,$tx,$a=false){}
-function add_options_page(...$a){} function register_setting($g,$o,$a=[]){}
-function current_user_can($c){return true;}
-function wp_unslash($v){return is_string($v)?stripslashes($v):$v;}
-function wp_strip_all_tags($s){return strip_tags((string)$s);}
-function is_email($e){return (bool)filter_var($e,FILTER_VALIDATE_EMAIL);}
-
+require __DIR__ . '/teste-wp-falso.php';
 require __DIR__ . '/plugin/anuncie-pix.php';
 
 $falhas = 0;

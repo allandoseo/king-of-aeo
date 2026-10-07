@@ -12,6 +12,8 @@ function apix_manutencao_roda() {
   apix_vence_planos();
   apix_limpa_abandonados();
   apix_confere_pendentes();
+  apix_confere_renovacoes();
+  apix_limpa_fotos_orfas();
 }
 
 /** Tira do ar o que passou do prazo do plano. */
@@ -110,6 +112,64 @@ function apix_confere_pendentes() {
       apix_log('resgate', 'anuncio ' . $id . ' estava pago e nao tinha publicado');
       apix_publica($id);
     }
+  }
+}
+
+/**
+ * A mesma rede de seguranca, para renovacao.
+ *
+ * apix_confere_pendentes() so olha rascunho sem apix_publicado_em, entao nao ve
+ * renovacao nenhuma: anuncio renovado ja esta publicado e ja tem essa meta. Sem
+ * esta funcao, uma renovacao cujo webhook se perdeu some em silencio — o
+ * anunciante pagou, o prazo nao subiu, e o anuncio cai no vencimento antigo.
+ */
+function apix_confere_renovacoes() {
+  if (apix_chave() === '') return;
+
+  $ids = get_posts([
+    'post_type'    => apix_cpt(),
+    'post_status'  => 'any',
+    'numberposts'  => 10,
+    'fields'       => 'ids',
+    'meta_key'     => 'apix_renov_cobranca',
+    'meta_compare' => 'EXISTS',
+  ]);
+
+  foreach ($ids as $id) {
+    $cobranca = (string) get_post_meta($id, 'apix_renov_cobranca', true);
+    if ($cobranca === '') continue;
+
+    $real = apix_cobranca_status($cobranca);
+    if (is_wp_error($real) || empty($real['status'])) continue;
+
+    if (in_array(strtoupper((string) $real['status']), apix_status_pagos(), true)) {
+      apix_log('resgate', 'renovacao do anuncio ' . $id . ' estava paga e nao tinha subido o prazo');
+      apix_aplica_renovacao($id);
+    }
+  }
+}
+
+/**
+ * Apaga foto que ficou esperando liberacao de um anuncio que nao existe mais.
+ *
+ * Acontece quando o anuncio e apagado pelo admin sem passar pela limpeza do
+ * plugin. A foto fica sem pai, invisivel na biblioteca de midia filtrada por
+ * anuncio, ocupando disco para sempre.
+ */
+function apix_limpa_fotos_orfas() {
+  $fotos = get_posts([
+    'post_type'    => 'attachment',
+    'post_status'  => 'inherit',
+    'numberposts'  => 30,
+    'fields'       => 'ids',
+    'meta_key'     => 'apix_espera_de',
+    'meta_compare' => 'EXISTS',
+  ]);
+
+  foreach ($fotos as $fid) {
+    $dono = (int) get_post_meta($fid, 'apix_espera_de', true);
+    if ($dono && get_post_status($dono) !== false) continue;   // o anuncio existe
+    wp_delete_attachment($fid, true);
   }
 }
 

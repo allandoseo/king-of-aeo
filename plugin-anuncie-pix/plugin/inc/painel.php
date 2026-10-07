@@ -32,6 +32,9 @@ function apix_sanitiza($bruto) {
     'vence_dias' => max(1, min(30, absint($bruto['vence_dias'] ?? 1))),
     'abandono_h' => max(2, min(720, absint($bruto['abandono_h'] ?? 48))),
     'whats'      => preg_replace('/\D+/', '', (string) ($bruto['whats'] ?? '')),
+    'moderar'    => empty($bruto['moderar']) ? 0 : 1,
+    'sessao_dias'=> max(1, min(90, absint($bruto['sessao_dias'] ?? 7))),
+    'link_min'   => max(5, min(1440, absint($bruto['link_min'] ?? 30))),
     'planos'     => [],
   ];
 
@@ -121,6 +124,16 @@ function apix_pagina() {
     <p>Crie uma pagina e coloque o shortcode <code>[anunciar]</code> nela. A mesma
     pagina mostra o QR Code depois do envio.</p>
 
+    <h2>4. Pagina da area do anunciante</h2>
+    <p>Crie uma segunda pagina (ex. <code>/minha-area/</code>) com o shortcode
+    <code>[minha-area]</code>. O anunciante entra por link enviado no e-mail —
+    sem senha e sem usuario do WordPress — e de lá edita o texto, troca as fotos
+    e renova o plano.</p>
+    <p><small>Nao criar usuario do WordPress e deliberado: usuario tem
+    capability, e capability se escala. Centenas de contas de terceiros no
+    <code>/wp-login.php</code> e alvo, e senha fraca de anunciante vira porta de
+    entrada no site.</small></p>
+
     <form method="post" action="options.php">
       <?php settings_fields('apix_grupo'); ?>
 
@@ -205,6 +218,44 @@ function apix_pagina() {
             <input type="number" min="2" max="720" class="small-text"
               name="<?php echo esc_attr(APIX_OPCAO); ?>[abandono_h]"
               value="<?php echo (int) $c['abandono_h']; ?>"> horas, com as fotos.
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Conferir alteracoes</th>
+          <td>
+            <label><input type="checkbox" value="1"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[moderar]"
+              <?php checked(!empty($c['moderar'])); ?>>
+              Texto e fotos novas esperam liberacao quando o anuncio ja esta no ar</label>
+            <p class="description">
+              <strong>Ligado (padrao):</strong> a alteracao fica guardada e o anuncio
+              <strong>continua no ar com o conteudo anterior</strong> — ninguem fica
+              sem anuncio esperando voce. Voce libera pelo aviso no topo do admin
+              ou pela caixa "Alteracao do anunciante" dentro do anuncio.<br>
+              <strong>Desligado:</strong> a alteracao vai ao ar na hora. Mais comodo,
+              e significa que quem pagou um plano pode trocar o texto de uma pagina
+              publicada do seu site por qualquer coisa — e o que aparece na pagina
+              e sua responsabilidade, nao da pessoa que anunciou.<br>
+              Telefone e WhatsApp mudam na hora nos dois casos: sao dado de contato,
+              nao conteudo.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Area do anunciante</th>
+          <td>
+            O login dura <input type="number" min="1" max="90" class="small-text"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[sessao_dias]"
+              value="<?php echo (int) $c['sessao_dias']; ?>"> dia(s).<br>
+            O link enviado por e-mail vale <input type="number" min="5" max="1440" class="small-text"
+              name="<?php echo esc_attr(APIX_OPCAO); ?>[link_min]"
+              value="<?php echo (int) $c['link_min']; ?>"> minutos, e serve uma vez so.
+            <p class="description">
+              O link e guardado pelo hash: um dump da <code>wp_options</code> nao
+              entrega links vivos. O pedido de link e freado por IP e pelo proprio
+              e-mail — so por IP, uma botnet encheria a caixa de alguem no seu nome
+              e o seu dominio e que ganharia reputacao de spam.
+            </p>
           </td>
         </tr>
         <tr>

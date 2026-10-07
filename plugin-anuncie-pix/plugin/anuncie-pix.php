@@ -58,6 +58,9 @@ function apix_config() {
     'vence_dias' => 1,           // validade da cobranca Pix
     'abandono_h' => 48,          // rascunho sem pagamento morre depois disso
     'whats'      => '',          // WhatsApp de suporte mostrado ao anunciante
+    'moderar'    => 1,           // edicao em anuncio no ar espera liberacao
+    'sessao_dias'=> 7,           // quanto dura o login da area do anunciante
+    'link_min'   => 30,          // validade do link de acesso enviado por e-mail
     'planos'     => apix_planos_padrao(),
   ];
   $c = get_option(APIX_OPCAO, []);
@@ -142,6 +145,8 @@ add_action('init', function () {
 require_once __DIR__ . '/inc/asaas.php';
 require_once __DIR__ . '/inc/fotos.php';
 require_once __DIR__ . '/inc/formulario.php';
+require_once __DIR__ . '/inc/area.php';
+require_once __DIR__ . '/inc/revisao.php';
 require_once __DIR__ . '/inc/webhook.php';
 require_once __DIR__ . '/inc/manutencao.php';
 if (is_admin()) require_once __DIR__ . '/inc/painel.php';

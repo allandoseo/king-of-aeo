@@ -71,9 +71,16 @@ function apix_protege_pasta_fotos() {
  * derruba o anuncio inteiro: o anunciante preencheu tudo, e perder o
  * formulario por causa de um arquivo ruim e motivo para ele desistir.
  */
-function apix_processa_fotos($campo, $post_id) {
+function apix_processa_fotos($campo, $post_id, $limite = null) {
   $c      = apix_config();
-  $maximo = max(1, (int) $c['max_fotos']);
+  // $limite permite passar quantas vagas ainda restam. Sem ele, o limite valeria
+  // por envio e nao por anuncio: quem ja tem 5 fotos adicionaria 5 a cada
+  // edicao, e o teto do painel nao significaria nada.
+  $maximo = $limite !== null ? max(0, (int) $limite) : max(1, (int) $c['max_fotos']);
+  if ($maximo < 1) {
+    return ['anexos' => [], 'erros' => [sprintf('O anuncio ja tem o maximo de %d fotos. '
+      . 'Apague alguma antes de enviar outra.', (int) $c['max_fotos'])]];
+  }
   $bytes  = max(1, (int) $c['max_mb']) * MB_IN_BYTES;
   $saida  = ['anexos' => [], 'erros' => []];
 
@@ -272,8 +279,17 @@ function apix_reempacota($caminho, $largura, $altura) {
   return $jpeg;
 }
 
-/** Apaga as fotos de um anuncio. Usado na limpeza dos abandonados. */
+/**
+ * Apaga as fotos de um anuncio. Usado na limpeza dos abandonados.
+ *
+ * Pega as duas situacoes: as anexadas (filhas do post) e as que estao soltas
+ * esperando liberacao. Sem a segunda, apagar o anuncio deixaria a foto no disco
+ * para sempre, sem pai e sem nada que a ligue a nada — invisivel no admin e
+ * impossivel de achar depois.
+ */
 function apix_apaga_fotos($post_id) {
   $filhos = get_children(['post_parent' => $post_id, 'post_type' => 'attachment', 'numberposts' => -1]);
   foreach ($filhos as $f) wp_delete_attachment($f->ID, true);
+
+  foreach (apix_fotos_em_analise($post_id) as $fid) wp_delete_attachment($fid, true);
 }

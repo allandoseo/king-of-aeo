@@ -63,6 +63,56 @@ Os valores que vêm instalados (R$ 49,90 / 89,90 / 149,90) são **exemplo**. Tro
 
 ---
 
+## Área do anunciante (`[minha-area]`)
+
+Crie uma segunda página (ex. `/minha-area/`) com o shortcode `[minha-area]`. De lá o anunciante edita o texto, troca as fotos e renova o plano sem passar por você.
+
+### Login sem senha e sem usuário do WordPress
+
+O anunciante digita o e-mail e recebe um link de uso único, válido por 30 minutos. Depois fica com uma sessão em cookie assinado por 7 dias. **Não cria usuário do WordPress** — deliberado, por três motivos:
+
+1. Usuário tem *capability*, e capability se escala. Um bug em qualquer plugin instalado que vaze privilégio passa a valer para centenas de anunciantes que você não conhece.
+2. Senha de terceiro é suporte eterno (esqueci, não chegou o e-mail, mudei de telefone) e senha fraca vira porta de entrada no site.
+3. `/wp-login.php` com centenas de contas é alvo. Sem contas, não há o que adivinhar.
+
+Quem tem o e-mail tem o anúncio — exatamente a mesma garantia de um "esqueci minha senha", sem a senha no meio.
+
+### O formulário de acesso não entrega quem anuncia aqui
+
+A resposta é **sempre idêntica**: *"Se existir anúncio com esse e-mail, o link acaba de ser enviado."* Vale para e-mail que existe, que não existe e que é inválido. Responder "não encontramos esse e-mail" transformaria o formulário numa consulta: bastaria testar uma lista para descobrir quem anuncia no site. Isso está coberto por teste.
+
+O pedido de link é freado **por IP e pelo próprio e-mail**. Só por IP, uma botnet pediria mil links para o mesmo endereço, encheria a caixa de alguém no seu nome — e o seu domínio é que ganharia reputação de spam.
+
+O token é guardado pelo **hash**: um dump da `wp_options` não entrega links vivos. E serve **uma vez só**, apagado antes de qualquer outra coisa — link reenviado, ou que vazou no histórico do navegador, não serve de novo. Depois do uso o token sai da URL por redirect, para não ficar no histórico, no `Referer` nem no log do servidor.
+
+### O que uma edição pode fazer com um anúncio no ar
+
+Este é o ponto delicado. Quem paga R$ 49 e ganha o direito de editar uma página publicada do seu site pode, depois de aprovado, trocar o texto por qualquer coisa. Num site deste ramo isso não é hipótese remota — e **o que aparece na página é sua responsabilidade, não da pessoa que anunciou**.
+
+A solução não castiga o anunciante. Com **Conferir alterações** ligado (padrão):
+
+| O que muda | Quando vale |
+|---|---|
+| Telefone e WhatsApp | **na hora** — é dado de contato, não conteúdo |
+| Apagar foto | **na hora** — tirar do ar nunca é o risco; o risco é colocar |
+| Trocar a capa | **na hora** |
+| Texto e nome | depois da sua liberação |
+| Fotos novas | depois da sua liberação |
+
+**O anúncio nunca sai do ar esperando.** A alteração fica guardada em meta e a página segue com o conteúdo anterior — ninguém fica sem anúncio porque você foi dormir. As fotos novas ficam **soltas do post, sem pai**, para que nenhuma galeria do tema que lista filhos mostre foto não conferida; seria análise no papel e publicação na prática. Isso está coberto por teste.
+
+Você libera pelo aviso no topo do admin ou pela caixa *Alteração do anunciante* dentro do anúncio, que mostra o antes e o depois lado a lado. **Recusar** descarta a alteração e apaga as fotos novas, sem tocar no anúncio.
+
+Desligando a opção, tudo vai ao ar na hora. A escolha é sua; o padrão é conferir, e você recebe e-mail a cada edição nos dois casos.
+
+### Renovação
+
+O anunciante escolhe o plano e paga outro Pix. A renovação **soma ao prazo que resta**: quem renova com 5 dias sobrando fica com 35, não com 30 — ninguém é punido por pagar adiantado. Quem renova depois de vencer parte de hoje, porque prazo vencido não volta, e o anúncio sobe de novo. Ambos cobertos por teste.
+
+O webhook aceita tanto a cobrança da primeira compra quanto a da renovação, e distingue as duas: renovação soma prazo, primeira compra publica. A rede de segurança horária também cobre renovação — `apix_confere_pendentes()` só olha rascunho, e anúncio renovado já está publicado, então sem uma checagem própria uma renovação cujo webhook se perdeu sumiria em silêncio.
+
+---
+
 ## Segurança do upload
 
 Você escolheu permitir upload **antes** do pagamento. É o cenário mais cômodo para o anunciante e o pior para o servidor: qualquer pessoa na internet grava arquivo no seu site sem se identificar e sem pagar nada. As cinco camadas, e o que cada uma de fato resolve:
@@ -125,7 +175,7 @@ Antes de instalar no segundo site, renomeie o prefixo, a pasta, o `Plugin Name:`
 sed -i 's/apix/xyz/g; s/APIX/XYZ/g; s#anuncie/v1#outro/v1#g' anuncie-pix.php inc/*.php uninstall.php
 ```
 
-O `uninstall.php` tem os nomes das opções escritos à mão — confira que o `sed` os pegou.
+O `uninstall.php` tem os nomes das opções escritos à mão e o `uninstall.php` do upload usa `apix_config` literal — confira que o `sed` os pegou. O nome do cookie (`APIX_COOKIE`) e os shortcodes `[anunciar]` e `[minha-area]` também aparecem no HTML; troque os shortcodes se quiser trocar tudo.
 
 ## Empacotar
 
@@ -136,14 +186,17 @@ python3 empacota.py
 ## Testes
 
 ```bash
-php teste.php
+php teste.php        # 43 asserções
+php teste-area.php   # 58 asserções
 ```
 
-42 asserções sem precisar de WordPress nem da API: CPF/CNPJ pelo dígito verificador, o carimbo assinado anti-robô, o `.htaccess`, os limites, e o reempacotamento contra um polyglot real.
+101 asserções, sem WordPress, sem banco e sem rede. `teste-wp-falso.php` é um WordPress mínimo com armazenamento em memória de opções, transients, posts e meta — o suficiente para testar lógica que mexe em estado.
+
+- **`teste.php`** — CPF/CNPJ pelo dígito verificador, carimbo assinado anti-robô, `.htaccess`, limites, e o reempacotamento contra um *polyglot* real.
+- **`teste-area.php`** — cookie de sessão (hash trocado, prazo esticado, assinatura forjada, cookie vencido, lixo), dono do anúncio, link de uso único, **mensagem idêntica para e-mail que existe e que não existe**, freio de pedidos, liberação e recusa de alteração, foto em análise solta do post, e a soma de prazo na renovação nos dois casos.
 
 ## Pendente
 
-- Renovação: avisar o anunciante por e-mail antes de o plano vencer, com link para nova cobrança.
-- Área do anunciante para editar o anúncio no ar sem passar por você.
+- Avisar o anunciante por e-mail alguns dias antes de o plano vencer, com link direto para a renovação (a renovação em si já existe; falta o lembrete).
 - Cupom de desconto.
 - Boleto e cartão além do Pix (o Asaas suporta; é trocar o `billingType` e tratar o prazo de compensação, que no boleto são dias).

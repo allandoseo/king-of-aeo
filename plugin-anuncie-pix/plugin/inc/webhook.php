@@ -83,10 +83,16 @@ function apix_webhook(WP_REST_Request $req) {
     return new WP_REST_Response(['ok' => true, 'nota' => 'sem anuncio'], 200);
   }
 
-  // a cobranca guardada no anuncio tem de ser esta. Sem isso, uma cobranca de
-  // R$ 1 com externalReference apontando para outro anuncio publicaria o caro
-  $guardada = (string) get_post_meta($post_id, 'apix_cobranca', true);
-  if ($guardada !== $cobranca) {
+  // A cobranca guardada no anuncio tem de ser esta — a da primeira compra ou a
+  // da renovacao. Sem conferir, uma cobranca de R$ 1 com externalReference
+  // apontando para outro anuncio publicaria o plano caro.
+  $primeira  = (string) get_post_meta($post_id, 'apix_cobranca', true);
+  $renovacao = (string) get_post_meta($post_id, 'apix_renov_cobranca', true);
+
+  $e_renovacao = ($renovacao !== '' && hash_equals($renovacao, $cobranca));
+  $e_primeira  = ($primeira !== '' && hash_equals($primeira, $cobranca));
+
+  if (!$e_renovacao && !$e_primeira) {
     apix_log('webhook', 'cobranca nao casa com o anuncio ' . $post_id);
     return new WP_REST_Response(['ok' => true, 'nota' => 'cobranca divergente'], 200);
   }
@@ -94,7 +100,9 @@ function apix_webhook(WP_REST_Request $req) {
   update_post_meta($post_id, 'apix_status', $status);
 
   if (in_array($status, apix_status_pagos(), true)) {
-    apix_publica($post_id);
+    // renovacao soma prazo; primeira compra publica
+    if ($e_renovacao) apix_aplica_renovacao($post_id);
+    else              apix_publica($post_id);
   } elseif (in_array($status, ['REFUNDED', 'CHARGEBACK_REQUESTED', 'CHARGEBACK_DISPUTE',
                               'DELETED', 'REFUND_REQUESTED'], true)) {
     apix_despublica($post_id, 'pagamento desfeito: ' . $status);
